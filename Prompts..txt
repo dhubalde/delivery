@@ -1,0 +1,188 @@
+Tengo creada la estructura canónica de documentación SDD en la carpeta docs/. Leé docs/READNE.md y la carpeta docs/.ai/ para entender las reglas de trabajo del proyecto. A partir de las ideas que voy a escribiéndote de a poco, quiero que empecemos a completar progresivamente los documentos siguiendo el paradigma SDD.
+
+
+Quiero hacer una aplicación que administre delivery (por ahora un MVP) dentro de comercio, para que dependiendo los sectores del comercio, tenga usuarios (con roles acorde al puesto) cuando el usuario se loguea, tu app lee el rol y lo dirige exclusivamente a su pantalla correspondiente (bloqueando el acceso a las demás). El cliente (en esta etapa de prueba no se registrara) realiza pedido ingresa a la aplicación por medio del catalogo de productos con sus respectivos precios, realiza el pedido y le va calculando el total, una vez confirmado el pedido, deberá elegir la forma de pago (EFECTIVO, BILLETERA VIRTUAL, TARJETAS) luego confirma el que el pago fue registrado, se imprime en una comandera. Ingresa al sector de preparación y luego pasa al de facturación y logística. Básicamente realizara estos procesos INGRESO DE PEDIDO --> PREPARACION --> FACTURACION --> LOGISTICA --> CIERRE CAJA (al final del día), luego detallare cada sector.
+
+Que exista una opción de cancelar, si el pedido no fue preparado todavía.
+
+Si el negocio esta cerrado no tome pedidos (se deberá registrar la hora de apertura y cierre del negocio de lunes a lunes.
+Ej Lunes 11:00 hrs a 00:00, Viernes 9:00 hrs a 00:00 hrs, Sábados 00:01 hrs a 01:00 hrs - 9:00 hrs a 00:00 hrs  
+
+
+Los productos y gustos deberían poder filtrarse por categorías, por letras que se escriben,  
+En caso de que fuera una heladería (tiene que tener los gustos), si es una pizzería con el tema de las empanadas también etc.
+El cliente podrá calificar el servicio al cliente
+
+Detalles interactivos 
+Se puede armar ej. si estas preparando un 1/4 de helados, aparezca un pote vacío y a medidas que se van eligiendo los gustos, se va completando el pote.
+Notificaciones que den avisos de tareas pendientes 
+
+Pantalla de seguimiento para ir mostrando en que parte del proceso va el pedido, y la tarjeta do esta el pedido va cambiando de color.
+Amarillo: RECIBIDO esperando confirmación 
+Azul: PREPARACION se están sirviendo los gustos
+Verde: FACTURACION se realiza el ticket y forma de pago
+Rojo: LOGISTICA repartidor en viaje
+Logo Empresa: ENTREGA pedido llego a su destino 
+El sistema mandara alertas de pedidos que no se han pagado o por alguna irregularidad no ha sido anulado, o puede ser un pedido falso  
+
+Dashboard del Empleado
+Esta pantalla debe ser limpia, pensada para usarse rápido en una tablet o monitor en el mostrador.
+En la parte superior del panel, los totales acumulados del día con diferentes colores: Efectivo: Total $XX.XXX (Verde) Billeteras virtuales: Total $XX.XXX (Azul) Tarjetas: Total $XX.XXX (Celeste/Morado)
+Cantidad de pedidos entregados y cantidad de pedidos cancelados 
+
+Administrador dueño
+Puede llevar el control del rendimiento del negocio (con un panel analítico) 
+Se podrá ingresar al dashboard para realizar consultas de venta de días anteriores, y del día 
+
+Fase 2
+Se puede armar una App para el celular:
+
+Cliente: deba registrarse con un mail y contraseña
+y realizar los pedidos desde ahi
+
+
+Delivery: tenga la hoja de ruta donde debe entregar el pedido
+Información critica: Dirección, teléfono y método de pago
+Cierre: botón entregado 
+
+Ayudaría mucho localizar desde donde se realizo el pedido y a donde se envía (geolocalización) para evitar pedidos falsos.
+El cliente debería validar su dirección y ubicación real.
+
+Geolocalización por Navegador: Podés usar la API nativa de JavaScript (navigator.geolocation) para capturar las coordenadas exactas (latitud y longitud) del dispositivo del cliente cuando presiona un botón como "Usar mi ubicación actual".
+Autocompletado de Direcciones: Para evitar que escriban direcciones inexistentes, integrá un buscador inteligente usando servicios gratuitos como OpenStreetMap con Leaflet, o la API de Google Maps. El usuario empieza a escribir y el sistema le sugiere calles reales.
+Restricción por Radio de Entrega: En tu código podés definir que la heladería solo entrega a un máximo de, por ejemplo, 4 kilómetros a la redonda. Si las coordenadas del cliente dan más lejos, el sistema bloquea el pedido automáticamente antes de enviarlo a la cocina.  
+Filtro de Pedidos Sospechosos: El sistema puede marcar en rojo parpadeante o lanzar una alerta si un pedido se hizo desde una computadora cuya ubicación IP no coincide para nada con la dirección de entrega que escribió (por ejemplo, si pide un helado para enviar a Gualeguaychú, pero su geolocalización real marca otra provincia o país).
+Optimización para el Repartidor: El cadete, al iniciar sesión, puede ver los pines de todos los pedidos listos en un mapa para agrupar las entregas que quedan cerca y armar una hoja de ruta eficiente.
+
+Trabajo con la AI
+
+Tengo creada la estructura canónica de documentación SDD en la carpeta docs/. Leé docs/READNE.md y la carpeta docs/.ai/ para entender las reglas de trabajo del proyecto. A partir de las ideas que voy a escribiéndote de a poco, quiero que empecemos a completar progresivamente los documentos siguiendo el paradigma SDD.
+
+¿Cómo recibe el cliente su pedido?
+
+Delivery a domicilio (el local tiene repartidores propios que llevan el pedido)
+Retiro en el local (el cliente pasa a buscarlo)
+Ambos desde el inicio
+
+Opción 3, Ambos desde el inicio
+
+Cuando el cliente elige la forma de pago (EFECTIVO, BILLETERA VIRTUAL, TARJETAS), ¿qué pasa realmente?
+
+El pago se hace online de verdad — integración con MercadoPago u otra pasarela: el cliente paga en el momento con tarjeta o billetera virtual, y el sistema recibe la confirmación automática.
+El cliente solo DECLARA el método — elige "pago con tarjeta" o "efectivo", pero paga en persona cuando retira o recibe el pedido. La confirmación del pago la registra el empleado en el local.
+Mixto — efectivo se declara y se paga al recibir; billetera virtual y tarjetas se pagan online con integración.
+
+Mixto — efectivo se declara y se paga al recibir; billetera virtual y tarjetas se pagan online con integración.
+
+¿Qué roles de empleados tiene el comercio? Según tu flujo (INGRESO → PREPARACIÓN → FACTURACIÓN → LOGÍSTICA → CIERRE CAJA), imagino algo así:
+
+Administrador / Dueño — configura, panel analítico, cierra caja.
+Cajero — registra pagos en efectivo, factura.
+Preparador — cocina/heladería, marca pedidos listos.
+Repartidor — hoja de ruta, entrega.
+Toma pedidos — ingresa y confirma pedidos (en horarios pico hay alguien dedicado a esto, y el cajero está aparte).
+
+En horarios no pico una persona hace todos los roles 
+
+Cuando el negocio está cerrado, ¿qué pasa con los pedidos?
+
+Se bloquean del todo — la web no acepta pedidos hasta que abra.
+
+¿Cómo se cobra el envío?
+
+Por zona/distancia — se divide el radio de entrega en zonas con distinto costo.
+
+¿Cómo se cobra el envío? Por zona/distancia — se divide el radio de entrega en zonas con distinto costo, esta tercerizado, el envió lo cobra el cadete cuando lo lleva, pero podes sugerirme algo mas moderno, teniendo en cuenta ambos escenarios que puede tener delivery propio o tercerizado.
+
+El corazón de la sugerencia: el envío se cobra SIEMPRE en el pedido (no en la entrega), y la diferencia entre propio/tercerizado es solo configuración del comercio + un registro de liquidación con el cadete tercero. El cliente nunca más saca la billetera en la puerta — se acabó el "no tengo cambio".
+
+Claro, tiene un costo: si el pedido es en efectivo contra entrega y el cadete tercerizado llega y el cliente no paga, el cadete no cobró su envío... por eso en el modelo moderno el efectivo también se cobra antes para delivery tercerizado, o el comercio se hace cargo de la deuda con el cadete en esos casos.
+
+¿Te gusta este modelo moderno (envío incluido en el total del pedido, cobro adelantado, modo propio/tercerizado configurable)? ¿O preferís mantener el cadete cobrando en mano para el MVP?
+
+El problema que se presenta es que: cuando lo tenes tercerizado, estas facturando por la empresa de envíos generando impuestos, quizás deberíamos dejar las posibles opciones e ir configurando dependiendo  como trabaje el comercio 
+
+¡Excelente ojo, ese es un punto contable de oro! Y tenés toda la razón: si el envío lo factura tu comercio cuando el delivery es tercerizado, generás impuestos sobre un ingreso que no es tuyo — es un "passthrough" (dinero que pasa por tu caja pero pertenece al cadete/empresa de envíos). Eso es exactamente el tipo de regla de negocio que hay que capturar en el dominio.
+
+Entonces el modelo correcto es configurable por comercio, con tres dimensiones independientes:
+
+Dimensión	Opciones	Impacto
+Modo de reparto	propio / tercerizado	Define de quién es el ingreso del envío (revenue del comercio vs. passthrough del cadete)
+Quién cobra el envío	en_pedido (incluido en el total) / en_entrega (cadete cobra en mano)	Define el flujo de cobro y el riesgo
+Cómo se calcula	por_zona / fijo / gratis_monto / por_distancia	Define el precio
+Y de ahí sale la regla contable: si tercerizado + en_pedido → el envío se cobra pero no se factura como ingreso tuyo: va como passthrough, el ticket lo muestra por separado y el sistema registra la liquidación pendiente con el cadete. Si propio → es tu ingreso y se factura normal. Si tercerizado + en_entrega → ni siquiera toca tu caja.
+
+Entonces, para el MVP, mi pregunta es:
+
+¿Qué combinación(es) implementamos primero?
+
+Todas configurable desde el inicio — el comercio elige su combo y el sistema se adapta (más robusto, más trabajo de arranque).
+La tuya primero — tercerizado + cadete cobra en la entrega + por zona, y dejamos la configuración lista para sumar las otras después.
+La moderna primero — tercerizado + cobro en el pedido + por zona (con passthrough contable), y el resto después.
+
+Ahora el recorrido del pedido — contame con tus palabras:
+
+¿Qué pasa desde que el cliente confirma el pedido en la web hasta que lo recibe? Quiero que me describas el camino del pedido dentro del local, por ejemplo: ¿llega a alguna pantalla o se imprime algo? ¿Quién lo ve primero? ¿Qué se hace en cada paso?
+
+Y de paso, una duda puntual: ¿el pedido se puede cancelar? Si sí, ¿hasta qué momento y quién puede hacerlo (el cliente, el local, ambos)?
+
+Cliente realiza el pedido por medio del catalogo (eligiendo la forma de pago) e ingresa por la web al comercio, una empleado ve el ingreso y lo imprime (la tarjeta del pedido esta de color amarillo), (desde el momento que imprime el pedido cambia a color azul y pasa a la pantalla de armado, donde se prepara, se presiona un botón de terminado, pasa de color verde a facturación se realiza el ticket y forma de pago ( si es efectivo queda titilando porque falta el ingreso del dinero, si es por otro medio queda fijo y el importe se suma al total con billetera o tarjeta, se le entrega al delivery y queda en color rojo, cuando llega al domicilio aparece el logo de la empresa, si es en efectivo el pago, el cadete tendrá que volver a pagar, ahí el cajero recibe el dinero y cierra el proceso de pago, y deja de titilar la tarjeta con ese pedido, ese importe se suma al total de efectivo. Mientras el pedido no ingrese al proceso de preparación, el cliente lo puede cancelar, si es cancelado figurara en un total de cancelados, al lado de total de pedidos entregados, al final del dia de trabajo se deberia imprimir un ticket con los diferentes totales (EFECTIVO, BILLETERAS VIRTUALES, TARJETAS, TOTAL DE PEDIDOS ENTREGADOS, TOTAL DE PEDIDOS RECHAZADOS)
+
+¡Excelente! Esto es el corazón del sistema. Dejame confirmar que lo entendí bien, porque es un flujo con varias transiciones:
+
+Flujo del pedido (estados de la tarjeta):
+
+Amarillo (RECIBIDO) — el cliente confirma el pedido en la web; un empleado ve el ingreso y lo imprime.
+Azul (PREPARACIÓN) — al imprimir, pasa a la pantalla de armado; se prepara y se presiona "terminado".
+Verde (FACTURACIÓN) — se hace el ticket y la forma de pago: si es efectivo, queda titilando (falta el dinero); si es billetera/tarjeta, queda fijo y el importe se suma al total de ese método.
+Rojo (LOGÍSTICA) — se entrega al delivery, repartidor en viaje.
+Logo (ENTREGADO) — llega al domicilio. Si el pago era en efectivo, el cadete vuelve con el dinero, el cajero lo recibe, deja de titilar y el importe se suma al total de efectivo.
+Reglas:
+
+El cliente puede cancelar mientras el pedido no haya ingresado a preparación (estado amarillo).
+Cancelados → contador aparte junto al de entregados.
+Cierre de caja diario: ticket impreso con EFECTIVO, BILLETERAS VIRTUALES, TARJETAS, TOTAL ENTREGADOS, TOTAL RECHAZADOS.
+Guardo todo esto y te hago una propuesta:
+
+Ya tenemos material de sobra para empezar a volcar en los documentos. Te propongo el próximo paso:
+
+¿Arrancamos con el primer borrador? Tengo suficiente para escribir:
+
+docs/vision/vision.md — qué es el producto, para quién, el problema que resuelve
+docs/vision/scope.md — qué incluye el MVP (heladería, web sin registro, delivery+retiro) y qué NO incluye (fase 2: app mobile, registro de clientes, geolocalización)
+docs/vision/objectives.md — objetivos medibles del sistema
+Primeras reglas de negocio en docs/requirements/business-rules.md — las que ya definimos (potes con gustos, cancelación antes de preparación, horarios, pago mixto, etc.)
+O preferís que sigamos entendiendo el negocio un poco más (dashboard del empleado con totales del día, panel del administrador, calificación del servicio) y después escribimos todo junto?
+
+Mi sugerencia: arrancamos con visión + alcance + reglas básicas ahora — así ves el formato y ajustamos sobre algo concreto, y lo demás lo vamos sumando por tandas. ¿Dale?
+
+otro tema que me quedo pendiente es que cuando hay envíos pendientes de cobro, pueden aparecer notificaciones al cajero, o usar las notificaciones para tareas pendientes en los diferentes sectores. y Arranca con  visión + alcance + reglas básicas
+
+Claro! Basándome en el análisis de la documentación que revisé, aquí algunas ideas para dar el siguiente paso:
+Ideias para continuar
+1. Iniciar el pipeline SDD formal
+La documentación de visión, alcance y objetivos ya está completada (docs/vision/). El siguiente paso natural según SDD sería lanzar la fase de proposal para el primer cambio. Esto transformaría las ideas actuales en un documento de proposal estructurado.
+2. Mapear las 87 reglas de negocio a specs
+Los docs/requirements/business-rules.md tienen un detalle excepcional (87 reglas BR-CAT-01 a BR-X-05). Podríamos usarlas como base directa para escribir las especificaciones (specs) - cada regla se mapea a un requisito con fortaleza MUST/SHALL/SHOULD y escenarios verificables.
+3. Decisión de modo y almacén de artefactos
+Antes de aplicar código, hay decisiones estructurales pendientes según la preflight SDD:
+- Modo de ejecución: Interactive (pausa tras cada fase) vs Auto (cadena continua con gatekeepers)
+- Almacén de artefactos: engram (memoria persistente), openspec (archivos Git), o hybrid
+- Estrategia de entrega: ask-on-risk, auto-chain, single-pr, o exception-ok
+4. Primer cambio SDD: "ice-cream-shop-mvp"
+Dado que el scope.md especifica "heladería" como vertical MVP, podríamos iniciar el primer cambio SDD con ese nombre. Las specs ya definirían catálogo, sabores, horarios, estados de pedido, etc.
+5. Validar código existente
+¿Hay código fuente en el proyecto o aún estamos en fase de documentación/planning? El directorio actual solo tiene docs/.atl/init-scripts, no vi carpetas src/, app/, etc.
+---
+¿Cuál de estas direcciones te interesa más? O si tienes otra en mente, dime y la Desarrollamos. Lo importante es que el next step sea claro y no quede flotando.
+
+Filtros: tanto productos, como gustos deberian porder filtrarse por categoria, por primeras letras, algun otro de filtro que sea muy usado.
+
+seguimos con lista 1. Iniciar el pipeline SDD formal -si.
+2. Mapear las 87 reglas de negocio a specs - si.  
+3. Decisión de modo y almacén de artefactos.  Modo de ejecución: Interactive (pausa tras cada fase), - Almacén de artefactos: engram (memoria persistente).
+- Estrategia de entrega: ask-on-risk 
+4. Primer cambio SDD: "ice-cream-shop-mvp", perfecto!
+Tests: que sean unitarios en todos los endpoints importantes y que quede documentado consecuentementes
+
+nos falta armar el github este es el repositorio https://github.com/dhubalde/delivery-admin.git y hay que hacer .gitignore
