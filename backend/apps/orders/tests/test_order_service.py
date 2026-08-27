@@ -47,6 +47,14 @@ class TestOrderServiceTransition:
         order.cash_declared = True
         order.save(update_fields=["cash_declared"])
         OrderService.transition(order.pk, Order.State.FACTURACION)
+        from apps.payments.services import PaymentService
+
+        PaymentService.declare_payments(order, [{"method": "EFECTIVO", "amount": str(order.total)}])
+        from apps.payments.models import Payment
+
+        for p in order.payments.filter(method=Payment.Method.EFECTIVO):
+            PaymentService.confirm_cash(p.pk)
+        order.refresh_from_db()
         OrderService.transition(order.pk, Order.State.LOGISTICA)
         OrderService.transition(order.pk, Order.State.ENTREGADO)
         order.refresh_from_db()
