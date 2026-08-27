@@ -21,12 +21,28 @@ def make_unsaved_product(**overrides):
         name="Chocolate 1kg",
         price=Decimal("8500.00"),
         product_type=Product.ProductType.POTE,
-        pote_size=Product.PoteSize.KG_1,
+        pote_size="KG_1",
         min_flavors=3,
         max_flavors=4,
     )
     data.update(overrides)
     return Product(**data)
+
+
+def make_pote_product(product_type, pote_size="KG_1"):
+    """Create a POTE product with the given pote_size for policy testing."""
+    if pote_size in ("KG_1", "KG_HALF"):
+        min_flavors = 3
+        max_flavors = 4
+    else:  # KG_QUARTER
+        min_flavors = 2
+        max_flavors = 3
+    return Product(
+        product_type=product_type,
+        pote_size=pote_size,
+        min_flavors=min_flavors,
+        max_flavors=max_flavors,
+    )
 
 
 class TestBrCat01ExactlyOneCategory:

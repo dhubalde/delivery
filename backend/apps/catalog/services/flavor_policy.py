@@ -28,6 +28,28 @@ class PoteFlavorPolicy:
                 raise FlavorSelectionRequiredError(
                     "Pote products require at least one flavor."
                 )
+            if product.pote_size in (
+                Product.PoteSize.KG_1,
+                Product.PoteSize.KG_HALF,
+            ):
+                min_flavors = 3
+                max_flavors = 4
+            elif product.pote_size == Product.PoteSize.KG_QUARTER:
+                min_flavors = 2
+                max_flavors = 3
+            else:
+                min_flavors = 0
+                max_flavors = 0
+            if len(ids) < min_flavors:
+                raise FlavorPolicyError(
+                    f"Pote products require at least {min_flavors} flavor(s), "
+                    f"got {len(ids)}."
+                )
+            if len(ids) > max_flavors:
+                raise FlavorPolicyError(
+                    f"Pote products require at most {max_flavors} flavor(s), "
+                    f"got {len(ids)}."
+                )
             return ids
         if ids:
             raise FlavorsNotAllowedError(

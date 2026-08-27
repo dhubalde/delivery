@@ -8,8 +8,24 @@ from apps.catalog.services.flavor_policy import (
 )
 
 
-def make_product(product_type):
-    return Product(product_type=product_type, min_flavors=3, max_flavors=4)
+def make_product(product_type, pote_size=None):
+    """Create a Product for policy testing with the given type and pote_size."""
+    if product_type == Product.ProductType.POTE and pote_size is not None:
+        if pote_size in ("KG_1", "KG_HALF"):
+            min_flavors = 3
+            max_flavors = 4
+        else:  # KG_QUARTER
+            min_flavors = 2
+            max_flavors = 3
+    else:
+        min_flavors = 0
+        max_flavors = 0
+    return Product(
+        product_type=product_type,
+        pote_size=pote_size,
+        min_flavors=min_flavors,
+        max_flavors=max_flavors,
+    )
 
 
 class TestBrCat03PoteRequiresFlavorSelection:
@@ -24,7 +40,8 @@ class TestBrCat03PoteRequiresFlavorSelection:
             PoteFlavorPolicy.validate(pote, None)
 
     def test_br_cat_03_nonempty_selection_passes_through(self):
-        pote = make_product(Product.ProductType.POTE)
+        # KG_QUARTER allows max 2 flavors, so [7, 8] should pass
+        pote = make_product(Product.ProductType.POTE, pote_size="KG_QUARTER")
         assert PoteFlavorPolicy.validate(pote, [7, 8]) == [7, 8]
 
 
