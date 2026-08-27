@@ -24,6 +24,13 @@ class Payment(BaseModel):
     )
     gateway_ref = models.CharField(max_length=120, null=True, blank=True)
     collected_by = models.CharField(max_length=120, null=True, blank=True)
+    collected_by_employee = models.ForeignKey(
+        "tenancy.Employee",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="collected_payments",
+    )
     confirmed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:

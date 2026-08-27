@@ -100,3 +100,63 @@ class SpecialDate(BaseModel):
 
     def __str__(self):
         return f"{self.merchant} {self.date} closed={self.is_closed}"
+
+
+class Employee(BaseModel):
+    merchant = models.ForeignKey(
+        Merchant, on_delete=models.CASCADE, related_name="employees"
+    )
+    display_name = models.CharField(max_length=120)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["merchant", "is_active"]),
+            models.Index(fields=["merchant", "display_name"]),
+        ]
+        ordering = ["display_name"]
+
+    def clean(self):
+        errors = {}
+        if not self.display_name or not str(self.display_name).strip():
+            errors["display_name"] = "display_name is required."
+        if errors:
+            raise ValidationError(errors)
+
+    def __str__(self):
+        return f"{self.display_name} ({self.merchant_id})"
+
+
+class EmployeeRole(models.Model):
+    class Role(models.TextChoices):
+        ADMIN = "ADMIN", "Admin"
+        CAJERO = "CAJERO", "Cajero"
+        PREPARADOR = "PREPARADOR", "Preparador"
+        REPARTIDOR = "REPARTIDOR", "Repartidor"
+        TOMA_PEDIDOS = "TOMA_PEDIDOS", "Toma Pedidos"
+
+    employee = models.ForeignKey(
+        Employee, on_delete=models.CASCADE, related_name="employee_roles"
+    )
+    role = models.CharField(max_length=13, choices=Role.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["employee", "role"],
+                name="uniq_employee_role",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["employee", "role"]),
+        ]
+        ordering = ["role"]
+
+    def clean(self):
+        if self.role not in {c[0] for c in self.Role.choices}:
+            raise ValidationError({"role": f"Invalid role {self.role}"})
+
+    def __str__(self):
+        return f"{self.employee_id} {self.role}"
