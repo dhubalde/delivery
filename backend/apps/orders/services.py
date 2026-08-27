@@ -1,0 +1,38 @@
+from django.db import transaction
+from django.utils import timezone
+
+from apps.orders.models import Order
+from apps.orders.state_machine import OrderStateMachine
+
+
+class OrderService:
+    @staticmethod
+    @transaction.atomic
+    def transition(order_id, to_state, actor=None):
+        order = Order.objects.select_for_update().get(pk=order_id)
+        old_state = order.state
+        OrderStateMachine.validate(order, to_state)
+        order.state = to_state
+        order.business_date = timezone.localdate()
+        order.save(update_fields=["state", "business_date", "updated_at"])
+        try:
+            from apps.audit.models import AuditEvent  # noqa: F401
+            from apps.audit.services import emit  # type: ignore
+
+            emit(
+                merchant_id=order.merchant_id,
+                actor=actor,
+                entity="Order",
+                entity_id=order.pk,
+                action="STATE_TRANSITION",
+                old_value={"state": old_state},
+                new_value={"state": to_state},
+            )
+        except Exception:
+            pass
+        return order
+
+    @staticmethod
+    @transaction.atomic
+    def cancel(order_id, actor=None):
+        return OrderService.transition(order_id, Order.State.CANCELADO, actor=actor)
