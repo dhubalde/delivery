@@ -16,6 +16,7 @@ INSTALLED_APPS = [
     "apps.orders",
     "apps.payments",
     "apps.delivery",
+    "apps.closing",
 ]
 
 DATABASES = {
