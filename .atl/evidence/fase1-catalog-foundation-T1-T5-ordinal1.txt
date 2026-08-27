@@ -1,0 +1,15 @@
+# Evidence: ice-cream-shop-mvp / fase1-catalog-foundation-T1-T5 / ordinal 1
+date: 2026-08-25T17:32:40Z
+
+## Commits
+27e5743 test(catalog): cover br-cat-01/03/06, productflavor scoping and soft delete
+033650f feat(catalog): add pote/unit flavor policy validations (br-cat-03, br-cat-06)
+20fa25c feat(catalog): add merchant/category/product/flavor models with br-cat-01 constraints
+9468f1e feat(backend): scaffold django project with env-driven settings
+
+## Test run (orchestrator verification)
+................                                                         [100%]
+16 passed in 0.90s
+
+## Scope
+T1 Product model | T2 BR-CAT-01 | T3 BR-CAT-03 | T4 BR-CAT-06 | T5 ProductFlavor join
