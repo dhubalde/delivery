@@ -14,6 +14,7 @@ INSTALLED_APPS = [
     "apps.tenancy",
     "apps.catalog",
     "apps.orders",
+    "apps.payments",
 ]
 
 DATABASES = {

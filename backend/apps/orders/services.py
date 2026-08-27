@@ -12,6 +12,10 @@ class OrderService:
         order = Order.objects.select_for_update().get(pk=order_id)
         old_state = order.state
         OrderStateMachine.validate(order, to_state)
+        if old_state == Order.State.FACTURACION and to_state == Order.State.LOGISTICA:
+            from apps.payments.services import PaymentService
+
+            PaymentService.validate_for_logistics(order)
         order.state = to_state
         order.business_date = timezone.localdate()
         order.save(update_fields=["state", "business_date", "updated_at"])
