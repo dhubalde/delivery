@@ -186,3 +186,67 @@ seguimos con lista 1. Iniciar el pipeline SDD formal -si.
 Tests: que sean unitarios en todos los endpoints importantes y que quede documentado consecuentementes
 
 nos falta armar el github este es el repositorio https://github.com/dhubalde/delivery-admin.git y hay que hacer .gitignore
+
+✅ Lo que hicimos (planificación — completa)
+Decisiones de negocio (fase Comprender, todo persistido):
+- Producto multi-comercio, MVP con heladería como primer rubro
+- Catálogo configurable por comercio (categorías, productos, gustos)
+- Modelo heladería: potes 1kg/½kg → 3-4 gustos; ¼kg → 2-3 gustos; unitarios sin gustos
+- Delivery configurable: propio/tercerizado × cobro en pedido/en entrega × cálculo por zona/fijo/gratis/distancia
+- 5 roles base + empleados multi-rol
+- Flujo del pedido: AMARILLO recibido → AZUL preparación → VERDE facturación → logística → entregado
+- Pago mixto: efectivo asincrónico (titila hasta confirmación del cajero), digital por pasarela
+- Notificaciones: cobros pendientes al cajero + tareas por sector
+Pipeline SDD del cambio ice-cream-shop-mvp:
+Fase	Estado
+Preflight	✅ interactive / engram / ask-on-risk / 400 líneas
+sdd-init	✅ stack y testing detectados
+Explore	✅ 87 reglas de negocio, 8 gaps
+Proposal	✅
+Spec	✅ 87 BRs con MUST/SHOULD
+Tasks	✅ 37 tareas en 8 fases
+🔲 Lo que falta
+1. sdd-apply — NO arrancó. Cero código escrito: el repo delivery tiene un solo commit (estructura docs SDD). Las 37 tareas están todas pendientes.
+2. Prerequisitos de apply que la fase tasks marcó: definir stack/framework definitivo, test runner, schema de BD, middleware auth/tenant.
+3. Repo delivery-admin/ (GitHub dhubalde/delivery-admin): creado pero vacío — solo README de 2 líneas e initial commit. Ahí iría presumiblemente el frontend admin.
+4. Verify y archive — obvio, dependen del apply.
+Próximo paso
+El siguiente en el grafo de dependencias es lanzar Fase 1 (Catalog & Product Foundation) del apply: T1 a T5. Pero antes necesito una decisión tuya: ¿con qué stack implementamos? El sdd-init detectó las capacidades, pero el stack concreto (backend + frontend) es una decisión que no quedó registrada.
+
+El stack es Backend: django rest_frame, BD: postgres, Frontend: Vue, Vite + vuetify, no se que mas me podes recomendar para frontend, y referente al logueo lo vamos a hacer con JWT y nos falta definir un administrador que va a ser app aparte que se conectara al backend por apis
+
+1. Polling con vue-query (refetchInterval cada 5-10s) → simple, suficiente para MVP ✅ mi recomendación. Cada sector debera estar logueado INGRESO DE PEDIDO --> PREPARACION --> FACTURACION --> LOGISTICA --> CIERRE CAJA, al PUBLICO que sera lo que ve el cliente, solo podra ver el catalogo o carrito para hacer sus compras y pagar, mi idea es hacer todo eso dentro del backend y el frontend, en la app de administracion despues manejaremos estadisticas, si tenes otra idea, sugerilo
+
+Tu idea es correcta — y te explico por qué
+Hacer todo en una sola app (público + sectores logueados) es la decisión right para este MVP:
+1. Reutilizás componentes: la tarjeta de producto que ve el cliente es la misma que usa el sector de ingreso de pedidos. Un solo design system, un solo esfuerzo.
+2. Un solo deploy, un solo repo de frontend para el 90% del sistema. Menos superficie operativa.
+3. El admin aparte para stats es exactamente donde debe estar: analytics tiene ciclo de vida distinto (cambia seguido, no bloquea operaciones). Si mañana las stats se rompen, la caja sigue facturando.
+Pero hay UNA condición innegociable
+Si público y operaciones viven juntos, necesitás dos capas de separación:
+- Code splitting por ruta (lazy loading): las rutas /panel/preparacion, /panel/caja etc. se cargan con () => import(...). El cliente que mira helados NUNCA baja el JS de facturación o cierre de caja. Sin esto, estás regalando tu lógica operativa a cualquiera que abra DevTools.
+- Autorización SIEMPRE en la API: el gating de rutas en Vue es UX, no seguridad. Si un cajero no puede cerrar caja de otro día, eso lo valida DRF con JWT + roles, punto. El frontend solo oculta botones; el backend niega requests.
+Esto ya lo cubre tu modelo de roles multi-rol que definimos, así que no agrega trabajo — solo disciplina.
+Topología final
+┌─────────────────────────────────────────────┐
+│  App Vue única (repo delivery)              │
+│  ├─ /            → Público: catálogo,       │
+│  │                  carrito, pago           │
+│  └─ /panel/*     → Login requerido          │
+│     ├─ ingreso-pedidos                     │
+│     ├─ preparacion                         │
+│     ├─ facturacion                         │
+│     ├─ logistica                           │
+│     └─ cierre-caja                         │
+└──────────────────┬──────────────────────────┘
+                   │ APIs REST (JWT, polling)
+┌──────────────────┴──────────────────────────┐
+│  Backend DRF + PostgreSQL                   │
+└──────────────────┬──────────────────────────┘
+                   │ APIs REST (JWT)
+┌──────────────────┴──────────────────────────┐
+│  delivery-admin (Vue) — stats más adelante  │
+└─────────────────────────────────────────────┘
+Próximo paso
+Con stack + topología + auth definidos, ahora sí tenemos todo para el artefacto que falta: el cambio ice-cream-shop-mvp tiene proposal, spec y tasks pero NO tiene design. El diseño formaliza modelo de datos, máquina de estados, estructura de apps Django, estrategia multi-tenant y esta topología — antes de escribir una línea de código.
+¿Largamos la fase de diseño (sdd-design)?

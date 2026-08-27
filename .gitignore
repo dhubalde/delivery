@@ -60,5 +60,8 @@ docker-compose.override.yml
 # Generated docs
 docs/*.generated.md
 
+# Nested independent Git repositories (separate projects)
+delivery-admin/
+
 # OS specific
 *.pem
