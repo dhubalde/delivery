@@ -4,7 +4,7 @@ import '@fontsource/comfortaa/700.css'
 import { createVuetify } from 'vuetify'
 
 const stored = (() => {
-  try { return localStorage.getItem('zona-ice-theme') as 'light' | 'dark' | null } catch { return null }
+  try { return localStorage.getItem('ice-zone-theme') as 'light' | 'dark' | null } catch { return null }
 })()
 
 export default createVuetify({

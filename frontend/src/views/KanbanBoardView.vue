@@ -1,7 +1,7 @@
 <template>
   <v-container fluid>
     <div class="d-flex justify-space-between align-center mb-4">
-      <h2>Kanban — Zona Ice</h2>
+      <h2>Kanban — Ice Zone</h2>
       <v-text-field v-model="businessDate" type="date" density="compact" hide-details style="max-width: 180px" />
     </div>
     <v-row>
