@@ -8,9 +8,9 @@ export const COLUMN_COLORS = {
 } as const
 
 export const ICE_ZONE_COLORS = {
-  primary: '#14B8A6', // turquesa Ice Zone
+  primary: '#06B6D4', // turquesa Ice Zone más azulado
   secondary: '#64748B', // gris slate
-  accent: '#5EEAD4', // turquesa claro
+  accent: '#22D3EE', // turquesa claro
   backgroundLight: '#FAFAF8', // blanco tiza
   backgroundDark: '#1E293B',
 } as const

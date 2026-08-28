@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@fontsource/comfortaa": "^5.0.18",
+    "@mdi/font": "^7.4.47",
     "@tanstack/vue-query": "^5.60.0",
     "axios": "^1.7.0",
     "pinia": "^2.1.7",
