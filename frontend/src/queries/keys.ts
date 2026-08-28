@@ -7,4 +7,8 @@ export const qk = {
   adminCategories: () => ['admin', 'categories'] as const,
   adminProducts: (p?: { category?: number; search?: string }) => ['admin', 'products', p ?? {}] as const,
   adminFlavors: (p?: { category?: number; search?: string }) => ['admin', 'flavors', p ?? {}] as const,
+  adminSchedules: () => ['admin', 'schedules'] as const,
+  adminSpecialDates: () => ['admin', 'specialDates'] as const,
+  adminDeliveryConfig: () => ['admin', 'deliveryConfig'] as const,
+  adminZones: () => ['admin', 'zones'] as const,
 }
