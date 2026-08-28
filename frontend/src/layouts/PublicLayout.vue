@@ -8,12 +8,14 @@
     <v-navigation-drawer v-if="xs" v-model="drawer" temporary width="260">
       <SearchInput class="ma-2" />
       <CategoryNav />
+      <CartDrawer class="ma-2" />
     </v-navigation-drawer>
     <v-main><v-container fluid>
+      <ClosedBanner />
       <v-row>
         <v-col v-if="!xs" cols="2"><SearchInput class="mb-3" /><CategoryNav /></v-col>
         <v-col :cols="xs?12:7"><router-view /></v-col>
-        <v-col v-if="!xs" cols="3"><v-card variant="tonal" class="pa-3">Carrito — PR2 B2</v-card></v-col>
+        <v-col v-if="!xs" cols="3"><CartDrawer /></v-col>
       </v-row>
     </v-container></v-main>
     <v-banner v-if="ui.offline" color="warning" sticky>Sin conexión — datos pueden estar desactualizados</v-banner>
@@ -26,6 +28,8 @@ import { useUiStore } from '@/stores/ui.store'
 import { useOffline } from '@/composables/useOffline'
 import CategoryNav from '@/components/CategoryNav.vue'
 import SearchInput from '@/components/SearchInput.vue'
+import CartDrawer from '@/components/CartDrawer.vue'
+import ClosedBanner from '@/components/ClosedBanner.vue'
 const ui = useUiStore()
 useOffline()
 const { xs } = useDisplay()
