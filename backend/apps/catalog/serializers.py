@@ -1,6 +1,13 @@
 from rest_framework import serializers
 
-from apps.catalog.models import Product, Flavor
+from apps.catalog.models import Category, Flavor, Product
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ["id", "name", "is_active", "position"]
+        read_only_fields = ["id"]
 
 
 class ProductSerializer(serializers.ModelSerializer):
