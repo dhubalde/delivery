@@ -1,0 +1,18 @@
+import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth.store'
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes: [
+    { path: '/', component: () => import('@/layouts/PublicLayout.vue'), children: [{ path: '', component: () => import('@/views/CatalogView.vue') }] },
+    { path: '/panel', component: () => import('@/layouts/AdminLayout.vue'), meta: { requiresAuth: true }, children: [{ path: 'board', component: () => import('@/views/KanbanBoardView.vue') }] },
+    { path: '/login', component: () => import('@/views/LoginView.vue') },
+    { path: '/:pathMatch(.*)*', component: () => import('@/views/NotFoundView.vue') },
+  ],
+})
+
+router.beforeEach((to) => {
+  if (to.meta.requiresAuth && !useAuthStore().isAuth) return '/login'
+})
+
+export default router

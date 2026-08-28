@@ -1,0 +1,8 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="60" cy="60" r="54" fill="#FACC15" stroke="#1c1917" stroke-width="2"/>
+  <path d="M 60 88 L 36 46 L 84 46 Z" fill="#fffbeb" stroke="#1c1917" stroke-width="2" stroke-linejoin="round"/>
+  <circle cx="48" cy="38" r="14" fill="#38BDF8" opacity="0.9"/>
+  <circle cx="72" cy="38" r="14" fill="#A78BFA" opacity="0.9"/>
+  <circle cx="60" cy="28" r="16" fill="#fff" stroke="#1c1917" stroke-width="1.5"/>
+  <text x="60" y="108" text-anchor="middle" font-family="Comfortaa, sans-serif" font-size="10" font-weight="700" fill="#1c1917">ZONA ICE</text>
+</svg>
