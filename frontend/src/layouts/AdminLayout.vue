@@ -14,7 +14,7 @@
         <v-list-item to="/panel/cash-close" title="Cierre de caja" prepend-icon="mdi-cash-register" />
       </v-list>
     </v-navigation-drawer>
-    <v-app-bar density="compact" title="Panel Ice Zone">
+    <v-app-bar density="compact" title="Panel Ice Zone" color="primary">
       <v-btn icon="mdi-brightness-6" @click="ui.toggleTheme()" />
     </v-app-bar>
     <v-banner v-if="ui.offline" color="warning" icon="mdi-wifi-off" class="text-caption">Sin conexión — modo offline</v-banner>

@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <v-app-bar title="Ice Zone" density="compact">
+    <v-app-bar title="Ice Zone" density="compact" color="primary">
       <template #prepend><img src="@/assets/logo-ice-zone.svg" width="32" height="32" alt="Ice Zone" /></template>
       <v-app-bar-nav-icon v-if="xs" @click="drawer=!drawer" />
       <v-btn icon="mdi-brightness-6" @click="ui.toggleTheme()" />
