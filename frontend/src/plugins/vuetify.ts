@@ -9,6 +9,7 @@ const stored = (() => {
   try { return localStorage.getItem('ice-zone-theme') as 'light' | 'dark' | null } catch { return null }
 })()
 
+export default createVuetify({
   icons: {
     defaultSet: 'mdi',
     aliases,
@@ -19,19 +20,19 @@ const stored = (() => {
     themes: {
       light: {
         colors: {
-          primary: '#06B6D4', // turquesa más azulado
-          secondary: '#64748B', // gris
+          primary: '#06B6D4',
+          secondary: '#64748B',
           accent: '#22D3EE',
-          background: '#FAFAF8', // blanco tiza
+          background: '#FAFAF8',
           surface: '#FFFFFF',
         },
       },
       dark: {
         colors: {
-          primary: '#22D3EE', // turquesa azulado claro para dark
+          primary: '#22D3EE',
           secondary: '#94A3B8',
           accent: '#22D3EE',
-          background: '#1E293B', // slate oscuro
+          background: '#1E293B',
           surface: '#334155',
         },
       },
@@ -40,3 +41,4 @@ const stored = (() => {
   defaults: {
     VBtn: { style: 'font-family: Comfortaa, sans-serif' },
   },
+})
