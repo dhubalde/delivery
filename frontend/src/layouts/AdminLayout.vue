@@ -10,6 +10,8 @@
         <v-list-item to="/panel/flavors" title="Sabores" prepend-icon="mdi-star" />
         <v-list-item to="/panel/schedules" title="Horarios" prepend-icon="mdi-clock-outline" />
         <v-list-item to="/panel/delivery" title="Delivery" prepend-icon="mdi-moped" />
+        <v-list-item to="/panel/employees" title="Empleados" prepend-icon="mdi-account-group" />
+        <v-list-item to="/panel/cash-close" title="Cierre de caja" prepend-icon="mdi-cash-register" />
       </v-list>
     </v-navigation-drawer>
     <v-app-bar density="compact" title="Panel Ice Zone">
