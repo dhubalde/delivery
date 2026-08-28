@@ -30,6 +30,12 @@ class LiveObjectsManager(models.Manager):
     def get_queryset(self):
         return TenantQuerySet(self.model, using=self._db).live()
 
+    def for_merchant(self, merchant_id):
+        return self.get_queryset().for_merchant(merchant_id)
+
+    def for_current_tenant(self):
+        return self.get_queryset().for_current_tenant()
+
 
 class BaseModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
