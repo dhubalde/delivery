@@ -28,11 +28,14 @@
   </v-app>
 </template>
 <script setup lang="ts">
-import { onMounted, onUnmounted, reactive } from 'vue'
+import { onMounted, onUnmounted, reactive, watch } from 'vue'
+import { useTheme } from 'vuetify'
 import { useUiStore } from '@/stores/ui.store'
 import { useOffline } from '@/composables/useOffline'
 import WeatherWidget from '@/components/WeatherWidget.vue'
 const ui = useUiStore()
+const theme = useTheme()
+watch(() => ui.theme, (v) => { theme.global.name.value = v }, { immediate: true })
 useOffline()
 const toast = reactive({ show: false, msg: '', type: 'error' as string })
 function onToast(e: Event) { const d = (e as CustomEvent).detail; toast.msg = d.msg; toast.type = d.type; toast.show = true }
