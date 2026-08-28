@@ -17,10 +17,25 @@
     <v-app-bar density="compact" title="Panel Ice Zone">
       <v-btn icon="mdi-brightness-6" @click="ui.toggleTheme()" />
     </v-app-bar>
-    <v-main><v-container><router-view /></v-container></v-main>
+    <v-banner v-if="ui.offline" color="warning" icon="mdi-wifi-off" class="text-caption">Sin conexión — modo offline</v-banner>
+    <v-main>
+      <v-container>
+        <WeatherWidget />
+        <router-view />
+      </v-container>
+    </v-main>
+    <v-snackbar v-model="toast.show" :color="toast.type === 'error' ? 'error' : 'warning'" timeout="3000">{{ toast.msg }}</v-snackbar>
   </v-app>
 </template>
 <script setup lang="ts">
+import { onMounted, onUnmounted, reactive } from 'vue'
 import { useUiStore } from '@/stores/ui.store'
+import { useOffline } from '@/composables/useOffline'
+import WeatherWidget from '@/components/WeatherWidget.vue'
 const ui = useUiStore()
+useOffline()
+const toast = reactive({ show: false, msg: '', type: 'error' as string })
+function onToast(e: Event) { const d = (e as CustomEvent).detail; toast.msg = d.msg; toast.type = d.type; toast.show = true }
+onMounted(() => window.addEventListener('app:toast', onToast as EventListener))
+onUnmounted(() => window.removeEventListener('app:toast', onToast as EventListener))
 </script>

@@ -22,7 +22,7 @@ export function useCreateEmployee(){
 export function useUpdateEmployee(){
   const qc=useQueryClient()
   return useMutation({
-    mutationFn: (p:{id:number}&Record<string,unknown>)=> employeesApi.update(p.id, p) as never,
+    mutationFn: (p:{id:number}&Record<string,unknown>)=> employeesApi.update(p.id, p as Parameters<typeof employeesApi.update>[1]) as never,
     onMutate: async(p:{id:number}&Record<string,unknown>)=>{
       const {id,...b}=p; await qc.cancelQueries({ queryKey: qk.adminEmployees() })
       const prev=qc.getQueryData(qk.adminEmployees())
