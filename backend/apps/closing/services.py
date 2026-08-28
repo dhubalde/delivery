@@ -91,4 +91,15 @@ class CashClosureService:
             total_rechazados=total_rechazados,
             ticket_payload=ticket_payload,
         )
+        from apps.audit.services import emit
+
+        emit(
+            merchant_id=merchant.pk,
+            actor=cashier,
+            entity="CashClosure",
+            entity_id=closure.pk,
+            action="CLOSURE",
+            old_value=None,
+            new_value={"business_date": str(business_date), "totals": ticket_payload["totals"]},
+        )
         return closure

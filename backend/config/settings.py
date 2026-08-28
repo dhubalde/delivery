@@ -10,6 +10,8 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
     "apps.common",
     "apps.tenancy",
     "apps.catalog",
@@ -17,6 +19,12 @@ INSTALLED_APPS = [
     "apps.payments",
     "apps.delivery",
     "apps.closing",
+    "apps.audit",
+]
+
+MIDDLEWARE = [
+    "apps.common.middleware.TenantContextMiddleware",
+    "apps.common.middleware.IdempotencyMiddleware",
 ]
 
 DATABASES = {

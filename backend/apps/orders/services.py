@@ -19,21 +19,17 @@ class OrderService:
         order.state = to_state
         order.business_date = timezone.localdate()
         order.save(update_fields=["state", "business_date", "updated_at"])
-        try:
-            from apps.audit.models import AuditEvent  # noqa: F401
-            from apps.audit.services import emit  # type: ignore
+        from apps.audit.services import emit
 
-            emit(
-                merchant_id=order.merchant_id,
-                actor=actor,
-                entity="Order",
-                entity_id=order.pk,
-                action="STATE_TRANSITION",
-                old_value={"state": old_state},
-                new_value={"state": to_state},
-            )
-        except Exception:
-            pass
+        emit(
+            merchant_id=order.merchant_id,
+            actor=actor,
+            entity="Order",
+            entity_id=order.pk,
+            action="STATE_TRANSITION",
+            old_value={"state": old_state},
+            new_value={"state": to_state},
+        )
         return order
 
     @staticmethod

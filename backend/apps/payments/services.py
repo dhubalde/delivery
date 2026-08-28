@@ -57,6 +57,18 @@ class PaymentService:
         if any(m == Payment.Method.EFECTIVO for m in [p["method"] for p in payments_data]):
             order.cash_declared = True
             order.save(update_fields=["cash_declared", "updated_at"])
+        from apps.audit.services import emit
+
+        for pay in created:
+            emit(
+                merchant_id=order.merchant_id,
+                actor=actor,
+                entity="Payment",
+                entity_id=pay.pk,
+                action="PAYMENT",
+                old_value=None,
+                new_value={"method": pay.method, "amount": str(pay.amount), "status": pay.status},
+            )
         return created
 
     @staticmethod
@@ -72,6 +84,17 @@ class PaymentService:
         if cashier_user is not None:
             payment.collected_by = str(cashier_user)
         payment.save(update_fields=["status", "confirmed_at", "collected_by", "updated_at"])
+        from apps.audit.services import emit
+
+        emit(
+            merchant_id=payment.order.merchant_id,
+            actor=cashier_user,
+            entity="Payment",
+            entity_id=payment.pk,
+            action="CASH_MOVEMENT",
+            old_value={"status": Payment.Status.PENDING},
+            new_value={"status": Payment.Status.CONFIRMED, "collected_by": payment.collected_by},
+        )
         return payment
 
     @staticmethod
