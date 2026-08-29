@@ -24,7 +24,7 @@ import CartItem from '@/components/CartItem.vue'
 defineProps<{ loading?: boolean; inlineError?: string | null }>()
 const cart = useCartStore()
 const auth = useAuthStore()
-const { data } = useMenu(computed(() => auth.merchantSlug || 'zona-ice') as any) as any
+const { data } = useMenu(computed(() => auth.merchantSlug || 'ice-zone') as any) as any
 const closed = computed(() => {
   const d = (data as any).value as any
   if (!d) return false

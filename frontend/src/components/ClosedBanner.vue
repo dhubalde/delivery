@@ -8,7 +8,7 @@ import { computed } from 'vue'
 import { useMenu } from '@/composables/useMenu'
 import { useAuthStore } from '@/stores/auth.store'
 const auth = useAuthStore()
-const { data } = useMenu(computed(() => auth.merchantSlug || 'zona-ice') as any) as any
+const { data } = useMenu(computed(() => auth.merchantSlug || 'ice-zone') as any) as any
 const closed = computed(() => {
   const d = data.value as any
   if (!d) return false

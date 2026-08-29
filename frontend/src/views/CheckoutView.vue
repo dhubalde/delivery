@@ -38,7 +38,7 @@ const inlineError = ref<string|null>(null)
 const fieldErrs = ref<Record<number,string>>({})
 const loading = ref(false)
 const ok = ref(false)
-const { data } = useMenu(computed(() => auth.merchantSlug || 'zona-ice') as any) as any
+const { data } = useMenu(computed(() => auth.merchantSlug || 'ice-zone') as any) as any
 const closed = computed(() => { const d=(data as any).value as any; return d ? (d.closed===true||d.is_open===false) : false })
 const sumError = computed(() => {
   const s = payments.value.reduce((a,p)=>a+Number(p.amount||0),0)
@@ -51,7 +51,7 @@ async function submit(){
   if (sumError.value) { inlineError.value = sumError.value; return }
   loading.value=true
   try{
-    const slug = auth.merchantSlug || 'zona-ice'
+    const slug = auth.merchantSlug || 'ice-zone'
     const body = { items: cart.items.map(i=>({ product_id:i.product.id, quantity:i.qty, flavor_ids:i.flavorIds })), payments: payments.value.map(p=>({ method:p.method, amount:String(p.amount) })), fulfillment:'DELIVERY' }
     await api.post(`/public/${slug}/orders`, body, { headers: { 'Idempotency-Key': crypto.randomUUID() } })
     cart.clear(); ok.value=true; setTimeout(()=>router.push('/'), 800)
