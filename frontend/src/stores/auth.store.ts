@@ -10,6 +10,7 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     isAuth: (s) => !!s.access,
     roles: (s): string[] => s.user?.roles ?? [],
+    isAdmin: (s): boolean => (s.user?.roles ?? []).includes('ADMIN'),
   },
   actions: {
     setTokens(access: string, refresh: string) {
