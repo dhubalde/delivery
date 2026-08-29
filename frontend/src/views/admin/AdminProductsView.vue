@@ -69,7 +69,6 @@ watch(()=>form.product_type, (v)=>{ if(v==='UNIT'){ form.pote_size=null } else i
 function openCreate(){ editing.value=null; Object.assign(form,{ name:'', category_id:null, product_type:'POTE', pote_size:'KG_1', has_flavors:true, min_flavors:1, max_flavors:4, price:'' }); details.value={}; formError.value=''; dlg.value=true }
 function openEdit(p: {id:number;name:string;category_id:number;product_type:'POTE'|'UNIT';pote_size:'KG_1'|'KG_HALF'|'KG_QUARTER'|null;min_flavors:number|null;max_flavors:number|null;price:string}){ const has = p.min_flavors!=null && p.max_flavors!=null; editing.value=p.id; Object.assign(form,{ name:p.name, category_id:p.category_id, product_type:p.product_type, pote_size:p.pote_size, has_flavors:has, min_flavors:p.min_flavors ?? 1, max_flavors:p.max_flavors ?? 4, price:p.price }); details.value={}; formError.value=''; dlg.value=true }
 function validatePote(): string|null{
-  if(!form.category_id) return 'Categoría requerida (BR-CAT-01)'
   if(form.product_type==='UNIT'){ if(form.pote_size) return 'UNIT no permite pote_size'; if(form.has_flavors){ if(form.min_flavors==null || form.max_flavors==null) return 'Min/max requeridos cuando tiene gustos'; if(form.min_flavors<1 || form.max_flavors>4 || form.min_flavors>form.max_flavors) return 'Requiere 1 <= min <= max <= 4' } return null }
   if(!form.pote_size) return 'Tamaño requerido para POTE'
   if(!form.has_flavors) return null
@@ -79,6 +78,7 @@ function validatePote(): string|null{
 }
 async function save(){
   const v=validatePote(); if(v){ formError.value=v; return }
+  if(!form.category_id){ details.value={...details.value, category_id:'Elegí una categoría'}; return }
   if(!form.name.trim() || !form.price){ details.value={ ...(!form.name.trim()?{name:'Nombre requerido'}:{}), ...(!form.price?{price:'Precio requerido'}:{}) }; return }
   saving.value=true; details.value={}; formError.value=''
   const payload: Record<string,unknown>={ name:form.name, category_id:form.category_id, product_type:form.product_type, pote_size: form.product_type==='UNIT'?null:form.pote_size, min_flavors: form.has_flavors?form.min_flavors:null, max_flavors: form.has_flavors?form.max_flavors:null, price:form.price }
