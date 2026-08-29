@@ -17,8 +17,17 @@ export function useProducts(slug: MaybeRef<string>, category: MaybeRef<number | 
       const params: Record<string, string> = {}
       if (c) params.category = String(c)
       if (q) params.search = q
-      const { data } = await api.get(`/public/${s}/products`, { params })
-      return (Array.isArray(data) ? data : data.results ?? data.items ?? []) as unknown[]
+      try {
+        const { data } = await api.get(`/public/${s}/products`, { params })
+        return (Array.isArray(data) ? data : data.results ?? data.items ?? []) as unknown[]
+      } catch (e: any) {
+        if (e?.response?.status === 404) {
+          const fallbackParams: Record<string, string> = { ...params, merchant_slug: s }
+          const { data } = await api.get(`/catalog/products/`, { params: fallbackParams })
+          return (Array.isArray(data) ? data : data.results ?? data.items ?? []) as unknown[]
+        }
+        throw e
+      }
     },
     refetchInterval: INTERVALS.CATALOG,
     staleTime: 0,
@@ -36,8 +45,17 @@ export function useFlavors(slug: MaybeRef<string>, category: MaybeRef<number | u
       const params: Record<string, string> = {}
       if (c) params.category = String(c)
       if (q) params.search = q
-      const { data } = await api.get(`/public/${s}/flavors`, { params })
-      return (Array.isArray(data) ? data : data.results ?? data.items ?? []) as unknown[]
+      try {
+        const { data } = await api.get(`/public/${s}/flavors`, { params })
+        return (Array.isArray(data) ? data : data.results ?? data.items ?? []) as unknown[]
+      } catch (e: any) {
+        if (e?.response?.status === 404) {
+          const fallbackParams: Record<string, string> = { ...params, merchant_slug: s }
+          const { data } = await api.get(`/catalog/flavors/`, { params: fallbackParams })
+          return (Array.isArray(data) ? data : data.results ?? data.items ?? []) as unknown[]
+        }
+        throw e
+      }
     },
     refetchInterval: INTERVALS.CATALOG,
     staleTime: 0,
