@@ -1,6 +1,17 @@
 <template>
   <v-card>
-    <v-img :src="img" height="140" cover loading="lazy" />
+    <v-img :src="img" height="180" cover>
+      <template #error>
+        <div class="d-flex align-center justify-center fill-height bg-grey-lighten-4">
+          <v-icon size="48" color="grey">mdi-image-off-outline</v-icon>
+        </div>
+      </template>
+      <template #placeholder>
+        <div class="d-flex align-center justify-center fill-height">
+          <v-progress-circular indeterminate size="24" />
+        </div>
+      </template>
+    </v-img>
     <v-card-title class="text-body-2" style="font-family:Comfortaa">{{ p.name }}</v-card-title>
     <v-card-text>
       <v-chip v-if="badge" size="x-small" color="primary" class="mr-1">{{ badge }}</v-chip>

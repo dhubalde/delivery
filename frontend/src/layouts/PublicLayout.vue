@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <v-app-bar title="Ice Zone" density="compact">
+    <v-app-bar title="Ice Zone" density="compact" color="primary">
       <template #prepend><img src="@/assets/logo-ice-zone.svg" width="32" height="32" alt="Ice Zone" /></template>
       <v-app-bar-nav-icon v-if="xs" @click="drawer=!drawer" />
       <v-btn icon="mdi-brightness-6" @click="ui.toggleTheme()" />
@@ -22,8 +22,8 @@
   </v-app>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useDisplay } from 'vuetify'
+import { ref, watch } from 'vue'
+import { useDisplay, useTheme } from 'vuetify'
 import { useUiStore } from '@/stores/ui.store'
 import { useOffline } from '@/composables/useOffline'
 import CategoryNav from '@/components/CategoryNav.vue'
@@ -31,6 +31,8 @@ import SearchInput from '@/components/SearchInput.vue'
 import CartDrawer from '@/components/CartDrawer.vue'
 import ClosedBanner from '@/components/ClosedBanner.vue'
 const ui = useUiStore()
+const theme = useTheme()
+watch(() => ui.theme, (v) => { theme.global.name.value = v }, { immediate: true })
 useOffline()
 const { xs } = useDisplay()
 const drawer = ref(false)
