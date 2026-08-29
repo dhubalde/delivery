@@ -57,7 +57,24 @@ class ProductListView(generics.ListCreateAPIView):
             from rest_framework.exceptions import ValidationError as DRFValidationError
 
             raise DRFValidationError({"merchant": "No merchant resolved (provide merchant_slug or auth)."})
+        data = getattr(self.request, "data", {})  # type: ignore[attr-defined]
+        flavor_ids = data.get("flavor_ids", None) if isinstance(data, dict) else None  # type: ignore[union-attr]
+        if isinstance(flavor_ids, list) and len(flavor_ids) == 0:
+            pass
         serializer.save(merchant=merchant)
+
+
+class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = ProductSerializer
+    permission_classes = [AllowAny]
+    queryset = Product.objects.all().prefetch_related("suggested_flavors__flavor")
+
+    def perform_update(self, serializer):
+        data = getattr(self.request, "data", {})  # type: ignore[attr-defined]
+        flavor_ids = data.get("flavor_ids", None) if isinstance(data, dict) else None  # type: ignore[union-attr]
+        if isinstance(flavor_ids, list) and len(flavor_ids) == 0:
+            pass
+        serializer.save()
 
 
 class FlavorListView(generics.ListAPIView):

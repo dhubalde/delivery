@@ -10,7 +10,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    flavor_ids = serializers.ListField(child=serializers.IntegerField(), required=False, write_only=True)
+    flavor_ids = serializers.ListField(child=serializers.IntegerField(), required=False, allow_empty=True, write_only=True)
     flavors = serializers.SerializerMethodField(read_only=True)
     merchant_id = serializers.IntegerField(required=False)
     category_id = serializers.IntegerField()
@@ -64,11 +64,42 @@ class ProductSerializer(serializers.ModelSerializer):
         if pt == Product.ProductType.UNIT:
             if ps is not None or mn is not None or mx is not None:
                 raise serializers.ValidationError({"product_type": "Unit must not have size/bounds"})
+        flavor_ids = data.get("flavor_ids", None)
+        if flavor_ids:
+            uniq = list(dict.fromkeys(flavor_ids))
+            if len(uniq) != len(flavor_ids):
+                raise serializers.ValidationError({"flavor_ids": "Duplicated flavor ids."})
+            qs = Flavor.objects.filter(id__in=flavor_ids)
+            if qs.count() != len(set(flavor_ids)):
+                raise serializers.ValidationError({"flavor_ids": "Algunos gustos no existen."})
+            merchant = data.get("merchant") or getattr(self.instance, "merchant", None) if self.instance else data.get("merchant")
+            merchant_id = None
+            if merchant is not None:
+                merchant_id = getattr(merchant, "id", None) or getattr(merchant, "pk", None) or merchant
+            else:
+                merchant_id = data.get("merchant_id")
+                if merchant_id is None and self.instance:
+                    merchant_id = getattr(self.instance, "merchant_id", None)
+            if merchant_id is not None:
+                if qs.exclude(merchant_id=merchant_id).exists():
+                    raise serializers.ValidationError({"flavor_ids": "Todos los gustos deben pertenecer al mismo merchant."})
         return data
 
     def create(self, validated_data):
         flavor_ids = validated_data.pop("flavor_ids", [])
+        if flavor_ids is None:
+            flavor_ids = []
+        if flavor_ids:
+            qs = Flavor.objects.filter(id__in=flavor_ids)
+            if qs.count() != len(set(flavor_ids)):
+                raise serializers.ValidationError({"flavor_ids": "Algunos gustos no existen."})
+            merchant = validated_data.get("merchant")
+            merchant_id = getattr(merchant, "id", None) if merchant else validated_data.get("merchant_id")
+            if merchant_id and qs.exclude(merchant_id=merchant_id).exists():
+                raise serializers.ValidationError({"flavor_ids": "Todos los gustos deben pertenecer al mismo merchant."})
         product = super().create(validated_data)
+        if not flavor_ids:
+            return product
         for fid in flavor_ids:
             try:
                 ProductFlavor.objects.create(product=product, flavor_id=fid)
@@ -79,13 +110,22 @@ class ProductSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         flavor_ids = validated_data.pop("flavor_ids", None)
         product = super().update(instance, validated_data)
-        if flavor_ids is not None:
+        if flavor_ids is None:
+            return product
+        if not flavor_ids:
             product.suggested_flavors.all().delete()
-            for fid in flavor_ids:
-                try:
-                    ProductFlavor.objects.create(product=product, flavor_id=fid)
-                except Exception:
-                    pass
+            return product
+        qs = Flavor.objects.filter(id__in=flavor_ids)
+        if qs.count() != len(set(flavor_ids)):
+            raise serializers.ValidationError({"flavor_ids": "Algunos gustos no existen."})
+        if qs.exclude(merchant_id=product.merchant_id).exists():
+            raise serializers.ValidationError({"flavor_ids": "Todos los gustos deben pertenecer al mismo merchant."})
+        product.suggested_flavors.all().delete()
+        for fid in flavor_ids:
+            try:
+                ProductFlavor.objects.create(product=product, flavor_id=fid)
+            except Exception:
+                pass
         return product
 
 

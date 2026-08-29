@@ -12,7 +12,8 @@
         <v-col cols="6"><v-text-field v-model.number="form.max_flavors" label="Cant. Gustos (máx)" type="number" :error-messages="maxErr" :hint="hint" persistent-hint /></v-col>
       </v-row>
       <div v-if="form.product_type==='POTE'" class="mt-2">
-        <div class="text-subtitle-2 mb-1">Gustos disponibles</div>
+        <div class="text-subtitle-2 mb-1">Gustos disponibles (opcional)</div>
+        <div class="text-caption text-medium-emphasis mb-2">Vacío = todos los gustos (venta diaria). Tildar solo para promo con subset.</div>
         <v-checkbox v-for="f in flavors" :key="f.id" v-model="form.flavor_ids" :label="f.name" :value="f.id" density="compact" hide-details />
         <div v-if="!flavors.length" class="text-caption text-medium-emphasis">Sin gustos — crea sabores en CRUD primero</div>
       </div>

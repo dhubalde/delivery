@@ -46,7 +46,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useCartStore } from '@/stores/cart.store'
-import { boundsForProduct, hintForProduct, validateForProduct, bounds, hint as phint, validate } from '@/utils/flavorPolicy'
+import { useFlavors } from '@/composables/useProducts'
+import { boundsForProduct, hintForProduct, validateForProduct } from '@/utils/flavorPolicy'
 const props = defineProps<{ p: any }>()
 const cart = useCartStore()
 const sel = ref<any[]>([])
@@ -58,11 +59,16 @@ watch(searchRaw, (v) => {
   if (tid) clearTimeout(tid)
   tid = setTimeout(() => { debounced.value = (v ?? '').trim().toLowerCase() }, 250)
 })
+const slug = 'ice-zone'
+const flavorsQuery = useFlavors(slug as any, undefined as any, undefined as any) as any
+const allFlavors = computed(() => (flavorsQuery.data.value ?? []) as any[])
 const badge = computed(() => ({ KG_1:'1KG', KG_HALF:'1/2KG', KG_QUARTER:'1/4KG' } as Record<string,string>)[props.p.pote_size] ?? null)
 const flavors = computed(() => (props.p.flavors ?? props.p.flavor_names ?? []) as any[])
 const options = computed(() => {
-  const f = props.p.flavors ?? props.p.flavor_names ?? ['Frutilla','Chocolate','Vainilla']
-  return (f as any[]).map((x:any)=> typeof x==='string'? { id:x, name:x } : { id: x.id ?? x.name ?? x, name: x.name ?? String(x.id ?? x) })
+  const raw = props.p.flavors ?? props.p.flavor_names ?? null
+  const useRestricted = Array.isArray(raw) && raw.length > 0
+  const source = useRestricted ? raw : (allFlavors.value.length ? allFlavors.value : ['Frutilla','Chocolate','Vainilla'])
+  return (source as any[]).map((x:any)=> typeof x==='string'? { id:x, name:x } : { id: x.id ?? x.name ?? x, name: x.name ?? String(x.id ?? x) })
 })
 const filtered = computed(() => {
   const q = debounced.value
