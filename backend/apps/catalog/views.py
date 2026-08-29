@@ -69,29 +69,134 @@ class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
         instance.delete()
 
 
-class ProductListView(generics.ListAPIView):
+class ProductListCreateView(generics.ListCreateAPIView):
     serializer_class = ProductSerializer
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        queryset = Product.objects.all()
-        category_id = self.request.query_params.get("category", None)
-        search = self.request.query_params.get("search", None)
+        qs = Product.objects.all().order_by("name")
+        mid = _resolve_merchant_id(self.request)
+        if mid is not None:
+            qs = qs.filter(merchant_id=mid)
+        category_id = self.request.query_params.get("category")
         if category_id is not None:
-            queryset = queryset.filter(category_id=category_id)
-        if search is not None:
-            queryset = queryset.filter(name__istartswith=search)
-        return queryset
+            try:
+                qs = qs.filter(category_id=int(category_id))
+            except ValueError:
+                pass
+        search = self.request.query_params.get("search")
+        if search:
+            qs = qs.filter(name__istartswith=search)
+        is_active = self.request.query_params.get("is_active")
+        if is_active is not None:
+            val = str(is_active).lower()
+            qs = qs.filter(is_active=val in ("1", "true", "yes"))
+        return qs
+
+    def perform_create(self, serializer):
+        mid = _resolve_merchant_id(self.request)
+        if mid is None:
+            from rest_framework.exceptions import ValidationError
+
+            raise ValidationError({"merchant": "merchant context required"})
+        category_id = serializer.validated_data.get("category_id")
+        if category_id is not None:
+            from apps.catalog.models import Category as CatModel
+
+            cat = CatModel.objects.filter(pk=category_id).first() or CatModel.all_objects.filter(pk=category_id).first()
+            if cat and cat.merchant_id != mid:
+                from rest_framework.exceptions import ValidationError
+
+                raise ValidationError({"category_id": "Category belongs to different merchant."})
+        serializer.save(merchant_id=mid)
 
 
-class FlavorListView(generics.ListAPIView):
+ProductListView = ProductListCreateView
+
+
+class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = ProductSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        qs = Product.objects.all()
+        mid = _resolve_merchant_id(self.request)
+        if mid is not None:
+            qs = qs.filter(merchant_id=mid)
+        return qs
+
+    def perform_update(self, serializer):
+        mid = _resolve_merchant_id(self.request)
+        category_id = serializer.validated_data.get("category_id")
+        if category_id is not None and mid is not None:
+            from apps.catalog.models import Category as CatModel
+
+            cat = CatModel.objects.filter(pk=category_id).first() or CatModel.all_objects.filter(pk=category_id).first()
+            if cat and cat.merchant_id != mid:
+                from rest_framework.exceptions import ValidationError
+
+                raise ValidationError({"category_id": "Category belongs to different merchant."})
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        instance.delete()
+
+
+class FlavorListCreateView(generics.ListCreateAPIView):
     serializer_class = FlavorSerializer
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        queryset = Flavor.objects.all()
-        category_id = self.request.query_params.get("category", None)
-        search = self.request.query_params.get("search", None)
+        qs = Flavor.objects.all().order_by("name")
+        mid = _resolve_merchant_id(self.request)
+        if mid is not None:
+            qs = qs.filter(merchant_id=mid)
+        category_id = self.request.query_params.get("category")
         if category_id is not None:
-            queryset = queryset.filter(category_id=category_id)
-        if search is not None:
-            queryset = queryset.filter(name__istartswith=search)
-        return queryset
+            try:
+                qs = qs.filter(category_id=int(category_id))
+            except ValueError:
+                pass
+        search = self.request.query_params.get("search")
+        if search:
+            qs = qs.filter(name__istartswith=search)
+        is_active = self.request.query_params.get("is_active")
+        if is_active is not None:
+            val = str(is_active).lower()
+            qs = qs.filter(is_active=val in ("1", "true", "yes"))
+        return qs
+
+    def perform_create(self, serializer):
+        mid = _resolve_merchant_id(self.request)
+        if mid is None:
+            from rest_framework.exceptions import ValidationError
+
+            raise ValidationError({"merchant": "merchant context required"})
+        category_id = serializer.validated_data.get("category_id")
+        if category_id is not None:
+            from apps.catalog.models import Category as CatModel
+
+            cat = CatModel.objects.filter(pk=category_id).first() or CatModel.all_objects.filter(pk=category_id).first()
+            if cat and cat.merchant_id != mid:
+                from rest_framework.exceptions import ValidationError
+
+                raise ValidationError({"category_id": "Category belongs to different merchant."})
+        serializer.save(merchant_id=mid)
+
+
+FlavorListView = FlavorListCreateView
+
+
+class FlavorDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = FlavorSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        qs = Flavor.objects.all()
+        mid = _resolve_merchant_id(self.request)
+        if mid is not None:
+            qs = qs.filter(merchant_id=mid)
+        return qs
+
+    def perform_destroy(self, instance):
+        instance.delete()
