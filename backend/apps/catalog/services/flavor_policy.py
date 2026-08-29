@@ -23,36 +23,35 @@ class PoteFlavorPolicy:
     @staticmethod
     def validate(product, flavor_ids):
         ids = list(flavor_ids or [])
+        has_flavors = product.min_flavors is not None and product.max_flavors is not None and not (product.min_flavors == 0 and product.max_flavors == 0)
         if product.product_type == Product.ProductType.POTE:
+            if has_flavors:
+                if not ids:
+                    raise FlavorSelectionRequiredError("Pote products require at least one flavor.")
+                min_flavors = product.min_flavors
+                max_flavors = product.max_flavors
+                if len(ids) < min_flavors:
+                    raise FlavorPolicyError(f"Pote products require at least {min_flavors} flavor(s), got {len(ids)}.")
+                if len(ids) > max_flavors:
+                    raise FlavorPolicyError(f"Pote products require at most {max_flavors} flavor(s), got {len(ids)}.")
+                return ids
             if not ids:
-                raise FlavorSelectionRequiredError(
-                    "Pote products require at least one flavor."
-                )
-            if product.pote_size in (
-                Product.PoteSize.KG_1,
-                Product.PoteSize.KG_HALF,
-            ):
-                min_flavors = 3
-                max_flavors = 4
+                raise FlavorSelectionRequiredError("Pote products require at least one flavor.")
+            if product.pote_size in (Product.PoteSize.KG_1, Product.PoteSize.KG_HALF):
+                min_flavors, max_flavors = 1, 4
             elif product.pote_size == Product.PoteSize.KG_QUARTER:
-                min_flavors = 2
-                max_flavors = 3
+                min_flavors, max_flavors = 1, 3
             else:
-                min_flavors = 0
-                max_flavors = 0
-            if len(ids) < min_flavors:
-                raise FlavorPolicyError(
-                    f"Pote products require at least {min_flavors} flavor(s), "
-                    f"got {len(ids)}."
-                )
-            if len(ids) > max_flavors:
-                raise FlavorPolicyError(
-                    f"Pote products require at most {max_flavors} flavor(s), "
-                    f"got {len(ids)}."
-                )
+                min_flavors, max_flavors = 1, 4
+            if len(ids) < min_flavors or len(ids) > max_flavors:
+                raise FlavorPolicyError(f"Pote requires {min_flavors}-{max_flavors} flavors, got {len(ids)}.")
+            return ids
+        if has_flavors:
+            if not ids:
+                raise FlavorSelectionRequiredError("Product requires flavor selection.")
+            if len(ids) < product.min_flavors or len(ids) > product.max_flavors:
+                raise FlavorPolicyError(f"Requires {product.min_flavors}-{product.max_flavors} flavors, got {len(ids)}.")
             return ids
         if ids:
-            raise FlavorsNotAllowedError(
-                "Unit products do not accept flavor selections."
-            )
+            raise FlavorsNotAllowedError("Unit products do not accept flavor selections.")
         return ids

@@ -57,25 +57,10 @@ class Product(BaseModel):
         constraints = [
             models.CheckConstraint(
                 condition=(
-                    models.Q(product_type="UNIT")
-                    | (
-                        models.Q(pote_size__isnull=False)
-                        & models.Q(min_flavors__isnull=False)
-                        & models.Q(max_flavors__isnull=False)
-                    )
-                ),
-                name="pote_requires_size_and_bounds",
-            ),
-            models.CheckConstraint(
-                condition=(
                     models.Q(product_type="POTE")
-                    | (
-                        models.Q(pote_size__isnull=True)
-                        & models.Q(min_flavors__isnull=True)
-                        & models.Q(max_flavors__isnull=True)
-                    )
+                    | models.Q(pote_size__isnull=True)
                 ),
-                name="unit_has_no_pote_fields",
+                name="unit_has_no_pote_size",
             ),
         ]
         indexes = [
@@ -87,21 +72,16 @@ class Product(BaseModel):
         if self.category_id is None:
             errors["category"] = "A product must belong to exactly one category."
         if self.product_type == self.ProductType.POTE:
-            if (
-                self.pote_size is None
-                or self.min_flavors is None
-                or self.max_flavors is None
-            ):
-                errors["pote_size"] = "Pote products require size and flavor bounds."
+            if self.pote_size is None and (self.min_flavors is not None or self.max_flavors is not None):
+                errors["pote_size"] = "Pote products with flavors require size."
         if self.product_type == self.ProductType.UNIT:
-            if (
-                self.pote_size is not None
-                or self.min_flavors is not None
-                or self.max_flavors is not None
-            ):
-                errors["product_type"] = (
-                    "Unit products must not define size or flavor bounds."
-                )
+            if self.pote_size is not None:
+                errors["product_type"] = "Unit products must not define pote_size."
+        if self.min_flavors is not None or self.max_flavors is not None:
+            if self.min_flavors is None or self.max_flavors is None:
+                errors["min_flavors"] = "Both min_flavors and max_flavors must be set or both null."
+            elif not (1 <= self.min_flavors <= self.max_flavors <= 4):
+                errors["min_flavors"] = "Require 1 <= min <= max <= 4."
         if errors:
             raise ValidationError(errors)
 

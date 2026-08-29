@@ -29,9 +29,27 @@ const options = computed(() => {
   const f = props.p.flavors ?? props.p.flavor_names ?? ['Frutilla','Chocolate','Vainilla']
   return f.map((x:any)=> typeof x==='string'? { id:x, name:x } : x)
 })
-const needsFlavors = computed(()=> props.p.product_type==='POTE' && !!props.p.pote_size)
-const hint = computed(()=> needsFlavors.value ? phint(props.p.pote_size, props.p.product_type) : '')
-const err = computed(()=> needsFlavors.value ? validate(props.p.pote_size, props.p.product_type, sel.value.length) : null)
+const needsFlavors = computed(()=> {
+  if (props.p.min_flavors==null || props.p.max_flavors==null) return false
+  if (props.p.product_type==='POTE' && !!props.p.pote_size) return true
+  return props.p.min_flavors!=null && props.p.max_flavors!=null
+})
+const hint = computed(()=> {
+  if (!needsFlavors.value) return ''
+  if (props.p.min_flavors!=null && props.p.max_flavors!=null) {
+    return props.p.min_flavors===props.p.max_flavors ? `Elegí ${props.p.min_flavors} gustos` : `Elegí ${props.p.min_flavors} a ${props.p.max_flavors} gustos`
+  }
+  return phint(props.p.pote_size, props.p.product_type)
+})
+const err = computed(()=> {
+  if (!needsFlavors.value) return null
+  if (props.p.min_flavors!=null && props.p.max_flavors!=null) {
+    const n=sel.value.length
+    if (n < props.p.min_flavors || n > props.p.max_flavors) return props.p.min_flavors===props.p.max_flavors ? `Elegí ${props.p.min_flavors} gustos` : `Elegí ${props.p.min_flavors} a ${props.p.max_flavors} gustos`
+    return null
+  }
+  return validate(props.p.pote_size, props.p.product_type, sel.value.length)
+})
 const img = computed(() => props.p.image_url || `/placeholders/${pick()}.jpg`)
 function pick(){ const m:Record<string,string>={ KG_1:'pote-1kg', KG_HALF:'pote-medio', KG_QUARTER:'pote-cuarto' }; return m[props.p.pote_size] ?? 'pote-1kg' }
 function add(){
