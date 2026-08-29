@@ -5,7 +5,7 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', component: () => import('@/layouts/PublicLayout.vue'), children: [{ path: '', component: () => import('@/views/CatalogView.vue') }, { path: 'checkout', component: () => import('@/views/CheckoutView.vue') }] },
-    { path: '/panel', component: () => import('@/layouts/AdminLayout.vue'), meta: { requiresAuth: true }, children: [{ path: 'board', component: () => import('@/views/KanbanBoardView.vue') }] },
+    { path: '/panel', component: () => import('@/layouts/AdminLayout.vue'), meta: { requiresAuth: true }, children: [{ path: 'board', component: () => import('@/views/KanbanBoardView.vue') }, { path: 'catalog', component: () => import('@/views/admin/AdminCatalogView.vue') }] },
     { path: '/login', component: () => import('@/views/LoginView.vue') },
     { path: '/:pathMatch(.*)*', component: () => import('@/views/NotFoundView.vue') },
   ],
