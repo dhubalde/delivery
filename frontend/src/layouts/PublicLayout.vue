@@ -1,7 +1,7 @@
 <template>
   <v-app>
-    <v-app-bar title="Zona Ice" density="compact">
-      <template #prepend><img src="@/assets/logo-zona-ice.svg" width="32" height="32" alt="Zona Ice" /></template>
+    <v-app-bar title="Ice Zone" density="compact">
+      <template #prepend><img src="@/assets/logo-ice-zone.svg" width="32" height="32" alt="Ice Zone" /></template>
       <v-app-bar-nav-icon v-if="xs" @click="drawer=!drawer" />
       <v-btn icon="mdi-brightness-6" @click="ui.toggleTheme()" />
     </v-app-bar>

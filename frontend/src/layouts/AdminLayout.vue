@@ -2,14 +2,14 @@
   <v-app>
     <v-navigation-drawer permanent width="240">
       <v-list density="compact" nav>
-        <v-list-item title="Zona Ice" subtitle="Panel" />
+        <v-list-item title="Ice Zone" subtitle="Panel" />
         <v-divider />
         <v-list-item to="/panel/board" title="Kanban" prepend-icon="mdi-view-columns" />
         <v-list-item to="/panel/catalog" title="Catálogo" prepend-icon="mdi-ice-cream" />
         <v-list-item to="/panel/ops" title="Operaciones" prepend-icon="mdi-cog" />
       </v-list>
     </v-navigation-drawer>
-    <v-app-bar density="compact" title="Panel Zona Ice">
+    <v-app-bar density="compact" title="Panel Ice Zone">
       <v-btn icon="mdi-brightness-6" @click="ui.toggleTheme()" />
     </v-app-bar>
     <v-main><v-container><router-view /></v-container></v-main>

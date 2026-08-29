@@ -7,8 +7,10 @@ export const COLUMN_COLORS = {
   CANCELADO: '#9CA3AF',
 } as const
 
-export const ZONA_ICE_COLORS = {
-  primary: '#FACC15',
-  secondary: '#38BDF8',
-  accent: '#A78BFA',
+export const ICE_ZONE_COLORS = {
+  primary: '#14B8A6', // turquesa Ice Zone
+  secondary: '#64748B', // gris slate
+  accent: '#5EEAD4', // turquesa claro
+  backgroundLight: '#FAFAF8', // blanco tiza
+  backgroundDark: '#1E293B',
 } as const

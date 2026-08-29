@@ -4,7 +4,7 @@ import '@fontsource/comfortaa/700.css'
 import { createVuetify } from 'vuetify'
 
 const stored = (() => {
-  try { return localStorage.getItem('zona-ice-theme') as 'light' | 'dark' | null } catch { return null }
+  try { return localStorage.getItem('ice-zone-theme') as 'light' | 'dark' | null } catch { return null }
 })()
 
 export default createVuetify({
@@ -13,20 +13,20 @@ export default createVuetify({
     themes: {
       light: {
         colors: {
-          primary: '#FACC15',
-          secondary: '#38BDF8',
-          accent: '#A78BFA',
-          background: '#FFFbeb',
+          primary: '#14B8A6', // turquesa
+          secondary: '#64748B', // gris
+          accent: '#5EEAD4',
+          background: '#FAFAF8', // blanco tiza
           surface: '#FFFFFF',
         },
       },
       dark: {
         colors: {
-          primary: '#FACC15',
-          secondary: '#38BDF8',
-          accent: '#A78BFA',
-          background: '#1c1917',
-          surface: '#292524',
+          primary: '#2DD4BF', // turquesa claro para dark
+          secondary: '#94A3B8',
+          accent: '#5EEAD4',
+          background: '#1E293B', // slate oscuro
+          surface: '#334155',
         },
       },
     },
