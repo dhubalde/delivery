@@ -31,7 +31,7 @@ const slug = 'ice-zone'
 const cats = ref<any[]>([])
 const flavorsRef = useFlavors(slug as any, undefined as any, undefined as any) as any
 const flavors = computed(() => (flavorsRef.data.value ?? []) as any[])
-const form = reactive({ name: 'Pote 1kg', price: 12000 as number | null, category_id: null as number | null, product_type: 'POTE' as 'POTE'|'UNIT', pote_size: 'KG_1' as any, min_flavors: 3, max_flavors: 4, flavor_ids: [] as number[] })
+const form = reactive({ name: 'Pote 1kg', price: 12000 as number | null, category_id: null as number | null, product_type: 'POTE' as 'POTE'|'UNIT', pote_size: 'KG_1' as any, min_flavors: 1, max_flavors: 4, flavor_ids: [] as number[] })
 const types = [{ title: 'POTE', value: 'POTE' }, { title: 'UNIT', value: 'UNIT' }]
 const sizes = [{ title: '1kg', value: 'KG_1' }, { title: '1/2kg', value: 'KG_HALF' }, { title: '1/4kg', value: 'KG_QUARTER' }]
 const rRequired = (v: any) => !!v || 'Requerido'
@@ -49,14 +49,16 @@ const autoHint = computed(() => `Auto ${bounds(form.pote_size,'POTE').min} segú
 const maxErr = computed(() => {
   if (form.product_type !== 'POTE') return ''
   const b = bounds(form.pote_size, 'POTE')
-  if (form.max_flavors < b.min || form.max_flavors > b.max) return `BR-CAT-04/05: para ${form.pote_size} permitido ${b.min}-${b.max}`
+  if (form.min_flavors < 1 || form.min_flavors > 4) return 'min debe ser 1-4'
+  if (form.max_flavors < 1 || form.max_flavors > 4) return `BR-CAT-04/05: para ${form.pote_size} permitido ${b.min}-${b.max} (máx 4)`
   if (form.min_flavors > form.max_flavors) return 'min no puede > max'
+  if (form.max_flavors < b.min || form.max_flavors > b.max) return `BR-CAT-04/05: para ${form.pote_size} permitido ${b.min}-${b.max}`
   if (form.min_flavors < b.min) return `min debe ser >= ${b.min}`
   return ''
 })
 watch(() => form.pote_size, (ns) => {
   const b = bounds(ns, 'POTE')
-  form.min_flavors = b.min
+  if (form.min_flavors < b.min) form.min_flavors = b.min
   if (form.max_flavors < b.min || form.max_flavors > b.max) form.max_flavors = b.max
 })
 onMounted(async () => {

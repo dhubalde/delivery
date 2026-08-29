@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { validate } from '@/utils/flavorPolicy'
+import { validateForProduct } from '@/utils/flavorPolicy'
 type CartItem = { uid: string; product: any; qty: number; flavorIds: number[]; flavorNames: string[] }
 export const useCartStore = defineStore('cart', {
   state: () => ({ items: [] as CartItem[] }),
@@ -10,7 +10,7 @@ export const useCartStore = defineStore('cart', {
   },
   actions: {
     canAdd(product: any, flavorIds: number[]): string | null {
-      return validate(product.pote_size ?? null, product.product_type, flavorIds.length)
+      return validateForProduct(product, flavorIds.length)
     },
     add(product: any, flavorIds: number[], flavorNames: string[]) {
       const err = this.canAdd(product, flavorIds)

@@ -46,7 +46,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useCartStore } from '@/stores/cart.store'
-import { bounds, hint as phint, validate } from '@/utils/flavorPolicy'
+import { boundsForProduct, hintForProduct, validateForProduct, bounds, hint as phint, validate } from '@/utils/flavorPolicy'
 const props = defineProps<{ p: any }>()
 const cart = useCartStore()
 const sel = ref<any[]>([])
@@ -70,9 +70,9 @@ const filtered = computed(() => {
   return options.value.filter((o:any)=> String(o.name).toLowerCase().includes(q))
 })
 const needsFlavors = computed(()=> props.p.product_type==='POTE' && !!props.p.pote_size)
-const hint = computed(()=> needsFlavors.value ? phint(props.p.pote_size, props.p.product_type) : '')
-const max = computed(()=> bounds(props.p.pote_size ?? null, props.p.product_type).max)
-const err = computed(()=> needsFlavors.value ? validate(props.p.pote_size, props.p.product_type, sel.value.length) : null)
+const hint = computed(()=> needsFlavors.value ? hintForProduct(props.p) : '')
+const max = computed(()=> boundsForProduct(props.p).max)
+const err = computed(()=> needsFlavors.value ? validateForProduct(props.p, sel.value.length) : null)
 const img = computed(() => props.p.image_url || `/placeholders/${pick()}.jpg`)
 function pick(){ const m:Record<string,string>={ KG_1:'pote-1kg', KG_HALF:'pote-medio', KG_QUARTER:'pote-cuarto' }; return m[props.p.pote_size] ?? 'pote-1kg' }
 function onAddClick(){

@@ -51,16 +51,16 @@ class ProductSerializer(serializers.ModelSerializer):
         if pt == Product.ProductType.POTE:
             if ps is None or mn is None or mx is None:
                 raise serializers.ValidationError({"pote_size": "Pote requires size and min/max flavors."})
+            if mn < 1 or mx < 1 or mn > mx or mx > 4:
+                raise serializers.ValidationError({"max_flavors": f"BR-CAT-04/05: allowed min 1-4 max 1-4, got min {mn} max {mx}"})
             if ps in (Product.PoteSize.KG_1, Product.PoteSize.KG_HALF):
-                low, high = 3, 4
+                low, high = 1, 4
             elif ps == Product.PoteSize.KG_QUARTER:
-                low, high = 2, 3
+                low, high = 1, 3
             else:
-                low, high = 0, 0
-            if mn < low or mx > high or mn > mx:
+                low, high = 1, 4
+            if mn < low or mx > high:
                 raise serializers.ValidationError({"max_flavors": f"BR-CAT-04/05: for {ps} allowed {low}-{high}, got min {mn} max {mx}"})
-            if mn < low or mx < low:
-                raise serializers.ValidationError({"max_flavors": f"BR-CAT-04/05: for {ps} min {low}"})
         if pt == Product.ProductType.UNIT:
             if ps is not None or mn is not None or mx is not None:
                 raise serializers.ValidationError({"product_type": "Unit must not have size/bounds"})

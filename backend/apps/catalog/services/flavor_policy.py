@@ -28,7 +28,10 @@ class PoteFlavorPolicy:
                 raise FlavorSelectionRequiredError(
                     "Pote products require at least one flavor."
                 )
-            if product.pote_size in (
+            if getattr(product, "min_flavors", None) is not None and getattr(product, "max_flavors", None) is not None:
+                min_flavors = product.min_flavors
+                max_flavors = product.max_flavors
+            elif product.pote_size in (
                 Product.PoteSize.KG_1,
                 Product.PoteSize.KG_HALF,
             ):
