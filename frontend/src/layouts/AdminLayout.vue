@@ -5,7 +5,9 @@
         <v-list-item title="Ice Zone" subtitle="Panel" />
         <v-divider />
         <v-list-item to="/panel/board" title="Kanban" prepend-icon="mdi-view-columns" />
-        <v-list-item to="/panel/catalog" title="Catálogo" prepend-icon="mdi-ice-cream" />
+        <v-list-item to="/panel/categories" title="Categorías" prepend-icon="mdi-shape" />
+        <v-list-item to="/panel/products" title="Productos" prepend-icon="mdi-ice-cream" />
+        <v-list-item to="/panel/flavors" title="Sabores" prepend-icon="mdi-ice-pop" />
         <v-list-item to="/panel/ops" title="Operaciones" prepend-icon="mdi-cog" />
       </v-list>
     </v-navigation-drawer>
