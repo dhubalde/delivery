@@ -8,7 +8,7 @@ def _resolve_merchant_id(request):
     mid = getattr(request, "tenant_merchant_id", None)
     if mid is not None:
         return mid
-    slug = request.query_params.get("merchant_slug")
+    slug = request.query_params.get("merchant_slug") or request.headers.get("X-Merchant-Slug") or request.META.get("HTTP_X_MERCHANT_SLUG")
     if slug:
         try:
             from apps.tenancy.models import Merchant

@@ -9,6 +9,13 @@ api.interceptors.request.use((cfg) => {
   if (cfg.method && ['post', 'patch', 'put'].includes(cfg.method)) {
     cfg.headers['Idempotency-Key'] = crypto.randomUUID()
   }
+  if (cfg.url?.includes('/v1/')) {
+    let slug = auth.merchantSlug || localStorage.getItem('merchantSlug') || 'ice-zone'
+    if (slug === 'zona-ice') slug = 'ice-zone'
+    const p = cfg.params as Record<string, unknown> | undefined
+    if (!p?.merchant_slug) cfg.params = { ...p, merchant_slug: slug }
+    if (!cfg.headers['X-Merchant-Slug'] && !cfg.headers['x-merchant-slug']) cfg.headers['X-Merchant-Slug'] = slug
+  }
   return cfg
 })
 

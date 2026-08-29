@@ -5,7 +5,7 @@ export const useAuthStore = defineStore('auth', {
     access: localStorage.getItem('access') || '',
     refresh: localStorage.getItem('refresh') || '',
     user: JSON.parse(localStorage.getItem('user') || 'null'),
-    merchantSlug: localStorage.getItem('merchantSlug') || 'zona-ice',
+    merchantSlug: localStorage.getItem('merchantSlug') || 'ice-zone',
   }),
   getters: {
     isAuth: (s) => !!s.access,
