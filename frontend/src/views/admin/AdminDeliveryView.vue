@@ -16,6 +16,7 @@
             <v-col cols="12" md="4"><v-text-field v-model="form.third_party_fixed_amount" label="Monto tercero fijo" type="number" density="compact" :error-messages="details.third_party_fixed_amount ?? ''" :disabled="!isAdmin" hide-details /></v-col>
           </v-row>
           <v-chip v-if="isPassthrough" color="info" class="mt-2">Passthrough: tercero+EN_PEDIDO → excluido de revenue (BR-DEL-04)</v-chip>
+          <v-chip v-else-if="form.modo==='AMBOS' || form.cobro==='AMBOS'" color="warning" class="mt-2">AMBOS: permite ambos flujos — no es passthrough puro</v-chip>
           <v-alert v-if="saveErr" type="error" density="compact" class="mt-3">{{ saveErr }}</v-alert>
         </v-card-text>
         <v-card-actions><v-btn color="primary" :disabled="!isAdmin" :loading="saving" @click="saveCfg">Guardar config</v-btn></v-card-actions>
@@ -60,7 +61,7 @@ const { data: zData, isLoading: zLoading } = useZones()
 const forbid = computed(()=> (error.value as {response?:{status?:number}})?.response?.status===403)
 const cfg = computed(()=> cfgData.value as { modo: string; cobro: string; calculo: string; flat_amount: string|null; free_threshold: string|null; third_party_fixed_amount: string|null } | undefined)
 const zones = computed(()=> (zData.value as {id:number;name:string;base_fee:string}[]) ?? [])
-const modoOpts=['PROPIO','TERCERIZADO']; const cobroOpts=['EN_PEDIDO','EN_ENTREGA']; const calculoOpts=['POR_ZONA','FIJO','GRATIS_MONTO','POR_DISTANCIA']
+const modoOpts=['PROPIO','TERCERIZADO','AMBOS']; const cobroOpts=['EN_PEDIDO','EN_ENTREGA','AMBOS']; const calculoOpts=['POR_ZONA','FIJO','GRATIS_MONTO','POR_DISTANCIA']
 const form=reactive({ modo:'PROPIO', cobro:'EN_PEDIDO', calculo:'FIJO', flat_amount:'', free_threshold:'', third_party_fixed_amount:'' })
 watch(cfg, v=>{ if(v){ form.modo=v.modo; form.cobro=v.cobro; form.calculo=v.calculo; form.flat_amount=v.flat_amount ?? ''; form.free_threshold=v.free_threshold ?? ''; form.third_party_fixed_amount=v.third_party_fixed_amount ?? '' } }, { immediate:true })
 const isPassthrough = computed(()=> form.modo==='TERCERIZADO' && form.cobro==='EN_PEDIDO')

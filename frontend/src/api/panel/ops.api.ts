@@ -1,7 +1,7 @@
 import { api } from '@/api/client'
 export type Schedule = { id: number; weekday: number; time_ranges: { opens_at: string; closes_at: string }[] }
 export type SpecialDate = { id: number; date: string; is_closed: boolean; reason: string }
-export type DeliveryConfig = { id: number; modo: 'PROPIO'|'TERCERIZADO'; cobro: 'EN_PEDIDO'|'EN_ENTREGA'; calculo: 'POR_ZONA'|'FIJO'|'GRATIS_MONTO'|'POR_DISTANCIA'; flat_amount: string|null; free_threshold: string|null; third_party_fixed_amount: string|null }
+export type DeliveryConfig = { id: number; modo: 'PROPIO'|'TERCERIZADO'|'AMBOS'; cobro: 'EN_PEDIDO'|'EN_ENTREGA'|'AMBOS'; calculo: 'POR_ZONA'|'FIJO'|'GRATIS_MONTO'|'POR_DISTANCIA'; flat_amount: string|null; free_threshold: string|null; third_party_fixed_amount: string|null }
 export type Zone = { id: number; name: string; base_fee: string }
 const unwrap = (d: unknown) => Array.isArray(d) ? d as never[] : ((d as { results?: never[]; items?: never[] }).results ?? (d as { items?: never[] }).items ?? d as never[])
 export const schedulesApi = {

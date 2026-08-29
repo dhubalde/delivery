@@ -7,10 +7,12 @@ class DeliveryConfig(BaseModel):
     class Modo(models.TextChoices):
         PROPIO = "PROPIO", "Propio"
         TERCERIZADO = "TERCERIZADO", "Tercerizado"
+        AMBOS = "AMBOS", "Ambos (propio + tercerizado)"
 
     class Cobro(models.TextChoices):
         EN_PEDIDO = "EN_PEDIDO", "En pedido"
         EN_ENTREGA = "EN_ENTREGA", "En entrega"
+        AMBOS = "AMBOS", "Ambos"
 
     class Calculo(models.TextChoices):
         POR_ZONA = "POR_ZONA", "Por zona"
