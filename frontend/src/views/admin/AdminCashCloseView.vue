@@ -24,6 +24,7 @@
         <v-card-text><pre style="white-space:pre-wrap;word-break:break-all">{{ JSON.stringify(ticket, null, 2) }}</pre></v-card-text>
       </v-card>
     </template>
+    <ConfirmDialog v-model="confirm.show.value" :title="confirm.title.value" :message="confirm.message.value" :confirm-text="confirm.confirmText.value" :cancel-text="confirm.cancelText.value" :confirm-color="confirm.confirmColor.value" icon="mdi-lock" @confirm="confirm.onConfirm" @cancel="confirm.onCancel" />
   </v-container>
 </template>
 <script setup lang="ts">
@@ -31,6 +32,8 @@ import { ref, computed } from 'vue'
 import { useCashPreview, useCloseCash, cashErrStatus, cashErrMsg } from '@/composables/useCashClose'
 import { useAuthStore } from '@/stores/auth.store'
 import { hasAnyRole } from '@/utils/guards'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import { useConfirm } from '@/composables/useConfirm'
 const auth = useAuthStore()
 const isAdmin = computed(()=> hasAnyRole(auth.roles, ['ADMIN']))
 const { data, isLoading: loading, error } = useCashPreview()
@@ -41,9 +44,10 @@ const ticket = computed(()=> preview.value?.ticket_payload ?? null)
 const alreadyClosed = computed(()=> !!preview.value?.already_closed)
 const closing=ref(false); const closeErr=ref('')
 const closeM=useCloseCash()
+const confirm=useConfirm()
 async function doClose(){
   if(!isAdmin.value) return
-  if(!confirm('¿Cerrar caja del día? Esta acción es inmutable.')) return
+  if(!await confirm.ask({ title:'¿Cerrar caja del día?', message:'Esta acción es inmutable y genera el ticket del día.', confirmText:'Cerrar', confirmColor:'primary' })) return
   closing.value=true; closeErr.value=''
   try{ await closeM.mutateAsync(undefined as never) } catch(e:unknown){ const s=cashErrStatus(e); closeErr.value = s===403 ? '403 — Solo ADMIN puede cerrar (BR-CIE-01)' : s===409 ? '409 — Caja ya cerrada para esta fecha' : cashErrMsg(e) }
   finally{ closing.value=false }

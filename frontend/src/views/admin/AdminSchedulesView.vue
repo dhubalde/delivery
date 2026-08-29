@@ -43,6 +43,7 @@
         <v-card-text v-if="sdFormError"><v-alert type="error" density="compact">{{ sdFormError }}</v-alert></v-card-text>
       </v-card>
     </template>
+    <ConfirmDialog v-model="confirm.show.value" :title="confirm.title.value" :message="confirm.message.value" :confirm-text="confirm.confirmText.value" :cancel-text="confirm.cancelText.value" :confirm-color="confirm.confirmColor.value" @confirm="confirm.onConfirm" @cancel="confirm.onCancel" />
   </v-container>
 </template>
 <script setup lang="ts">
@@ -50,6 +51,8 @@ import { ref, reactive, computed } from 'vue'
 import { useSchedules, useSpecialDates, useUpsertSchedule, useDeleteSchedule, useCreateSpecialDate, useDeleteSpecialDate, errDetails } from '@/composables/useAdminOps'
 import { useAuthStore } from '@/stores/auth.store'
 import { hasAnyRole } from '@/utils/guards'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import { useConfirm, toast } from '@/composables/useConfirm'
 const auth = useAuthStore()
 const isAdmin = computed(()=> hasAnyRole(auth.roles, ['ADMIN']))
 const { data: schedData, isLoading: loading, isError, error } = useSchedules()
@@ -80,15 +83,16 @@ function overlapErr(wd:number){
 }
 const savingDay=ref<number|null>(null)
 const upsertM=useUpsertSchedule(); const delM=useDeleteSchedule()
+const confirm=useConfirm()
 async function saveDay(wd:number){
   if(overlapErr(wd)) return
   savingDay.value=wd
-  try{ await upsertM.mutateAsync({ weekday:wd, ranges: formByDay(wd)} as never); } catch(e:unknown){ const d=errDetails(e); alert(Object.values(d).join(', ') || (e as {response?:{data?:{error?:{message?:string}}}})?.response?.data?.error?.message || 'Error') }
+  try{ await upsertM.mutateAsync({ weekday:wd, ranges: formByDay(wd)} as never); } catch(e:unknown){ const d=errDetails(e); toast(Object.values(d).join(', ') || (e as {response?:{data?:{error?:{message?:string}}}})?.response?.data?.error?.message || 'Error') }
   finally{ savingDay.value=null }
 }
 async function delDay(wd:number){
-  const s=schedList.value.find(x=>x.weekday===wd); if(!s) return; if(!confirm('¿Borrar horario del día?')) return
-  try{ await delM.mutateAsync(s.id) as never; delete edits[wd] } catch(e:unknown){ alert((e as {response?:{status?:number}})?.response?.status===403?'403 Solo ADMIN':'Error') }
+  const s=schedList.value.find(x=>x.weekday===wd); if(!s) return; if(!await confirm.ask({ title:'¿Borrar horario del día?', message:'Se eliminarán todos los rangos de este día.' })) return
+  try{ await delM.mutateAsync(s.id) as never; delete edits[wd] } catch(e:unknown){ toast((e as {response?:{status?:number}})?.response?.status===403?'403 Solo ADMIN':'Error') }
 }
 const sdForm=reactive({ date:'', is_closed:true, reason:'' }); const sdSaving=ref(false); const sdDetails=ref<Record<string,string>>({}); const sdFormError=ref('')
 const createM=useCreateSpecialDate(); const delSdM=useDeleteSpecialDate()
@@ -97,5 +101,5 @@ async function createSd(){
   try{ await createM.mutateAsync({ date: sdForm.date, is_closed: sdForm.is_closed, reason: sdForm.reason } as never); sdForm.date=''; sdForm.reason='' } catch(e:unknown){ const d=errDetails(e); if(Object.keys(d).length) sdDetails.value=d as Record<string,string>; else sdFormError.value=(e as {response?:{data?:{error?:{message?:string}}}})?.response?.data?.error?.message ?? 'Error' }
   finally{ sdSaving.value=false }
 }
-async function delSd(id:number){ if(!confirm('¿Eliminar fecha especial?')) return; try{ await delSdM.mutateAsync(id) as never } catch(e:unknown){ alert((e as {response?:{status?:number}})?.response?.status===403?'403':'Error') } }
+async function delSd(id:number){ if(!await confirm.ask({ title:'¿Eliminar fecha especial?', message:'Esta acción no se puede deshacer.' })) return; try{ await delSdM.mutateAsync(id) as never } catch(e:unknown){ toast((e as {response?:{status?:number}})?.response?.status===403?'403':'Error') } }
 </script>

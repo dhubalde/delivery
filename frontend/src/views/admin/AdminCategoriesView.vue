@@ -30,6 +30,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <ConfirmDialog v-model="confirm.show.value" :title="confirm.title.value" :message="confirm.message.value" :confirm-text="confirm.confirmText.value" :cancel-text="confirm.cancelText.value" :confirm-color="confirm.confirmColor.value" @confirm="confirm.onConfirm" @cancel="confirm.onCancel" />
   </v-container>
 </template>
 <script setup lang="ts">
@@ -37,6 +38,8 @@ import { ref, reactive, computed } from 'vue'
 import { useAdminCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, errDetails } from '@/composables/useAdminCatalog'
 import { useAuthStore } from '@/stores/auth.store'
 import { hasAnyRole } from '@/utils/guards'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import { useConfirm, toast } from '@/composables/useConfirm'
 const auth = useAuthStore()
 const isAdmin = computed(() => hasAnyRole(auth.roles, ['ADMIN']))
 const { data, isLoading, isError, error } = useAdminCategories()
@@ -56,5 +59,6 @@ async function save(){
   catch(e: unknown){ const d=errDetails(e); if(Object.keys(d).length) details.value=d as Record<string,string>; else formError.value=(e as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Error al guardar' }
   finally{ saving.value=false }
 }
-async function remove(id:number){ if(!confirm('¿Eliminar categoría?')) return; try{ await deleteM.mutateAsync(id) } catch(e: unknown){ const s=(e as { response?: { status?: number } })?.response?.status; alert(s===403 ? '403 — Solo ADMIN' : 'Error al eliminar') } }
+const confirm=useConfirm()
+async function remove(id:number){ if(!await confirm.ask({ title:'¿Eliminar categoría?', message:'Esta acción no se puede deshacer.' })) return; try{ await deleteM.mutateAsync(id) } catch(e: unknown){ const s=(e as { response?: { status?: number } })?.response?.status; toast(s===403 ? '403 — Solo ADMIN' : 'Error al eliminar') } }
 </script>

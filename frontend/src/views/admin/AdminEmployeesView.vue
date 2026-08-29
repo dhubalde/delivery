@@ -27,6 +27,7 @@
         <v-card-actions><v-spacer/><v-btn variant="text" @click="dlg=false">Cancelar</v-btn><v-btn color="primary" :loading="saving" :disabled="!isAdmin" @click="save">Guardar</v-btn></v-card-actions>
       </v-card>
     </v-dialog>
+    <ConfirmDialog v-model="confirm.show.value" :title="confirm.title.value" :message="confirm.message.value" :confirm-text="confirm.confirmText.value" :cancel-text="confirm.cancelText.value" :confirm-color="confirm.confirmColor.value" @confirm="confirm.onConfirm" @cancel="confirm.onCancel" />
   </v-container>
 </template>
 <script setup lang="ts">
@@ -35,6 +36,8 @@ import { useEmployees, useCreateEmployee, useUpdateEmployee, useDeleteEmployee, 
 import { ROLES, type Role } from '@/api/panel/employees.api'
 import { useAuthStore } from '@/stores/auth.store'
 import { hasAnyRole } from '@/utils/guards'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import { useConfirm, toast } from '@/composables/useConfirm'
 const auth = useAuthStore()
 const isAdmin = computed(()=> hasAnyRole(auth.roles, ['ADMIN']))
 const { data, isLoading: loading, isError, error } = useEmployees()
@@ -54,5 +57,6 @@ async function save(){
   catch(e:unknown){ const d=empErrDetails(e); if(Object.keys(d).length) details.value=d as Record<string,string>; else formError.value=(e as {response?:{data?:{error?:{message?:string}}}})?.response?.data?.error?.message ?? 'Error' }
   finally{ saving.value=false }
 }
-async function remove(id:number){ if(!confirm('¿Eliminar empleado? (soft-delete)')) return; try{ await delM.mutateAsync(id) as never } catch(e:unknown){ alert((e as {response?:{status?:number}})?.response?.status===403?'403 Solo ADMIN':'Error') } }
+const confirm=useConfirm()
+async function remove(id:number){ if(!await confirm.ask({ title:'¿Eliminar empleado?', message:'Se hará soft-delete del empleado.' })) return; try{ await delM.mutateAsync(id) as never } catch(e:unknown){ toast((e as {response?:{status?:number}})?.response?.status===403?'403 Solo ADMIN':'Error') } }
 </script>

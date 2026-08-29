@@ -43,6 +43,7 @@
         </v-card>
       </v-dialog>
     </template>
+    <ConfirmDialog v-model="confirm.show.value" :title="confirm.title.value" :message="confirm.message.value" :confirm-text="confirm.confirmText.value" :cancel-text="confirm.cancelText.value" :confirm-color="confirm.confirmColor.value" @confirm="confirm.onConfirm" @cancel="confirm.onCancel" />
   </v-container>
 </template>
 <script setup lang="ts">
@@ -50,6 +51,8 @@ import { ref, reactive, computed, watch } from 'vue'
 import { useDeliveryConfig, useZones, useUpdateDelivery, useCreateZone, useUpdateZone, useDeleteZone, errDetails, errStatus } from '@/composables/useAdminOps'
 import { useAuthStore } from '@/stores/auth.store'
 import { hasAnyRole } from '@/utils/guards'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import { useConfirm, toast } from '@/composables/useConfirm'
 const auth = useAuthStore()
 const isAdmin = computed(()=> hasAnyRole(auth.roles, ['ADMIN']))
 const { data: cfgData, isLoading: loading, isError, error } = useDeliveryConfig()
@@ -86,5 +89,6 @@ async function saveZone(){
   catch(e:unknown){ const d=errDetails(e); if(Object.keys(d).length) zDetails.value=d as Record<string,string>; else zFormError.value=(e as {response?:{data?:{error?:{message?:string}}}})?.response?.data?.error?.message ?? 'Error' }
   finally{ zSaving.value=false }
 }
-async function delZone(id:number){ if(!confirm('¿Eliminar zona?')) return; try{ await delM.mutateAsync(id) as never } catch(e:unknown){ alert((e as {response?:{status?:number}})?.response?.status===403?'403 Solo ADMIN':'Error al eliminar') } }
+const confirm=useConfirm()
+async function delZone(id:number){ if(!await confirm.ask({ title:'¿Eliminar zona?', message:'Esta acción no se puede deshacer.' })) return; try{ await delM.mutateAsync(id) as never } catch(e:unknown){ toast((e as {response?:{status?:number}})?.response?.status===403?'403 Solo ADMIN':'Error al eliminar') } }
 </script>
