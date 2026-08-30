@@ -1,5 +1,11 @@
 <template>
-  <v-card :loading="pending" class="mb-2" density="compact">
+  <v-card v-if="compact" :loading="pending" class="mb-1" density="compact" height="60">
+    <v-card-text class="py-1 px-2 d-flex align-center justify-space-between text-caption" style="height: 60px">
+      <span class="text-truncate"><strong>#{{ order.code }}</strong> · {{ order.customer_name ?? order.customer ?? '—' }}</span>
+      <span class="d-flex align-center ga-2 flex-shrink-0 ml-2"><strong>${{ order.total }}</strong><span v-if="hour" class="text-medium-emphasis">{{ hour }}</span></span>
+    </v-card-text>
+  </v-card>
+  <v-card v-else :loading="pending" class="mb-2" density="compact">
     <v-card-text class="pb-1">
       <div class="d-flex justify-space-between align-center">
         <strong>#{{ order.code }}</strong>
@@ -25,9 +31,14 @@ import { useAuthStore } from '@/stores/auth.store'
 import { canAdvance, nextStateOf } from '@/utils/guards'
 import { useTransition } from '@/composables/useOrders'
 
-const props = defineProps<{ order: { id: number; code: string; state: string; fulfillment: string; cash_declared: boolean; total: string; payments: { method: string; status: string }[]; customer_name?: string; customer?: string } }>()
+const props = defineProps<{ order: { id: number; code: string; state: string; fulfillment: string; cash_declared: boolean; total: string; payments: { method: string; status: string }[]; customer_name?: string; customer?: string; created_at?: string }; compact?: boolean }>()
 const auth = useAuthStore()
 const tr = useTransition()
+const hour = computed(() => {
+  const raw = props.order.created_at
+  if (!raw) return ''
+  try { return new Date(raw).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) } catch { return '' }
+})
 const isTerminal = computed(() => ['ENTREGADO', 'CANCELADO'].includes(props.order.state))
 const hasPending = computed(() => props.order.payments?.some((p) => p.status === 'PENDING'))
 const guard = computed(() => canAdvance(props.order.state, auth.roles, props.order))

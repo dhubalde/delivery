@@ -6,7 +6,7 @@
     </div>
     <v-row>
       <v-col v-for="col in cols" :key="col.state" cols="12" md="2">
-        <KanbanColumn :title="col.title" :color="col.color" :orders="boards[col.state].data.value ?? []" :is-loading="boards[col.state].isLoading.value" :is-error="boards[col.state].isError.value" @retry="boards[col.state].refetch()" />
+        <KanbanColumn :title="col.title" :color="col.color" :orders="boards[col.state].data.value ?? []" :is-loading="boards[col.state].isLoading.value" :is-error="boards[col.state].isError.value" :compact="col.state === 'ENTREGADO'" @retry="boards[col.state].refetch()" />
       </v-col>
       <v-col cols="12" md="2">
         <KanbanTotalsCard :fallback-orders="(boards['ENTREGADO'].data.value ?? []) as any" />
