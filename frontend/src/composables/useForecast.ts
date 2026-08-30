@@ -6,17 +6,22 @@ import { api } from '@/api/client'
 
 export type ForecastDay = { date: string; tempMin: number; tempMax: number; condition: string; icon: string }
 
+function isoDate(offsetDays: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() + offsetDays)
+  return d.toISOString().slice(0, 10)
+}
+
 const MOCK: ForecastDay[] = [
-  { date: 'Hoy', tempMin: 18, tempMax: 26, condition: 'Soleado', icon: 'mdi-weather-sunny' },
-  { date: 'Mañana', tempMin: 16, tempMax: 24, condition: 'Parcial', icon: 'mdi-weather-partly-cloudy' },
-  { date: 'Mié', tempMin: 15, tempMax: 22, condition: 'Nublado', icon: 'mdi-weather-cloudy' },
-  { date: 'Jue', tempMin: 14, tempMax: 20, condition: 'Lluvia', icon: 'mdi-weather-rainy' },
-  { date: 'Vie', tempMin: 17, tempMax: 25, condition: 'Soleado', icon: 'mdi-weather-sunny' },
-  { date: 'Sáb', tempMin: 19, tempMax: 27, condition: 'Soleado', icon: 'mdi-weather-sunny' },
+  { date: isoDate(0), tempMin: 18, tempMax: 26, condition: 'Soleado', icon: 'mdi-weather-sunny' },
+  { date: isoDate(1), tempMin: 16, tempMax: 24, condition: 'Parcial', icon: 'mdi-weather-partly-cloudy' },
+  { date: isoDate(2), tempMin: 15, tempMax: 22, condition: 'Nublado', icon: 'mdi-weather-cloudy' },
+  { date: isoDate(3), tempMin: 14, tempMax: 20, condition: 'Lluvia', icon: 'mdi-weather-rainy' },
+  { date: isoDate(4), tempMin: 17, tempMax: 25, condition: 'Soleado', icon: 'mdi-weather-sunny' },
+  { date: isoDate(5), tempMin: 19, tempMax: 27, condition: 'Soleado', icon: 'mdi-weather-sunny' },
 ]
 
 function genMockFallback(): ForecastDay[] {
-  const labels = ['Hoy', 'Mañana', 'Mié', 'Jue', 'Vie', 'Sáb']
   const conds: ForecastDay[] = []
   for (let i = 0; i < 6; i++) {
     const tMax = 20 + Math.round(Math.random() * 8)
@@ -24,7 +29,7 @@ function genMockFallback(): ForecastDay[] {
     const icons = ['mdi-weather-sunny', 'mdi-weather-partly-cloudy', 'mdi-weather-cloudy', 'mdi-weather-rainy']
     const condNames = ['Soleado', 'Parcial', 'Nublado', 'Lluvia']
     const idx = Math.floor(Math.random() * 4)
-    conds.push({ date: labels[i], tempMin: tMin, tempMax: tMax, condition: condNames[idx], icon: icons[idx] })
+    conds.push({ date: isoDate(i), tempMin: tMin, tempMax: tMax, condition: condNames[idx], icon: icons[idx] })
   }
   return conds
 }
@@ -46,6 +51,11 @@ function saveCache(data: ForecastDay[]) {
   try { localStorage.setItem(LS_KEY, JSON.stringify({ at: Date.now(), data })) } catch { /* ignore */ }
 }
 
+/**
+ * API chain: 1) GET /api/v1/weather/forecast?days=6 (backend propio) -> live
+ *            2) OpenWeatherMap https://api.openweathermap.org/data/2.5/forecast con VITE_WEATHER_KEY -> live
+ *            3) Mock local con fechas ISO (isoDate) -> demo
+ */
 async function fetchForecast(): Promise<{ data: ForecastDay[]; isDemo: boolean }> {
   const cached = loadCache()
   if (cached) return { data: cached.data, isDemo: true }
@@ -78,7 +88,7 @@ async function fetchForecast(): Promise<{ data: ForecastDay[]; isDemo: boolean }
             cur.max = Math.max(cur.max, e.main.temp_max)
           }
         }
-        const mapped: ForecastDay[] = [...byDay.values()].slice(0, 6).map((v, i) => ({ date: i === 0 ? 'Hoy' : i === 1 ? 'Mañana' : `D+${i}`, tempMin: Math.round(v.min), tempMax: Math.round(v.max), condition: v.cond, icon: v.icon }))
+        const mapped: ForecastDay[] = [...byDay.entries()].slice(0, 6).map(([date, v]) => ({ date, tempMin: Math.round(v.min), tempMax: Math.round(v.max), condition: v.cond, icon: v.icon }))
         if (mapped.length >= 5) { saveCache(mapped); return { data: mapped, isDemo: false } }
       } catch { /* fallback to mock */ }
     }
