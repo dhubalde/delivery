@@ -61,19 +61,19 @@ function owmIconToMdi(icon: string): string {
 const LS_KEY = 'ice-zone-forecast'
 const TTL = INTERVALS.WEATHER
 
-function loadCache(): { at: number; data: ForecastDay[] } | null {
+function loadCache(): { at: number; data: ForecastDay[]; isDemo: boolean } | null {
   try {
     const raw = localStorage.getItem(LS_KEY)
     if (!raw) return null
-    const parsed = JSON.parse(raw) as { at: number; data: ForecastDay[] }
+    const parsed = JSON.parse(raw) as { at: number; data: ForecastDay[]; isDemo?: boolean }
     if (Date.now() - parsed.at > TTL) return null
     if (!Array.isArray(parsed.data) || parsed.data.length < 5) return null
-    return parsed
+    return { at: parsed.at, data: parsed.data, isDemo: parsed.isDemo ?? true }
   } catch { return null }
 }
 
-function saveCache(data: ForecastDay[]) {
-  try { localStorage.setItem(LS_KEY, JSON.stringify({ at: Date.now(), data })) } catch { /* ignore */ }
+function saveCache(data: ForecastDay[], isDemo: boolean) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify({ at: Date.now(), data, isDemo })) } catch { /* ignore */ }
 }
 
 /**
@@ -84,7 +84,7 @@ function saveCache(data: ForecastDay[]) {
  */
 async function fetchForecast(): Promise<{ data: ForecastDay[]; isDemo: boolean }> {
   const cached = loadCache()
-  if (cached) return { data: cached.data, isDemo: true }
+  if (cached) return { data: cached.data, isDemo: cached.isDemo }
   try {
     const res = await api.get('/v1/weather/forecast', { params: { days: 6 } })
     const d = res.data as ForecastDay[] | { data?: ForecastDay[]; results?: ForecastDay[]; days?: ForecastDay[] }
@@ -93,7 +93,7 @@ async function fetchForecast(): Promise<{ data: ForecastDay[]; isDemo: boolean }
       const mapped: ForecastDay[] = arr.slice(0, 6).map((x: ForecastDay) => ({
         date: x.date, tempMin: Math.round(x.tempMin), tempMax: Math.round(x.tempMax), condition: x.condition, icon: x.icon || 'mdi-weather-cloudy',
       }))
-      saveCache(mapped)
+      saveCache(mapped, false)
       return { data: mapped, isDemo: false }
     }
     throw new Error('invalid payload')
@@ -125,11 +125,11 @@ async function fetchForecast(): Promise<{ data: ForecastDay[]; isDemo: boolean }
           }
         }
         const mapped: ForecastDay[] = [...byDay.entries()].slice(0, 6).map(([date, v]) => ({ date, tempMin: Math.round(v.min), tempMax: Math.round(v.max), condition: v.cond, icon: v.icon }))
-        if (mapped.length >= 5) { saveCache(mapped); return { data: mapped, isDemo: false } }
+        if (mapped.length >= 5) { saveCache(mapped, false); return { data: mapped, isDemo: false } }
       } catch { /* fallback to mock */ }
     }
     const fallback = MOCK.length === 6 ? MOCK : genMockFallback()
-    saveCache(fallback)
+    saveCache(fallback, true)
     return { data: fallback, isDemo: true }
   }
 }

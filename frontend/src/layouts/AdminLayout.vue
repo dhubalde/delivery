@@ -20,7 +20,6 @@
     <v-banner v-if="ui.offline" color="warning" icon="mdi-wifi-off" class="text-caption">Sin conexión — modo offline</v-banner>
     <v-main>
       <v-container>
-        <WeatherWidget />
         <router-view />
       </v-container>
     </v-main>
@@ -32,7 +31,6 @@ import { onMounted, onUnmounted, reactive, watch } from 'vue'
 import { useTheme } from 'vuetify'
 import { useUiStore } from '@/stores/ui.store'
 import { useOffline } from '@/composables/useOffline'
-import WeatherWidget from '@/components/WeatherWidget.vue'
 const ui = useUiStore()
 const theme = useTheme()
 watch(() => ui.theme, (v) => { theme.global.name.value = v }, { immediate: true })
