@@ -8,9 +8,10 @@
     </div>
     <v-divider class="my-3" />
     <div class="ticket-body">
-      <div class="row"><span>EFECTIVO</span><strong>${{ totals.EFECTIVO }}</strong></div>
-      <div class="row"><span>BILLETERAS VIRTUALES</span><strong>${{ totals.BILLETERAS_VIRTUALES }}</strong></div>
-      <div class="row"><span>TARJETAS</span><strong>${{ totals.TARJETAS }}</strong></div>
+      <div class="row"><span>EFECTIVO</span><strong>${{ fmt(totals.EFECTIVO) }}</strong></div>
+      <div class="row"><span>BILLETERAS VIRTUALES</span><strong>${{ fmt(totals.BILLETERAS_VIRTUALES) }}</strong></div>
+      <div class="row"><span>TARJETAS</span><strong>${{ fmt(totals.TARJETAS) }}</strong></div>
+      <div class="row total"><span>TOTAL</span><strong>${{ totalImporte }}</strong></div>
       <v-divider class="my-2" />
       <div class="row"><span>ENTREGADOS</span><strong>{{ totals.TOTAL_ENTREGADOS }}</strong></div>
       <div class="row"><span>RECHAZADOS</span><strong>{{ totals.TOTAL_RECHAZADOS }}</strong></div>
@@ -24,12 +25,15 @@
 import { computed } from 'vue'
 const props = defineProps<{ ticket: Record<string,unknown> }>()
 const totals = computed(()=> (props.ticket?.totals as Record<string,unknown> ?? {}) as { EFECTIVO:string; BILLETERAS_VIRTUALES:string; TARJETAS:string; TOTAL_ENTREGADOS:number; TOTAL_RECHAZADOS:number })
+const fmt = (v: unknown) => Number.parseFloat(String(v ?? 0)).toFixed(2)
+const totalImporte = computed(()=> (Number.parseFloat(String(totals.value.EFECTIVO ?? 0)) + Number.parseFloat(String(totals.value.BILLETERAS_VIRTUALES ?? 0)) + Number.parseFloat(String(totals.value.TARJETAS ?? 0))).toFixed(2))
 const now = new Date().toLocaleString('es-AR')
 </script>
 <style scoped>
 .ticket { font-family: monospace; max-width: 320px; margin: 0 auto; padding: 16px; border: 1px dashed #999; background: white; }
 .ticket-header h3 { margin:0 0 4px 0; font-size: 14px; }
 .row { display:flex; justify-content:space-between; padding:4px 0; font-size: 13px; }
+.row.total { font-weight: 700; border-top: 2px solid #000; margin-top: 4px; padding-top: 8px; }
 @media print {
   :global(body * ) { visibility: hidden; }
   #printable-ticket, #printable-ticket * { visibility: visible; }

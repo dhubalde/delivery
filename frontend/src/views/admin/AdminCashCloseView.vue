@@ -24,9 +24,6 @@
           <v-btn v-if="ticket" variant="text" prepend-icon="mdi-printer-outline" :text="alreadyClosed ? 'Reimprimir directo' : 'Imprimir directo'" @click="doPrint" />
         </v-card-actions>
       </v-card>
-      <v-card v-if="ticket" title="Ticket payload (JSONB)" class="mb-4">
-        <v-card-text><pre style="white-space:pre-wrap;word-break:break-all">{{ JSON.stringify(ticket, null, 2) }}</pre></v-card-text>
-      </v-card>
     </template>
     <v-dialog v-model="showTicket" max-width="420">
       <v-card>
