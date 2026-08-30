@@ -15,6 +15,7 @@ class ProductSerializer(serializers.ModelSerializer):
     min_flavors = serializers.IntegerField(required=False, allow_null=True)
     max_flavors = serializers.IntegerField(required=False, allow_null=True)
     pote_size = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    image = serializers.ImageField(required=False, allow_null=True, write_only=True)
 
     class Meta:
         model = Product
@@ -29,9 +30,21 @@ class ProductSerializer(serializers.ModelSerializer):
             "min_flavors",
             "max_flavors",
             "image_url",
+            "image",
             "is_active",
         ]
         read_only_fields = ["id"]
+
+    def to_internal_value(self, data):
+        mutable = data.copy() if hasattr(data, "copy") else dict(data)
+        for k in ("min_flavors", "max_flavors", "category_id"):
+            if k in mutable and mutable[k] == "":
+                mutable[k] = None
+        if "pote_size" in mutable and mutable["pote_size"] == "":
+            mutable["pote_size"] = None
+        if "image_url" in mutable and mutable["image_url"] == "":
+            mutable["image_url"] = None
+        return super().to_internal_value(mutable)
 
     def validate(self, attrs):
         ptype = attrs.get("product_type", getattr(self.instance, "product_type", None))
@@ -67,6 +80,19 @@ class ProductSerializer(serializers.ModelSerializer):
             if not qs.exists() and not CatModel.all_objects.filter(pk=attrs["category_id"]).exists():
                 raise serializers.ValidationError({"category_id": "Category does not exist."})
         return attrs
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if getattr(instance, "image", None) and getattr(instance.image, "name", None):
+            request = self.context.get("request")
+            try:
+                url = instance.image.url
+                if request is not None:
+                    url = request.build_absolute_uri(url)
+                data["image_url"] = url
+            except Exception:
+                pass
+        return data
 
 
 class FlavorSerializer(serializers.ModelSerializer):

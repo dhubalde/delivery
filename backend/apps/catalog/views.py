@@ -1,4 +1,5 @@
 from rest_framework import generics, permissions
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 
 from apps.catalog.models import Category, Flavor, Product
 from apps.catalog.serializers import CategorySerializer, FlavorSerializer, ProductSerializer
@@ -72,6 +73,7 @@ class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
 class ProductListCreateView(generics.ListCreateAPIView):
     serializer_class = ProductSerializer
     permission_classes = [permissions.AllowAny]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
         qs = Product.objects.all().order_by("name")
@@ -117,6 +119,7 @@ ProductListView = ProductListCreateView
 class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ProductSerializer
     permission_classes = [permissions.AllowAny]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
         qs = Product.objects.all()

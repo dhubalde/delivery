@@ -5,3 +5,4 @@ psycopg2-binary>=2.9
 pytest>=8.0
 pytest-django>=4.8
 factory_boy>=3.3
+Pillow>=11.0

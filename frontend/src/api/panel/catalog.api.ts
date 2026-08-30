@@ -12,8 +12,8 @@ export const catalogApi = {
   },
   products: {
     list: async (p?: { category?: number; search?: string }) => unwrap((await api.get('/v1/products/', { params: p })).data) as Product[],
-    create: async (b: Partial<Product>) => (await api.post('/v1/products/', b)).data as Product,
-    update: async (id: number, b: Partial<Product>) => (await api.put(`/v1/products/${id}/`, b)).data as Product,
+    create: async (b: Partial<Product> | FormData) => (await api.post('/v1/products/', b)).data as Product,
+    update: async (id: number, b: Partial<Product> | FormData) => (await api.put(`/v1/products/${id}/`, b)).data as Product,
     remove: async (id: number) => (await api.delete(`/v1/products/${id}/`)).data,
   },
   flavors: {

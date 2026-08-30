@@ -43,8 +43,9 @@
             <v-col><v-text-field v-model.number="form.max_flavors" label="Max gustos" type="number" density="compact" :error-messages="fieldErr('max_flavors')" /></v-col>
           </v-row>
           <v-text-field v-model="form.price" label="Precio *" prefix="$" density="compact" :error-messages="fieldErr('price')" />
-          <v-text-field v-model="form.image_url" label="Imagen URL" placeholder="https://..." density="compact" clearable :error-messages="fieldErr('image_url')" hint="URL de la foto del producto" persistent-hint />
-          <v-img v-if="form.image_url" :src="form.image_url" height="120" cover class="mt-2 rounded" style="border:1px solid #eee" />
+          <v-file-input v-model="form.imageFile" label="Foto (archivo)" accept="image/*" density="compact" clearable prepend-icon="" :error-messages="fieldErr('image')" hint="Subí una foto propia (JPG/PNG). Si no elegís archivo, se usa la URL." persistent-hint @update:model-value="onFileChange" />
+          <v-text-field v-model="form.image_url" label="Imagen URL (fallback)" placeholder="https://..." density="compact" clearable :error-messages="fieldErr('image_url')" hint="URL alternativa si no subís archivo" persistent-hint />
+          <v-img v-if="previewSrc" :src="previewSrc" height="120" cover class="mt-2 rounded" style="border:1px solid #eee" />
           <v-alert v-if="poteHint" type="info" density="compact" class="mt-2">{{ poteHint }}</v-alert>
           <v-alert v-if="formError" type="error" density="compact" class="mt-2">{{ formError }}</v-alert>
         </v-card-text>
@@ -63,6 +64,8 @@ import { qk } from '@/queries/keys'
 import { hint } from '@/utils/flavorPolicy'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { useConfirm, toast } from '@/composables/useConfirm'
+import { catalogApi } from '@/api/panel/catalog.api'
+import { useQueryClient } from '@tanstack/vue-query'
 const auth = useAuthStore(); const isAdmin = computed(()=>hasAnyRole(auth.roles,['ADMIN']))
 const { data: cats } = useAdminCategories()
 const catItems = computed(()=>((cats.value as {id:number;name:string}[])??[]).map(c=>({ title:c.name, value:c.id })))
@@ -74,16 +77,20 @@ const list = computed(()=>(data.value as {id:number;name:string;product_type:str
 function flavorHint(p: {min_flavors:number|null;max_flavors:number|null}): string { if(p.min_flavors==null||p.max_flavors==null) return 'sin gustos'; return p.min_flavors===p.max_flavors ? `${p.min_flavors} gustos` : `${p.min_flavors} a ${p.max_flavors} gustos` }
 const isForbidden = computed(()=>(error.value as { response?:{status?:number}})?.response?.status===403)
 const dlg=ref(false); const editing=ref<number|null>(null); const saving=ref(false)
-const form=reactive({ name:'', category_id: null as number|null, product_type:'POTE' as 'POTE'|'UNIT', pote_size:'KG_1' as 'KG_1'|'KG_HALF'|'KG_QUARTER'|null, has_flavors:true, min_flavors:1 as number|null, max_flavors:4 as number|null, price:'' , image_url:'' as string })
+const form=reactive({ name:'', category_id: null as number|null, product_type:'POTE' as 'POTE'|'UNIT', pote_size:'KG_1' as 'KG_1'|'KG_HALF'|'KG_QUARTER'|null, has_flavors:true, min_flavors:1 as number|null, max_flavors:4 as number|null, price:'' , image_url:'' as string, imageFile: null as File | File[] | null })
+const filePreview = ref<string | null>(null)
+const previewSrc = computed(()=> filePreview.value || form.image_url || null)
+function onFileChange(v: File | File[] | null){ const f = Array.isArray(v) ? v[0] ?? null : v; if(f){ if(filePreview.value) URL.revokeObjectURL(filePreview.value); filePreview.value = URL.createObjectURL(f); form.imageFile = f as unknown as File } else { if(filePreview.value) URL.revokeObjectURL(filePreview.value); filePreview.value = null; form.imageFile = null } }
 const details=ref<Record<string,string>>({}); const formError=ref('')
 const fieldErr=(k:string)=>details.value[k]??''
 const poteHint=computed(()=> form.has_flavors ? hint(form.pote_size, form.product_type) : '')
+const qc = useQueryClient()
 const createM=useCreateProduct(qkRef.value as never); const updateM=useUpdateProduct(qkRef.value as never); const deleteM=useDeleteProduct(qkRef.value as never)
 watch(()=>form.has_flavors, (v)=>{ if(v && (form.min_flavors==null || form.max_flavors==null)){ if(form.pote_size==='KG_QUARTER'){ form.min_flavors=1; form.max_flavors=3 } else { form.min_flavors=1; form.max_flavors=4 } } })
 watch(()=>form.pote_size, (v)=>{ if(!form.has_flavors) return; if(v==='KG_QUARTER' && form.min_flavors===3 && form.max_flavors===4){ form.min_flavors=1; form.max_flavors=3 } })
 watch(()=>form.product_type, (v)=>{ if(v==='UNIT'){ form.pote_size=null } else if(v==='POTE' && !form.pote_size){ form.pote_size='KG_1' } })
-function openCreate(){ editing.value=null; Object.assign(form,{ name:'', category_id:null, product_type:'POTE', pote_size:'KG_1', has_flavors:true, min_flavors:1, max_flavors:4, price:'', image_url:'' }); details.value={}; formError.value=''; dlg.value=true }
-function openEdit(p: {id:number;name:string;category_id:number;product_type:'POTE'|'UNIT';pote_size:'KG_1'|'KG_HALF'|'KG_QUARTER'|null;min_flavors:number|null;max_flavors:number|null;price:string;image_url?:string|null}){ const has = p.min_flavors!=null && p.max_flavors!=null; editing.value=p.id; Object.assign(form,{ name:p.name, category_id:p.category_id, product_type:p.product_type, pote_size:p.pote_size, has_flavors:has, min_flavors:p.min_flavors ?? 1, max_flavors:p.max_flavors ?? 4, price:p.price, image_url:p.image_url ?? '' }); details.value={}; formError.value=''; dlg.value=true }
+function openCreate(){ editing.value=null; if(filePreview.value) URL.revokeObjectURL(filePreview.value); filePreview.value=null; Object.assign(form,{ name:'', category_id:null, product_type:'POTE', pote_size:'KG_1', has_flavors:true, min_flavors:1, max_flavors:4, price:'', image_url:'', imageFile:null }); details.value={}; formError.value=''; dlg.value=true }
+function openEdit(p: {id:number;name:string;category_id:number;product_type:'POTE'|'UNIT';pote_size:'KG_1'|'KG_HALF'|'KG_QUARTER'|null;min_flavors:number|null;max_flavors:number|null;price:string;image_url?:string|null}){ const has = p.min_flavors!=null && p.max_flavors!=null; editing.value=p.id; if(filePreview.value) URL.revokeObjectURL(filePreview.value); filePreview.value=null; Object.assign(form,{ name:p.name, category_id:p.category_id, product_type:p.product_type, pote_size:p.pote_size, has_flavors:has, min_flavors:p.min_flavors ?? 1, max_flavors:p.max_flavors ?? 4, price:p.price, image_url:p.image_url ?? '', imageFile:null }); details.value={}; formError.value=''; dlg.value=true }
 function validatePote(): string|null{
   if(form.product_type==='UNIT'){ if(form.pote_size) return 'UNIT no permite pote_size'; if(form.has_flavors){ if(form.min_flavors==null || form.max_flavors==null) return 'Min/max requeridos cuando tiene gustos'; if(form.min_flavors<1 || form.max_flavors>4 || form.min_flavors>form.max_flavors) return 'Requiere 1 <= min <= max <= 4' } return null }
   if(!form.pote_size) return 'Tamaño requerido para POTE'
@@ -97,6 +104,26 @@ async function save(){
   if(!form.category_id){ details.value={...details.value, category_id:'Elegí una categoría'}; return }
   if(!form.name.trim() || !form.price){ details.value={ ...(!form.name.trim()?{name:'Nombre requerido'}:{}), ...(!form.price?{price:'Precio requerido'}:{}) }; return }
   saving.value=true; details.value={}; formError.value=''
+  const file = Array.isArray(form.imageFile) ? (form.imageFile[0] ?? null) : (form.imageFile as File | null)
+  if(file){
+    const fd = new FormData()
+    fd.append('name', form.name)
+    fd.append('category_id', String(form.category_id))
+    fd.append('product_type', form.product_type)
+    if(form.product_type==='UNIT') fd.append('pote_size', '')
+    else if(form.pote_size) fd.append('pote_size', form.pote_size)
+    else fd.append('pote_size', '')
+    if(form.has_flavors){ fd.append('min_flavors', String(form.min_flavors)); fd.append('max_flavors', String(form.max_flavors)) }
+    else { fd.append('min_flavors', ''); fd.append('max_flavors', '') }
+    fd.append('price', String(form.price))
+    if(form.image_url?.trim()) fd.append('image_url', form.image_url.trim())
+    else fd.append('image_url', '')
+    fd.append('image', file)
+    try{ if(editing.value) await catalogApi.products.update(editing.value, fd); else await catalogApi.products.create(fd); qc.invalidateQueries({ queryKey: qkRef.value as never }); dlg.value=false }
+    catch(e: unknown){ const d=errDetails(e); if(Object.keys(d).length) details.value=d as Record<string,string>; else formError.value=(e as {response?:{data?:{error?:{message?:string}}}})?.response?.data?.error?.message ?? 'Error al guardar' }
+    finally{ saving.value=false }
+    return
+  }
   const payload: Record<string,unknown>={ name:form.name, category_id:form.category_id, product_type:form.product_type, pote_size: form.product_type==='UNIT'?null:form.pote_size, min_flavors: form.has_flavors?form.min_flavors:null, max_flavors: form.has_flavors?form.max_flavors:null, price:form.price, image_url: form.image_url?.trim() || null }
   try{ if(editing.value) await updateM.mutateAsync({ id:editing.value, ...payload } as never); else await createM.mutateAsync(payload as never); dlg.value=false }
   catch(e: unknown){ const d=errDetails(e); if(Object.keys(d).length) details.value=d as Record<string,string>; else formError.value=(e as {response?:{data?:{error?:{message?:string}}}})?.response?.data?.error?.message ?? 'Error al guardar' }
