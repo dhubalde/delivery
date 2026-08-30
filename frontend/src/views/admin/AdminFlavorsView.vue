@@ -12,14 +12,22 @@
     <v-alert v-if="isForbidden" type="error" class="mb-2">403 — ADMIN requerido</v-alert>
     <v-skeleton-loader v-if="isLoading" type="list-item@3" />
     <v-alert v-else-if="!list.length" type="info">Sin sabores — creá el primero</v-alert>
-    <v-list v-else>
-      <v-list-item v-for="f in list" :key="f.id" :title="f.name" :subtitle="catName(f.category_id)">
-        <template #append>
-          <v-btn size="small" variant="text" :disabled="!isAdmin" @click="openEdit(f)">Editar</v-btn>
-          <v-btn size="small" variant="text" color="error" :disabled="!isAdmin" @click="remove(f.id)">Eliminar</v-btn>
-        </template>
-      </v-list-item>
-    </v-list>
+    <template v-else>
+      <div class="d-flex align-center px-4 py-1 text-caption text-medium-emphasis">
+        <span style="flex:1">Nombre</span>
+        <span style="flex:1">Categoría</span>
+        <span style="width:150px" class="text-right">Acciones</span>
+      </div>
+      <v-divider />
+      <v-list density="compact" lines="one">
+        <v-list-item v-for="f in list" :key="f.id" density="compact" lines="one" :title="f.name" :subtitle="catName(f.category_id)">
+          <template #append>
+            <v-btn size="small" variant="text" :disabled="!isAdmin" @click="openEdit(f)">Editar</v-btn>
+            <v-btn size="small" variant="text" color="error" :disabled="!isAdmin" @click="remove(f.id)">Eliminar</v-btn>
+          </template>
+        </v-list-item>
+      </v-list>
+    </template>
     <v-dialog v-model="dlg" max-width="480">
       <v-card :title="editing ? 'Editar sabor' : 'Nuevo sabor'">
         <v-card-text>

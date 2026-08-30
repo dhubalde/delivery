@@ -12,14 +12,22 @@
     <v-alert v-if="isForbidden" type="error" class="mb-2">403 — ADMIN requerido</v-alert>
     <v-skeleton-loader v-if="isLoading" type="list-item@3" />
     <v-alert v-else-if="!list.length" type="info">Sin productos — ajustá filtros o creá uno</v-alert>
-    <v-list v-else density="compact">
-      <v-list-item v-for="p in list" :key="p.id" density="compact" :title="`${p.name} — ${p.product_type} ${p.pote_size ? '(' + p.pote_size.replace('KG_1','1kg').replace('KG_HALF','1/2kg').replace('KG_QUARTER','1/4kg') + ')' : ''} — $${p.price}`" :subtitle="flavorHint(p)">
-        <template #append>
-          <v-btn size="small" variant="text" :disabled="!isAdmin" @click="openEdit(p as never)">Editar</v-btn>
-          <v-btn size="small" variant="text" color="error" :disabled="!isAdmin" @click="remove(p.id)">Eliminar</v-btn>
-        </template>
-      </v-list-item>
-    </v-list>
+    <template v-else>
+      <div class="d-flex align-center px-4 py-1 text-caption text-medium-emphasis">
+        <span style="flex:1">Nombre — Tipo — Precio</span>
+        <span style="width:130px" class="text-center">Gustos</span>
+        <span style="width:150px" class="text-right">Acciones</span>
+      </div>
+      <v-divider />
+      <v-list density="compact" lines="one">
+        <v-list-item v-for="p in list" :key="p.id" density="compact" lines="one" :title="`${p.name} — ${p.product_type} ${p.pote_size ? '(' + p.pote_size.replace('KG_1','1kg').replace('KG_HALF','1/2kg').replace('KG_QUARTER','1/4kg') + ')' : ''} — $${p.price}`" :subtitle="flavorHint(p)">
+          <template #append>
+            <v-btn size="small" variant="text" :disabled="!isAdmin" @click="openEdit(p as never)">Editar</v-btn>
+            <v-btn size="small" variant="text" color="error" :disabled="!isAdmin" @click="remove(p.id)">Eliminar</v-btn>
+          </template>
+        </v-list-item>
+      </v-list>
+    </template>
     <v-dialog v-model="dlg" max-width="520">
       <v-card :title="editing ? 'Editar producto' : 'Nuevo producto'">
         <v-card-text>

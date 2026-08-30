@@ -8,14 +8,23 @@
     <v-alert v-if="isError && isForbidden" type="error">403 — Permiso denegado (ADMIN requerido)</v-alert>
     <v-skeleton-loader v-if="isLoading" type="list-item@3" />
     <v-alert v-else-if="!list.length" type="info">Sin categorías — creá la primera</v-alert>
-    <v-list v-else>
-      <v-list-item v-for="c in list" :key="c.id" :title="c.name" :subtitle="`#${c.position} · ${c.is_active ? 'Activa' : 'Inactiva'}`">
-        <template #append>
-          <v-btn size="small" variant="text" :disabled="!isAdmin" @click="openEdit(c)">Editar</v-btn>
-          <v-btn size="small" variant="text" color="error" :disabled="!isAdmin" @click="remove(c.id)">Eliminar</v-btn>
-        </template>
-      </v-list-item>
-    </v-list>
+    <template v-else>
+      <div class="d-flex align-center px-4 py-1 text-caption text-medium-emphasis">
+        <span style="flex:1">Nombre</span>
+        <span style="width:60px" class="text-center">#</span>
+        <span style="width:80px" class="text-center">Estado</span>
+        <span style="width:150px" class="text-right">Acciones</span>
+      </div>
+      <v-divider />
+      <v-list density="compact" lines="one">
+        <v-list-item v-for="c in list" :key="c.id" density="compact" lines="one" :title="c.name" :subtitle="`#${c.position} · ${c.is_active ? 'Activa' : 'Inactiva'}`">
+          <template #append>
+            <v-btn size="small" variant="text" :disabled="!isAdmin" @click="openEdit(c)">Editar</v-btn>
+            <v-btn size="small" variant="text" color="error" :disabled="!isAdmin" @click="remove(c.id)">Eliminar</v-btn>
+          </template>
+        </v-list-item>
+      </v-list>
+    </template>
     <v-dialog v-model="dlg" max-width="480">
       <v-card :title="editing ? 'Editar categoría' : 'Nueva categoría'">
         <v-card-text>
