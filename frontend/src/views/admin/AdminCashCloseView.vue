@@ -20,8 +20,8 @@
         </v-card-text>
         <v-card-actions class="ga-2">
           <v-btn color="primary" :disabled="!isAdmin || alreadyClosed" :loading="closing" @click="doClose">Cerrar caja</v-btn>
-          <v-btn v-if="ticket" variant="outlined" prepend-icon="mdi-printer" @click="showTicket=true">Imprimir ticket</v-btn>
-          <v-btn v-if="ticket" variant="text" prepend-icon="mdi-printer-outline" @click="doPrint">Imprimir directo</v-btn>
+          <v-btn v-if="ticket" variant="outlined" prepend-icon="mdi-printer" :text="alreadyClosed ? 'Reimprimir ticket' : 'Imprimir ticket'" @click="showTicket=true" />
+          <v-btn v-if="ticket" variant="text" prepend-icon="mdi-printer-outline" :text="alreadyClosed ? 'Reimprimir directo' : 'Imprimir directo'" @click="doPrint" />
         </v-card-actions>
       </v-card>
       <v-card v-if="ticket" title="Ticket payload (JSONB)" class="mb-4">
@@ -32,7 +32,7 @@
       <v-card>
         <v-card-title class="d-flex justify-space-between align-center"><span>Ticket — cierre de caja</span><v-btn icon="mdi-close" variant="text" @click="showTicket=false" /></v-card-title>
         <v-card-text><CashTicket v-if="ticket" :ticket="ticket as Record<string,unknown>" /></v-card-text>
-        <v-card-actions><v-spacer /><v-btn variant="text" @click="showTicket=false">Cerrar</v-btn><v-btn color="primary" prepend-icon="mdi-printer" @click="doPrint">Imprimir</v-btn></v-card-actions>
+        <v-card-actions><v-spacer /><v-btn variant="text" @click="showTicket=false">Cerrar</v-btn><v-btn color="primary" prepend-icon="mdi-printer" :text="alreadyClosed ? 'Reimprimir' : 'Imprimir'" @click="doPrint" /></v-card-actions>
       </v-card>
     </v-dialog>
     <ConfirmDialog v-model="confirm.show.value" :title="confirm.title.value" :message="confirm.message.value" :confirm-text="confirm.confirmText.value" :cancel-text="confirm.cancelText.value" :confirm-color="confirm.confirmColor.value" icon="mdi-lock" @confirm="confirm.onConfirm" @cancel="confirm.onCancel" />
