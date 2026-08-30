@@ -12,8 +12,8 @@
     <v-alert v-if="isForbidden" type="error" class="mb-2">403 — ADMIN requerido</v-alert>
     <v-skeleton-loader v-if="isLoading" type="list-item@3" />
     <v-alert v-else-if="!list.length" type="info">Sin productos — ajustá filtros o creá uno</v-alert>
-    <v-list v-else>
-      <v-list-item v-for="p in list" :key="p.id" :title="p.name" :subtitle="`${p.product_type} ${p.pote_size ?? ''} $${p.price}`">
+    <v-list v-else density="compact">
+      <v-list-item v-for="p in list" :key="p.id" density="compact" :title="`${p.name} — ${p.product_type} ${p.pote_size ? '(' + p.pote_size.replace('KG_1','1kg').replace('KG_HALF','1/2kg').replace('KG_QUARTER','1/4kg') + ')' : ''} — $${p.price}`" :subtitle="flavorHint(p)">
         <template #append>
           <v-btn size="small" variant="text" :disabled="!isAdmin" @click="openEdit(p as never)">Editar</v-btn>
           <v-btn size="small" variant="text" color="error" :disabled="!isAdmin" @click="remove(p.id)">Eliminar</v-btn>
@@ -58,7 +58,8 @@ const poteSizeItems = [{ title: '1 kg', value: 'KG_1' }, { title: '1/2 kg', valu
 const fltCat = ref<number|undefined>(undefined); const search = ref('')
 const qkRef = computed(()=> qk.adminProducts({ category: fltCat.value, search: search.value || undefined }))
 const { data, isLoading, error } = useAdminProducts(fltCat as never, search as never)
-const list = computed(()=>(data.value as {id:number;name:string;product_type:string;pote_size:string|null;price:string}[])??[])
+const list = computed(()=>(data.value as {id:number;name:string;product_type:string;pote_size:string|null;price:string;min_flavors:number|null;max_flavors:number|null}[])??[])
+function flavorHint(p: {min_flavors:number|null;max_flavors:number|null}): string { if(p.min_flavors==null||p.max_flavors==null) return 'sin gustos'; return p.min_flavors===p.max_flavors ? `${p.min_flavors} gustos` : `${p.min_flavors} a ${p.max_flavors} gustos` }
 const isForbidden = computed(()=>(error.value as { response?:{status?:number}})?.response?.status===403)
 const dlg=ref(false); const editing=ref<number|null>(null); const saving=ref(false)
 const form=reactive({ name:'', category_id: null as number|null, product_type:'POTE' as 'POTE'|'UNIT', pote_size:'KG_1' as 'KG_1'|'KG_HALF'|'KG_QUARTER'|null, has_flavors:true, min_flavors:1 as number|null, max_flavors:4 as number|null, price:'' })
