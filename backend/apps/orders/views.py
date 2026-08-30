@@ -5,6 +5,8 @@ from django.db import transaction
 from django.db.models import Max
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+
+from apps.common.utils import get_business_date
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -152,7 +154,7 @@ class PublicOrderCreateView(APIView):
         pay_sum = sum(Decimal(str(p["amount"])) for p in payments)
         if pay_sum != total:
             return Response({"error": {"code": "VALIDATION_ERROR", "message": f"Payment amounts sum {pay_sum} != order total {total} (BR-PAY-05)", "details": {"payments": f"Payment amounts sum {pay_sum} != order total {total} (BR-PAY-05)"}}}, status=400)
-        today = timezone.localdate()
+        today = get_business_date()
         with transaction.atomic():
             max_code = Order.objects.filter(merchant=merchant, business_date=today).aggregate(m=Max("code"))["m"] or 0
             code = max_code + 1

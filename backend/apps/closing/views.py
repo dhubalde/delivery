@@ -2,6 +2,8 @@ from decimal import Decimal
 
 from django.db.models import Sum
 from django.utils import timezone
+
+from apps.common.utils import get_business_date
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -96,7 +98,7 @@ class CashCloseView(APIView):
         merchant = Merchant.objects.filter(pk=mid).first() or Merchant.all_objects.filter(pk=mid).first()
         if merchant is None:
             return Response({"error": {"code": "NOT_FOUND", "message": "Merchant not found"}}, status=404)
-        business_date = timezone.localdate()
+        business_date = get_business_date()
         closure = CashClosure.objects.filter(merchant=merchant, business_date=business_date).first()
         if closure is not None:
             return Response({
@@ -133,7 +135,7 @@ class CashCloseView(APIView):
         merchant = Merchant.objects.filter(pk=mid).first() or Merchant.all_objects.filter(pk=mid).first()
         if merchant is None:
             return Response({"error": {"code": "NOT_FOUND", "message": "Merchant not found"}}, status=404)
-        business_date = timezone.localdate()
+        business_date = get_business_date()
         cashier = _resolve_cashier(request, merchant.pk)
         try:
             closure = CashClosureService.close(merchant, business_date, cashier)
