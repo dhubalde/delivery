@@ -34,6 +34,30 @@ function genMockFallback(): ForecastDay[] {
   return conds
 }
 
+function owmIconToMdi(icon: string): string {
+  const map: Record<string, string> = {
+    '01d': 'mdi-weather-sunny',
+    '01n': 'mdi-weather-night',
+    '02d': 'mdi-weather-partly-cloudy',
+    '02n': 'mdi-weather-night-partly-cloudy',
+    '03d': 'mdi-weather-cloudy',
+    '03n': 'mdi-weather-cloudy',
+    '04d': 'mdi-weather-cloudy',
+    '04n': 'mdi-weather-cloudy',
+    '09d': 'mdi-weather-rainy',
+    '09n': 'mdi-weather-rainy',
+    '10d': 'mdi-weather-pouring',
+    '10n': 'mdi-weather-pouring',
+    '11d': 'mdi-weather-lightning',
+    '11n': 'mdi-weather-lightning',
+    '13d': 'mdi-weather-snowy',
+    '13n': 'mdi-weather-snowy',
+    '50d': 'mdi-weather-fog',
+    '50n': 'mdi-weather-fog',
+  }
+  return map[icon] ?? 'mdi-weather-cloudy'
+}
+
 const LS_KEY = 'ice-zone-forecast'
 const TTL = INTERVALS.WEATHER
 
@@ -54,6 +78,7 @@ function saveCache(data: ForecastDay[]) {
 /**
  * API chain: 1) GET /api/v1/weather/forecast?days=6 (backend propio) -> live
  *            2) OpenWeatherMap https://api.openweathermap.org/data/2.5/forecast con VITE_WEATHER_KEY -> live
+ *               Usa lat/lon si VITE_WEATHER_LAT/LON están seteados (-34.61,-58.38 CABA), sino q=VITE_WEATHER_CITY
  *            3) Mock local con fechas ISO (isoDate) -> demo
  */
 async function fetchForecast(): Promise<{ data: ForecastDay[]; isDemo: boolean }> {
@@ -75,13 +100,23 @@ async function fetchForecast(): Promise<{ data: ForecastDay[]; isDemo: boolean }
     const key = import.meta.env.VITE_WEATHER_KEY as string | undefined
     if (key) {
       try {
-        const res = await fetch(`https://api.openweathermap.org/data/2.5/forecast?cnt=40&units=metric&lang=es&appid=${key}&q=Buenos%20Aires,ar`)
+        const city = (import.meta.env.VITE_WEATHER_CITY as string | undefined) || 'Buenos Aires'
+        const lat = import.meta.env.VITE_WEATHER_LAT as string | undefined
+        const lon = import.meta.env.VITE_WEATHER_LON as string | undefined
+        const base = 'https://api.openweathermap.org/data/2.5/forecast'
+        const url = lat && lon
+          ? `${base}?lat=${lat}&lon=${lon}&units=metric&lang=es&appid=${key}`
+          : `${base}?q=${encodeURIComponent(city)}&units=metric&lang=es&appid=${key}`
+        const res = await fetch(url)
         if (!res.ok) throw new Error(String(res.status))
-        const j = await res.json() as { list: { dt_txt: string; main: { temp_min: number; temp_max: number }; weather: { main: string; icon: string }[] }[] }
+        const j = await res.json() as { list: { dt_txt: string; main: { temp_min: number; temp_max: number }; weather: { main: string; description: string; icon: string }[] }[] }
         const byDay = new Map<string, { min: number; max: number; cond: string; icon: string }>()
         for (const e of j.list) {
           const d = e.dt_txt.slice(0, 10)
-          if (!byDay.has(d)) byDay.set(d, { min: e.main.temp_min, max: e.main.temp_max, cond: e.weather[0]?.main ?? '', icon: 'mdi-weather-cloudy' })
+          const w = e.weather[0]
+          const cond = w?.description ? w.description.charAt(0).toUpperCase() + w.description.slice(1) : (w?.main ?? '')
+          const mdi = w?.icon ? owmIconToMdi(w.icon) : 'mdi-weather-cloudy'
+          if (!byDay.has(d)) byDay.set(d, { min: e.main.temp_min, max: e.main.temp_max, cond, icon: mdi })
           else {
             const cur = byDay.get(d)!
             cur.min = Math.min(cur.min, e.main.temp_min)
