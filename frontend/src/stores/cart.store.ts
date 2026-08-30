@@ -11,6 +11,7 @@ export const useCartStore = defineStore('cart', {
   actions: {
     canAdd(product: any, flavorIds: number[]): string | null {
       const n = flavorIds.length
+      if (n === 0) return null
       if (product.min_flavors != null && product.max_flavors != null) {
         const min = product.min_flavors as number, max = product.max_flavors as number
         if (n < min || n > max) return min === max ? `Elige ${min} gustos` : `Elige ${min} a ${max} gustos`
