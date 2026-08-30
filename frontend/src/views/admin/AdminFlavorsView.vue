@@ -13,14 +13,16 @@
     <v-skeleton-loader v-if="isLoading" type="list-item@3" />
     <v-alert v-else-if="!list.length" type="info">Sin sabores — creá el primero</v-alert>
     <template v-else>
-      <div class="d-flex align-center px-4 py-1 text-caption text-medium-emphasis">
-        <span style="flex:1">Nombre</span>
-        <span style="flex:1">Categoría</span>
-        <span style="width:150px" class="text-right">Acciones</span>
+      <div class="d-flex align-center flex-nowrap px-4 py-1 text-caption text-medium-emphasis" style="flex-wrap:nowrap">
+        <span style="flex:1; min-width:0" class="text-truncate">Nombre · Categoría</span>
+        <span style="width:150px; flex-shrink:0" class="text-right">Acciones</span>
       </div>
       <v-divider />
       <v-list density="compact" lines="one">
-        <v-list-item v-for="f in list" :key="f.id" density="compact" lines="one" :title="f.name" :subtitle="catName(f.category_id)">
+        <v-list-item v-for="f in list" :key="f.id" density="compact" class="py-1">
+          <template #default>
+            <div class="d-flex align-center flex-nowrap" style="flex:1; min-width:0; overflow:hidden"><span class="font-weight-medium text-truncate" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ f.name }}</span><span class="ml-2 text-caption text-medium-emphasis flex-shrink-0" style="white-space:nowrap">· {{ catName(f.category_id) }}</span></div>
+          </template>
           <template #append>
             <v-btn size="small" variant="text" :disabled="!isAdmin" @click="openEdit(f)">Editar</v-btn>
             <v-btn size="small" variant="text" color="error" :disabled="!isAdmin" @click="remove(f.id)">Eliminar</v-btn>
