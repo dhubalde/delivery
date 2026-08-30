@@ -1,15 +1,27 @@
 <template>
-  <v-card v-if="compact" :loading="pending" class="mb-1" density="compact" height="60">
-    <v-card-text class="py-1 px-2 d-flex flex-column justify-center" style="height: 60px; min-width: 0">
-      <div class="d-flex align-center text-caption font-weight-bold" style="min-width: 0; font-size: 12px; line-height: 1.2">
-        <span class="flex-shrink-0">#{{ order.code }} —&nbsp;</span>
-        <span class="text-truncate flex-1">{{ order.customer_name ?? order.customer ?? '—' }}</span>
-      </div>
-      <div class="text-caption text-medium-emphasis text-truncate" style="font-size: 11px; line-height: 1.2; white-space: nowrap">
-        <span v-if="hour">{{ hour }} · </span>${{ order.total }}
-      </div>
-    </v-card-text>
-  </v-card>
+  <v-tooltip v-if="compact" location="top" open-on-hover>
+    <template #activator="{ props: tipProps }">
+      <v-card v-bind="tipProps" :loading="pending" class="mb-1" density="compact" height="60">
+        <v-card-text class="py-1 px-2 d-flex flex-column justify-center" style="height: 60px; min-width: 0">
+          <div class="d-flex align-center text-caption font-weight-bold" style="min-width: 0; font-size: 12px; line-height: 1.2">
+            <span class="flex-shrink-0">#{{ order.code }} —&nbsp;</span>
+            <span class="text-truncate flex-1">{{ order.customer_name ?? order.customer ?? '—' }}</span>
+          </div>
+          <div class="text-caption text-medium-emphasis text-truncate" style="font-size: 11px; line-height: 1.2; white-space: nowrap">
+            <span v-if="hour">{{ hour }} · </span>${{ order.total }}
+          </div>
+        </v-card-text>
+      </v-card>
+    </template>
+    <div class="pa-1" style="min-width: 180px">
+      <div class="font-weight-bold">#{{ order.code }}</div>
+      <div>{{ order.customer_name ?? order.customer ?? '—' }}</div>
+      <div>Total ${{ order.total }}</div>
+      <div v-if="hour">Hora {{ hour }}</div>
+      <div v-if="orderAddress">{{ orderAddress }}</div>
+      <div v-if="orderPhone">{{ orderPhone }}</div>
+    </div>
+  </v-tooltip>
   <v-card v-else :loading="pending" class="mb-2" density="compact">
     <v-card-text class="pb-1">
       <div class="d-flex justify-space-between align-center">
@@ -36,7 +48,9 @@ import { useAuthStore } from '@/stores/auth.store'
 import { canAdvance, nextStateOf } from '@/utils/guards'
 import { useTransition } from '@/composables/useOrders'
 
-const props = defineProps<{ order: { id: number; code: string; state: string; fulfillment: string; cash_declared: boolean; total: string; payments: { method: string; status: string }[]; customer_name?: string; customer?: string; created_at?: string }; compact?: boolean }>()
+const props = defineProps<{ order: { id: number; code: string; state: string; fulfillment: string; cash_declared: boolean; total: string; payments: { method: string; status: string }[]; customer_name?: string; customer?: string; created_at?: string; address?: string; phone?: string; customer_address?: string; customer_phone?: string; delivery_address?: string }; compact?: boolean }>()
+const orderAddress = computed(() => (props.order as unknown as Record<string, string | undefined>).address ?? (props.order as unknown as Record<string, string | undefined>).customer_address ?? (props.order as unknown as Record<string, string | undefined>).delivery_address ?? '')
+const orderPhone = computed(() => (props.order as unknown as Record<string, string | undefined>).phone ?? (props.order as unknown as Record<string, string | undefined>).customer_phone ?? '')
 const auth = useAuthStore()
 const tr = useTransition()
 const hour = computed(() => {
