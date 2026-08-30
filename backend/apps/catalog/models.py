@@ -51,6 +51,7 @@ class Product(BaseModel):
     )
     min_flavors = models.SmallIntegerField(null=True, blank=True)
     max_flavors = models.SmallIntegerField(null=True, blank=True)
+    image_url = models.URLField(blank=True, null=True, max_length=500)
     is_active = models.BooleanField(default=True)
 
     class Meta:

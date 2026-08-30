@@ -2,6 +2,7 @@
   <v-card>
     <v-img :src="img" height="140" cover loading="lazy" />
     <v-card-title class="text-body-2" style="font-family:Comfortaa">{{ p.name }}</v-card-title>
+    <div v-if="weatherTag" class="px-4 pb-1"><v-chip :color="weatherTag.color" size="x-small" variant="tonal"><v-icon :icon="weatherTag.icon" size="12" start />{{ weatherTag.label }}</v-chip></div>
     <v-card-text v-if="needsFlavors" class="pb-0">
       <div class="text-caption text-center text-medium-emphasis">{{ hint }}</div>
     </v-card-text>
@@ -41,6 +42,8 @@ import { computed, ref } from 'vue'
 import { useCartStore } from '@/stores/cart.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { useFlavors } from '@/composables/useProducts'
+import { useForecast } from '@/composables/useForecast'
+import { getWeatherTag } from '@/utils/weatherTag'
 import { toast } from '@/composables/useConfirm'
 const props = defineProps<{ p: any }>()
 const cart = useCartStore()
@@ -78,6 +81,12 @@ const err = computed(() => {
 })
 const img = computed(() => props.p.image_url || `/placeholders/${pick()}.jpg`)
 function pick() { const m: Record<string, string> = { KG_1: 'pote-1kg', KG_HALF: 'pote-medio', KG_QUARTER: 'pote-cuarto' }; return m[props.p.pote_size] ?? 'pote-1kg' }
+const { days } = useForecast()
+const weatherTag = computed(() => {
+  const today = (days.value as any[])?.[0] as { tempMax: number; condition: string } | undefined
+  if (!today) return null
+  return getWeatherTag(today.tempMax, today.condition)
+})
 function onAddClick() {
   if (!needsFlavors.value) {
     try {

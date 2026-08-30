@@ -28,6 +28,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "pote_size",
             "min_flavors",
             "max_flavors",
+            "image_url",
             "is_active",
         ]
         read_only_fields = ["id"]
