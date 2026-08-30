@@ -17,8 +17,8 @@
           <v-chip v-if="tagFor(d)" :color="tagFor(d)!.color" size="x-small" variant="tonal" class="mt-1">{{ tagFor(d)!.label }}</v-chip>
         </v-card>
       </div>
-      <div v-if="isLoading" class="d-flex justify-center mt-2"><v-progress-circular indeterminate size="20" /></div>
-      <div v-if="isError" class="text-caption text-error mt-2">No se pudo cargar el pronóstico <v-btn size="x-small" variant="text" @click="() => refetch()">Reintentar</v-btn></div>
+      <div v-if="isLoading && days.length === 0" class="d-flex justify-center mt-2"><v-progress-circular indeterminate size="20" /></div>
+      <div v-if="isError" class="text-caption text-warning mt-2">Pronóstico demo — reintentando live <v-btn size="x-small" variant="text" @click="() => refetch()">Reintentar</v-btn></div>
     </v-card-text>
   </v-card>
 </template>

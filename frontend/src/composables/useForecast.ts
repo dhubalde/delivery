@@ -67,6 +67,7 @@ function loadCache(): { at: number; data: ForecastDay[] } | null {
     if (!raw) return null
     const parsed = JSON.parse(raw) as { at: number; data: ForecastDay[] }
     if (Date.now() - parsed.at > TTL) return null
+    if (!Array.isArray(parsed.data) || parsed.data.length < 5) return null
     return parsed
   } catch { return null }
 }
@@ -142,7 +143,10 @@ export function useForecast() {
     refetchInterval: TTL,
     retry: 1,
   })
-  const days = computed(() => q.data.value?.data ?? MOCK)
+  const days = computed(() => {
+    const d = q.data.value?.data
+    return d && Array.isArray(d) && d.length >= 5 ? d : MOCK
+  })
   const isDemo = computed(() => q.data.value?.isDemo ?? true)
   return { ...q, days, isDemo }
 }
