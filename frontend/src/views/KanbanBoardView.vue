@@ -5,6 +5,7 @@
       <v-text-field v-model="businessDate" type="date" density="compact" hide-details style="max-width: 180px" />
     </div>
     <v-alert v-if="isTodayClosed" type="info" class="mb-4">Caja cerrada — pedidos del día archivados</v-alert>
+    <WeatherForecast />
     <v-row v-if="!isTodayClosed">
       <v-col v-for="col in cols" :key="col.state" cols="12" md="2">
         <KanbanColumn :title="col.title" :color="col.color" :orders="boards[col.state].data.value ?? []" :is-loading="boards[col.state].isLoading.value" :is-error="boards[col.state].isError.value" :compact="col.state === 'ENTREGADO'" @retry="boards[col.state].refetch()" />
@@ -22,6 +23,7 @@ import { useOrdersBoard } from '@/composables/useOrders'
 import { useCashPreview } from '@/composables/useCashClose'
 import KanbanColumn from '@/components/KanbanColumn.vue'
 import KanbanTotalsCard from '@/components/KanbanTotalsCard.vue'
+import WeatherForecast from '@/components/WeatherForecast.vue'
 const today = new Date().toISOString().slice(0, 10)
 const businessDate = ref(today)
 const { data: cashData } = useCashPreview()
