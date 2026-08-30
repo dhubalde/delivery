@@ -22,7 +22,7 @@
     <v-card>
       <v-card-title class="text-body-1" style="font-family:Comfortaa">Elige tus gustos</v-card-title>
       <v-card-text>
-        <div class="text-caption text-center" :class="err ? 'text-error' : 'text-medium-emphasis'">{{ err || hint }}</div>
+        <div v-if="!err" class="text-caption text-center text-medium-emphasis">{{ hint }}</div>
         <v-chip-group v-model="selected" multiple column>
           <v-chip v-for="f in options" :key="f.id ?? f.name" :value="f.id ?? f.name" size="x-small" filter>{{ f.name }}</v-chip>
         </v-chip-group>

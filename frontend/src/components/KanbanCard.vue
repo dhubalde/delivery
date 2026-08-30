@@ -70,9 +70,24 @@ async function onAdvance() {
   try {
     await tr.mutateAsync({ id: props.order.id, to_state: to })
   } catch (e: unknown) {
-    const status = (e as { response?: { status?: number } })?.response?.status
-    if (status === 409) console.warn('[409] Estado ya cambió')
-    if (status === 403) console.warn('[403] Permiso denegado')
+    const response = (e as { response?: { status?: number; data?: { error?: { code?: string; message?: string } } } })?.response
+    const status = response?.status
+    const serverMsg = response?.data?.error?.message
+    if (status === 409) {
+      const msg = serverMsg || 'Estado ya cambió'
+      window.dispatchEvent(new CustomEvent('app:toast', { detail: { msg, type: 'warning' } }))
+      console.warn(`[409] ${msg}`)
+    } else if (status === 403) {
+      const msg = serverMsg || 'Permiso denegado'
+      window.dispatchEvent(new CustomEvent('app:toast', { detail: { msg, type: 'error' } }))
+      console.warn('[403] Permiso denegado')
+    } else if (status && status >= 500) {
+      const msg = serverMsg || 'Error de servidor'
+      window.dispatchEvent(new CustomEvent('app:toast', { detail: { msg, type: 'error' } }))
+      console.error(`[${status}] ${msg}`)
+    } else if (serverMsg) {
+      window.dispatchEvent(new CustomEvent('app:toast', { detail: { msg: serverMsg, type: 'error' } }))
+    }
   }
 }
 </script>

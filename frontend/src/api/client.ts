@@ -48,18 +48,23 @@ api.interceptors.response.use(
       return api(config)
     }
     if (status === 403) {
-      window.dispatchEvent(new CustomEvent('app:toast', { detail: { msg: 'Permiso denegado', type: 'error' } }))
+      const serverMsg = response?.data?.error?.message
+      const msg = serverMsg || 'Permiso denegado'
+      window.dispatchEvent(new CustomEvent('app:toast', { detail: { msg, type: 'error' } }))
       console.warn('[403]', response.data)
     }
     if (status === 409) {
       const code = response?.data?.error?.code
-      const msg = code === 'INVALID_TRANSITION' ? 'Transición no válida — refetch' : (code ?? 'Conflicto')
+      const serverMsg = response?.data?.error?.message
+      const msg = serverMsg || (code === 'INVALID_TRANSITION' ? 'Transición no válida — refetch' : (code ?? 'Conflicto'))
       window.dispatchEvent(new CustomEvent('app:toast', { detail: { msg, type: 'warning' } }))
       return Promise.reject(err)
     }
     if (status === 400 || status === 422) return Promise.reject(err)
     if (status >= 500) {
-      window.dispatchEvent(new CustomEvent('app:toast', { detail: { msg: 'Error del servidor — reintentando', type: 'error' } }))
+      const serverMsg = response?.data?.error?.message || response?.data?.detail || response?.data?.error || null
+      const msg = serverMsg ? String(serverMsg) : 'Error de servidor'
+      window.dispatchEvent(new CustomEvent('app:toast', { detail: { msg, type: 'error' } }))
       console.error('[500]', response.data)
     }
     if (!response && err.code === 'ERR_NETWORK') {

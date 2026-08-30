@@ -1,6 +1,5 @@
 from django.db import transaction
 
-from apps.common.utils import get_business_date
 from apps.orders.models import Order
 from apps.orders.state_machine import OrderStateMachine
 
@@ -17,8 +16,7 @@ class OrderService:
 
             PaymentService.validate_for_logistics(order)
         order.state = to_state
-        order.business_date = get_business_date()
-        order.save(update_fields=["state", "business_date", "updated_at"])
+        order.save(update_fields=["state", "updated_at"])
         from apps.audit.services import emit
 
         emit(

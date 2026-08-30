@@ -2,7 +2,7 @@ import hashlib
 from datetime import timedelta
 from decimal import Decimal
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Max
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -246,6 +246,8 @@ class OrderTransitionView(APIView):
             return Response({"error": {"code": "INVALID_TRANSITION", "message": str(e)}}, status=409)
         except Order.DoesNotExist:
             return Response({"error": {"code": "NOT_FOUND", "message": "Order not found"}}, status=404)
+        except IntegrityError as e:
+            return Response({"error": {"code": "CONFLICT", "message": f"Conflicto de datos: {str(e)}"}}, status=409)
         if to_state == Order.State.ENTREGADO:
             try:
                 pending_cash = Payment.objects.filter(order_id=updated.pk, method=Payment.Method.EFECTIVO, status=Payment.Status.PENDING)

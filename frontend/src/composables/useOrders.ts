@@ -51,13 +51,23 @@ export function useTransition() {
       if (ctx?.snapshots) {
         for (const [key, data] of ctx.snapshots as [readonly unknown[], unknown][]) qc.setQueryData(key as unknown[], data as never)
       }
-      const status = (err as { response?: { status?: number; data?: { error?: { code?: string; message?: string } } } })?.response?.status
-      const code = (err as { response?: { data?: { error?: { code?: string } } } })?.response?.data?.error?.code
+      const response = (err as { response?: { status?: number; data?: { error?: { code?: string; message?: string } } } })?.response
+      const status = response?.status
+      const code = response?.data?.error?.code
+      const serverMsg = response?.data?.error?.message
       if (status === 409) {
-        const msg = code === 'INVALID_TRANSITION' ? 'Estado ya cambió' : (code ?? 'Transición no válida')
+        const msg = serverMsg || (code === 'INVALID_TRANSITION' ? 'Estado ya cambió' : (code ?? 'Transición no válida'))
+        window.dispatchEvent(new CustomEvent('app:toast', { detail: { msg, type: 'warning' } }))
         console.warn(`[409] ${msg}`)
+      } else if (status === 403) {
+        const msg = serverMsg || 'Permiso denegado'
+        window.dispatchEvent(new CustomEvent('app:toast', { detail: { msg, type: 'error' } }))
+        console.warn('[403] Permiso denegado')
+      } else if (status && status >= 500) {
+        const msg = serverMsg || 'Error de servidor'
+        window.dispatchEvent(new CustomEvent('app:toast', { detail: { msg, type: 'error' } }))
+        console.error(`[${status}] ${msg}`)
       }
-      if (status === 403) console.warn('[403] Permiso denegado')
       if (status === 401) window.location.href = '/login'
     },
     onSettled: async (_data, _err, vars) => {
