@@ -1,11 +1,11 @@
 <template>
   <v-card v-if="compact" :loading="pending" class="mb-1" density="compact" height="60">
     <v-card-text class="py-1 px-2 d-flex flex-column justify-center" style="height: 60px; min-width: 0">
-      <div class="d-flex align-center text-body-2 font-weight-bold" style="min-width: 0">
+      <div class="d-flex align-center text-caption font-weight-bold" style="min-width: 0; font-size: 12px; line-height: 1.2">
         <span class="flex-shrink-0">#{{ order.code }} —&nbsp;</span>
         <span class="text-truncate flex-1">{{ order.customer_name ?? order.customer ?? '—' }}</span>
       </div>
-      <div class="text-caption text-medium-emphasis text-truncate">
+      <div class="text-caption text-medium-emphasis text-truncate" style="font-size: 11px; line-height: 1.2; white-space: nowrap">
         <span v-if="hour">{{ hour }} · </span>${{ order.total }}
       </div>
     </v-card-text>
