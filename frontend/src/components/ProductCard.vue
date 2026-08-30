@@ -2,16 +2,20 @@
   <v-card>
     <v-img :src="img" height="140" cover loading="lazy" />
     <v-card-title class="text-body-2" style="font-family:Comfortaa">{{ p.name }}</v-card-title>
-    <v-card-text>
+    <v-card-text v-if="needsFlavors" class="pb-0">
+      <div class="text-caption text-center text-medium-emphasis">{{ hint }}</div>
+    </v-card-text>
+    <v-card-actions class="d-flex align-center justify-space-between">
       <div class="d-flex align-center ga-2">
         <v-chip v-if="badge" size="x-small" color="primary">{{ badge }}</v-chip>
         <span class="font-weight-bold">${{ priceFormatted }}</span>
       </div>
-      <div v-if="needsFlavors" class="mt-2">
-        <div class="text-caption text-center text-medium-emphasis">{{ hint }}</div>
-      </div>
-    </v-card-text>
-    <v-card-actions><v-btn size="small" color="primary" :disabled="!p.is_active" @click="add">Agregar</v-btn></v-card-actions>
+      <v-tooltip text="Agregar al carrito" location="top">
+        <template #activator="{ props: tProps }">
+          <v-btn v-bind="tProps" icon size="small" color="primary" :disabled="!p.is_active" @click="add" aria-label="Agregar al carrito"><v-icon>mdi-plus</v-icon></v-btn>
+        </template>
+      </v-tooltip>
+    </v-card-actions>
   </v-card>
 </template>
 <script setup lang="ts">
