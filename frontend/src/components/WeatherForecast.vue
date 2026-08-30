@@ -1,7 +1,7 @@
 <template>
   <v-card class="mb-4" elevation="1" data-testid="weather-forecast">
     <v-card-title class="d-flex align-center justify-space-between text-subtitle-2">
-      <span><v-icon size="small" class="mr-1">mdi-weather-cloudy</v-icon>Pronostico</span>
+      <span><v-icon size="small" class="mr-1">mdi-weather-cloudy</v-icon>Pronóstico</span>
       <v-chip v-if="isDemo" size="x-small" color="secondary" variant="tonal">demo</v-chip>
       <v-chip v-else size="x-small" color="primary" variant="tonal">live</v-chip>
     </v-card-title>
