@@ -39,16 +39,26 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useCartStore } from '@/stores/cart.store'
+import { useAuthStore } from '@/stores/auth.store'
+import { useFlavors } from '@/composables/useProducts'
 import { toast } from '@/composables/useConfirm'
 const props = defineProps<{ p: any }>()
 const cart = useCartStore()
+const auth = useAuthStore()
+const slug = computed(() => auth.merchantSlug || 'ice-zone')
+const { data: flavorsData } = useFlavors(slug as any, computed(() => undefined), computed(() => undefined)) as any
 const dialog = ref(false)
 const selected = ref<any[]>([])
 const badge = computed(() => ({ KG_1: '1 kg', KG_HALF: '1/2 kg', KG_QUARTER: '1/4 kg' } as Record<string, string>)[props.p.pote_size] ?? null)
 const priceFormatted = computed(() => Number(props.p.price).toFixed(2))
 const options = computed(() => {
-  const f = props.p.flavors ?? props.p.flavor_names ?? ['Chocolate', 'Dulce de Leche', 'Frutilla', 'Vainilla']
-  return (f as any[]).map((x: any) => typeof x === 'string' ? { id: x, name: x } : { id: x.id ?? x.name, name: x.name ?? String(x) })
+  const pFlavors = props.p.flavors ?? props.p.flavor_names
+  if (Array.isArray(pFlavors) && pFlavors.length) {
+    return (pFlavors as any[]).map((x: any) => typeof x === 'string' ? { id: x, name: x } : { id: x.id ?? x.name, name: x.name ?? String(x) })
+  }
+  const fetched = (flavorsData.value as any[] | undefined) ?? []
+  if (fetched.length) return fetched.map((x: any) => ({ id: x.id, name: x.name }))
+  return [] as { id: any; name: string }[]
 })
 const needsFlavors = computed(() => {
   if (props.p.min_flavors == null || props.p.max_flavors == null) return false

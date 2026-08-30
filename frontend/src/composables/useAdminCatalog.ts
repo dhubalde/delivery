@@ -28,7 +28,7 @@ export function useCreateCategory() {
     mutationFn: catalogApi.categories.create as never,
     onMutate: async (v: object) => { await qc.cancelQueries({ queryKey: qk.adminCategories() }); const prev = qc.getQueryData(qk.adminCategories()); qc.setQueryData(qk.adminCategories(), (o: unknown) => [...((o as unknown[])??[]), { id: Date.now(), ...(v as object) }] as never); return { prev } },
     onError: (_e: unknown, _v: unknown, c: unknown) => (c as {prev:unknown})?.prev && qc.setQueryData(qk.adminCategories(), (c as {prev:unknown}).prev as never),
-    onSettled: () => qc.invalidateQueries({ queryKey: qk.adminCategories() }),
+    onSettled: () => { qc.invalidateQueries({ queryKey: qk.adminCategories() }); qc.invalidateQueries({ queryKey: ['categories'] }) },
   })
 }
 export function useUpdateCategory() {
@@ -37,7 +37,7 @@ export function useUpdateCategory() {
     mutationFn: (p: { id: number } & Record<string, unknown>) => catalogApi.categories.update(p.id, p) as never,
     onMutate: async (p: { id:number } & Record<string,unknown>) => { const { id, ...b } = p; await qc.cancelQueries({ queryKey: qk.adminCategories() }); const prev = qc.getQueryData(qk.adminCategories()); qc.setQueryData(qk.adminCategories(), (o: unknown) => ((o as unknown[])??[]).map((x: unknown) => (x as {id:number}).id===id ? { ...(x as object), ...b } as never : x as never) as never); return { prev } },
     onError: (_e: unknown,_v: unknown,c: unknown) => (c as {prev:unknown})?.prev && qc.setQueryData(qk.adminCategories(), (c as {prev:unknown}).prev as never),
-    onSettled: () => qc.invalidateQueries({ queryKey: qk.adminCategories() }),
+    onSettled: () => { qc.invalidateQueries({ queryKey: qk.adminCategories() }); qc.invalidateQueries({ queryKey: ['categories'] }) },
   })
 }
 export function useDeleteCategory() {
@@ -46,7 +46,7 @@ export function useDeleteCategory() {
     mutationFn: catalogApi.categories.remove as never,
     onMutate: async (id: number) => { await qc.cancelQueries({ queryKey: qk.adminCategories() }); const prev = qc.getQueryData(qk.adminCategories()); qc.setQueryData(qk.adminCategories(), (o: unknown) => ((o as unknown[])??[]).filter((x: unknown) => (x as {id:number}).id!==id) as never); return { prev } },
     onError: (_e: unknown,_v: unknown,c: unknown) => (c as {prev:unknown})?.prev && qc.setQueryData(qk.adminCategories(), (c as {prev:unknown}).prev as never),
-    onSettled: () => qc.invalidateQueries({ queryKey: qk.adminCategories() }),
+    onSettled: () => { qc.invalidateQueries({ queryKey: qk.adminCategories() }); qc.invalidateQueries({ queryKey: ['categories'] }) },
   })
 }
 export function useCreateProduct(k: readonly unknown[]) {
