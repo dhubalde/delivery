@@ -33,11 +33,11 @@ export function canAdvance(state: string, userRoles: string[], order?: { cash_de
   if (!hasAnyRole(userRoles, required)) return { ok: false, reason: `Requiere ${required.join(' o ')}` }
   if (state === 'PREPARACION' && !order?.cash_declared) return { ok: false, reason: 'Falta declarar efectivo' }
   if (state === 'FACTURACION') {
-    const hasConfirmed = (order?.payments ?? []).some((p) => p.status === 'CONFIRMED')
-    if (!hasConfirmed) return { ok: false, reason: 'Requiere al menos un pago CONFIRMED' }
-    if (order?.fulfillment === 'PICKUP') {
-      const cashConfirmed = (order?.payments ?? []).some((p) => p.method === 'EFECTIVO' && p.status === 'CONFIRMED')
-      if ((order?.payments ?? []).some((p) => p.method === 'EFECTIVO') && !cashConfirmed) return { ok: false, reason: 'Efectivo PICKUP debe estar CONFIRMED' }
+    const payments = order?.payments ?? []
+    const hasPayment = payments.length > 0
+    if (hasPayment) {
+      const hasAnyPayment = payments.some((p) => p.status === 'CONFIRMED' || p.status === 'PENDING')
+      if (!hasAnyPayment) return { ok: false, reason: 'Requiere al menos un pago' }
     }
   }
   return { ok: true, reason: '' }
