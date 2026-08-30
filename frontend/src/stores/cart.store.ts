@@ -10,7 +10,13 @@ export const useCartStore = defineStore('cart', {
   },
   actions: {
     canAdd(product: any, flavorIds: number[]): string | null {
-      return validate(product.pote_size ?? null, product.product_type, flavorIds.length)
+      const n = flavorIds.length
+      if (product.min_flavors != null && product.max_flavors != null) {
+        const min = product.min_flavors as number, max = product.max_flavors as number
+        if (n < min || n > max) return min === max ? `Elegí ${min} gustos` : `Elegí ${min} a ${max} gustos`
+        return null
+      }
+      return validate(product.pote_size ?? null, product.product_type, n)
     },
     add(product: any, flavorIds: number[], flavorNames: string[]) {
       const err = this.canAdd(product, flavorIds)

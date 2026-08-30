@@ -13,13 +13,13 @@
       </div>
       <div v-else class="mt-2"><v-chip v-for="f in flavors" :key="f" size="x-small" class="mr-1 mb-1">{{ f }}</v-chip></div>
     </v-card-text>
-    <v-card-actions><v-btn size="small" color="primary" :disabled="!!err || (needsFlavors && sel.length===0)" @click="add">Agregar</v-btn></v-card-actions>
+    <v-card-actions><v-btn size="small" color="primary" :disabled="!!err" @click="add">Agregar</v-btn></v-card-actions>
   </v-card>
 </template>
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useCartStore } from '@/stores/cart.store'
-import { hint as phint, validate } from '@/utils/flavorPolicy'
+import { hint as phint } from '@/utils/flavorPolicy'
 const props = defineProps<{ p: any }>()
 const cart = useCartStore()
 const sel = ref<any[]>([])
@@ -43,22 +43,15 @@ const hint = computed(()=> {
 })
 const err = computed(()=> {
   if (!needsFlavors.value) return null
-  if (props.p.min_flavors!=null && props.p.max_flavors!=null) {
-    const n=sel.value.length
-    if (n < props.p.min_flavors || n > props.p.max_flavors) return props.p.min_flavors===props.p.max_flavors ? `Elegí ${props.p.min_flavors} gustos` : `Elegí ${props.p.min_flavors} a ${props.p.max_flavors} gustos`
-    return null
-  }
-  return validate(props.p.pote_size, props.p.product_type, sel.value.length)
+  return cart.canAdd(props.p, sel.value as any)
 })
 const img = computed(() => props.p.image_url || `/placeholders/${pick()}.jpg`)
 function pick(){ const m:Record<string,string>={ KG_1:'pote-1kg', KG_HALF:'pote-medio', KG_QUARTER:'pote-cuarto' }; return m[props.p.pote_size] ?? 'pote-1kg' }
 function add(){
-  const ids = sel.value.map((v:any)=> typeof v==='string'? v : v)
-  const names = sel.value.map((v:any)=> typeof v==='string'? v : String(v))
-  const flavorIds = ids.map((x:any)=> typeof x==='number'? x : 0).filter(Boolean)
-  const idList = flavorIds.length? flavorIds : ids.map((_:any,i:number)=> i+1)
-  const nameList = options.value.filter((o:any)=> sel.value.includes(o.id ?? o.name)).map((o:any)=> o.name ?? o)
-  cart.add(props.p, idList.length? idList : sel.value as any, nameList.length? nameList : sel.value as any)
+  const flavorIds = sel.value.map((v:any,i:number)=> typeof v==='number' ? v : Number.isFinite(Number(v)) && String(v).trim()!=='' ? Number(v) : i+1)
+  const nameList = options.value.filter((o:any)=> sel.value.includes(o.id ?? o.name)).map((o:any)=> o.name ?? String(o))
+  const flavorNames = nameList.length ? nameList : sel.value.map((v:any)=> String(v))
+  cart.add(props.p, flavorIds as any, flavorNames as any)
   sel.value=[]
 }
 </script>
