@@ -31,7 +31,10 @@ export function canAdvance(state: string, userRoles: string[], order?: { cash_de
   if (!to) return { ok: false, reason: 'Estado terminal' }
   const required = requiredRolesFor(state, to)
   if (!hasAnyRole(userRoles, required)) return { ok: false, reason: `Requiere ${required.join(' o ')}` }
-  if (state === 'PREPARACION' && !order?.cash_declared) return { ok: false, reason: 'Falta declarar efectivo' }
+  if (state === 'PREPARACION' && !order?.cash_declared) {
+    const needsCash = (order?.payments ?? []).some((p) => p.method === 'EFECTIVO' && p.status !== 'CONFIRMED')
+    if (needsCash) return { ok: false, reason: 'Falta declarar efectivo' }
+  }
   if (state === 'FACTURACION') {
     const payments = order?.payments ?? []
     const hasPayment = payments.length > 0

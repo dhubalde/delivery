@@ -22,6 +22,15 @@ TRANSITIONS = {
 
 def _check_guard(order, guard):
     if guard == "cash_declared" and not order.cash_declared:
+        try:
+            payments = list(order.payments.all())
+        except Exception:
+            payments = []
+        needs_cash = any(getattr(p, "method", None) == "EFECTIVO" and getattr(p, "status", None) != "CONFIRMED" for p in payments)
+        if payments and not needs_cash:
+            return
+        if not payments:
+            return
         raise GuardViolationError("cash_declared required for PREPARACION -> FACTURACION")
 
 
