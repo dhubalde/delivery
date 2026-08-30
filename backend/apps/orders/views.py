@@ -1,4 +1,5 @@
 import hashlib
+from datetime import timedelta
 from decimal import Decimal
 
 from django.db import transaction
@@ -155,6 +156,15 @@ class PublicOrderCreateView(APIView):
         if pay_sum != total:
             return Response({"error": {"code": "VALIDATION_ERROR", "message": f"Payment amounts sum {pay_sum} != order total {total} (BR-PAY-05)", "details": {"payments": f"Payment amounts sum {pay_sum} != order total {total} (BR-PAY-05)"}}}, status=400)
         today = get_business_date()
+        try:
+            from apps.closing.models import CashClosure
+
+            for _ in range(7):
+                if not CashClosure.objects.filter(merchant=merchant, business_date=today).exists():
+                    break
+                today += timedelta(days=1)
+        except Exception:
+            pass
         with transaction.atomic():
             max_code = Order.objects.filter(merchant=merchant, business_date=today).aggregate(m=Max("code"))["m"] or 0
             code = max_code + 1
