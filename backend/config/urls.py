@@ -8,6 +8,7 @@ urlpatterns = [
     path("api/v1/", include("apps.tenancy.urls")),
     path("api/v1/", include("apps.delivery.urls")),
     path("api/v1/", include("apps.orders.urls")),
+    path("api/public/", include("apps.catalog.urls_public")),
     path("api/public/", include("apps.orders.urls_public")),
     path("api/public/<slug:slug>/orders", include("apps.orders.urls_public")),
     path("api/public/<slug:slug>/orders/", include("apps.orders.urls_public")),
