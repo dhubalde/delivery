@@ -23,7 +23,7 @@
         <template v-if="hasTarjeta">
           <v-divider class="my-3" />
           <div class="text-subtitle-2 mb-2">Datos de tarjeta (mock)</div>
-          <v-text-field v-model="cardNumber" label="Número de tarjeta *" density="compact" :error-messages="cardNumberErr" placeholder="4111 1111 1111 1111" class="mb-2" />
+          <v-text-field v-model="cardNumber" label="Número de tarjeta *" density="compact" :error-messages="cardNumberErr" placeholder="4111 1111 1111 1111" hint="Para probar usá 4111 1111 1111 1111" persistent-hint class="mb-2" />
           <div class="d-flex ga-2">
             <v-text-field v-model="cardExpiry" label="Vencimiento MM/AA *" density="compact" :error-messages="cardExpiryErr" placeholder="12/30" style="max-width:180px" />
             <v-text-field v-model="cardCvv" label="CVV *" density="compact" :error-messages="cardCvvErr" placeholder="123" style="max-width:120px" />
@@ -85,9 +85,18 @@ async function submit(){
   if(!address.value.trim()){ addressErr.value='Requerido'; hasErr=true }
   if(hasTarjeta.value){
     if(!cardNumber.value.trim()){ cardNumberErr.value='Requerido'; hasErr=true }
-    else if(cardNumber.value.replace(/\s/g,'').length < 13){ cardNumberErr.value='Número inválido'; hasErr=true }
+    else {
+      const digits = cardNumber.value.replace(/\s/g,'')
+      if(!/^\d+$/.test(digits)){ cardNumberErr.value='Solo números'; hasErr=true }
+      else if(digits.length < 12 || digits.length > 19){ cardNumberErr.value='Debe tener 12 a 19 dígitos'; hasErr=true }
+    }
     if(!cardExpiry.value.trim()){ cardExpiryErr.value='Requerido'; hasErr=true }
-    else if(!/^\d{2}\/\d{2}$/.test(cardExpiry.value.trim())){ cardExpiryErr.value='Formato MM/AA'; hasErr=true }
+    else if(!/^\d{2}\/\d{2,4}$/.test(cardExpiry.value.trim())){ cardExpiryErr.value='Formato MM/AA o MM/AAAA'; hasErr=true }
+    else {
+      const [mm] = cardExpiry.value.trim().split('/')
+      const m = Number(mm)
+      if(m < 1 || m > 12){ cardExpiryErr.value='Mes inválido (01-12)'; hasErr=true }
+    }
     if(!cardCvv.value.trim()){ cardCvvErr.value='Requerido'; hasErr=true }
     else if(!/^\d{3,4}$/.test(cardCvv.value.trim())){ cardCvvErr.value='CVV inválido'; hasErr=true }
   }
