@@ -234,5 +234,14 @@ class OrderTransitionView(APIView):
             return Response({"error": {"code": "INVALID_TRANSITION", "message": str(e)}}, status=409)
         except Order.DoesNotExist:
             return Response({"error": {"code": "NOT_FOUND", "message": "Order not found"}}, status=404)
+        if to_state == Order.State.ENTREGADO:
+            try:
+                pending_cash = Payment.objects.filter(order_id=updated.pk, method=Payment.Method.EFECTIVO, status=Payment.Status.PENDING)
+                for p in pending_cash:
+                    p.status = Payment.Status.CONFIRMED
+                    p.confirmed_at = timezone.now()
+                    p.save(update_fields=["status", "confirmed_at", "updated_at"])
+            except Exception:
+                pass
         updated = Order.objects.prefetch_related("items", "payments").get(pk=updated.pk)
         return Response(_serialize_order(updated))
