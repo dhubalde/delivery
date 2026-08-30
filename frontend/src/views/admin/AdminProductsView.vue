@@ -13,15 +13,15 @@
     <v-skeleton-loader v-if="isLoading" type="list-item@3" />
     <v-alert v-else-if="!list.length" type="info">Sin productos — ajustá filtros o creá uno</v-alert>
     <template v-else>
-      <div class="d-flex align-center flex-nowrap px-4 py-1 text-caption text-medium-emphasis" style="flex-wrap:nowrap; font-size:12px">
+      <div class="d-flex align-center flex-nowrap px-2 py-0 text-caption text-medium-emphasis" style="flex-wrap:nowrap; font-size:12px; min-height:36px; height:36px">
         <span style="flex:1; min-width:0; font-size:12px" class="text-truncate">Nombre — Tipo — Precio</span>
         <span style="width:150px; flex-shrink:0; font-size:12px" class="text-right">Acciones</span>
       </div>
       <v-divider />
       <v-list density="compact" lines="one">
-        <v-list-item v-for="p in list" :key="p.id" density="compact" class="py-1">
+        <v-list-item v-for="p in list" :key="p.id" density="compact" style="min-height:36px; height:36px" class="py-0 px-2">
           <template #default>
-            <div class="d-flex align-center flex-nowrap" style="flex:1; min-width:0; overflow:hidden"><span class="font-weight-medium text-truncate" style="font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ p.name }} — {{ p.product_type }}{{ p.pote_size ? ' (' + p.pote_size.replace('KG_1','1kg').replace('KG_HALF','1/2kg').replace('KG_QUARTER','1/4kg') + ')' : '' }} — ${{ p.price }}</span><span v-if="p.min_flavors!=null && p.max_flavors!=null" class="ml-2 text-caption text-medium-emphasis flex-shrink-0" style="font-size:12px; white-space:nowrap">· {{ p.min_flavors===p.max_flavors ? p.min_flavors + ' gustos' : p.min_flavors + ' a ' + p.max_flavors + ' gustos' }}</span><span v-else class="ml-2 text-caption text-medium-emphasis flex-shrink-0" style="font-size:12px; white-space:nowrap">· sin gustos</span></div>
+            <div class="d-flex align-center flex-nowrap" style="flex:1; min-width:0; overflow:hidden"><span class="font-weight-medium text-truncate" style="font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ p.name }} — {{ p.product_type }}{{ p.pote_size ? ' (' + p.pote_size.replace('KG_1','1kg').replace('KG_HALF','1/2kg').replace('KG_QUARTER','1/4kg') + ')' : '' }} — ${{ p.price }}</span><span v-if="p.min_flavors!=null && p.max_flavors!=null" class="ml-2 text-caption text-medium-emphasis flex-shrink-0" style="font-size:12px; white-space:nowrap">· {{ p.min_flavors===p.max_flavors ? p.min_flavors + ' gustos' : p.min_flavors + ' a ' + p.max_flavors + ' gustos' }}</span><span v-else class="ml-2 text-caption text-medium-emphasis flex-shrink-0" style="font-size:12px; white-space:nowrap">· sin gustos</span></div>
           </template>
           <template #append>
             <v-btn size="small" variant="text" :disabled="!isAdmin" @click="openEdit(p as never)">Editar</v-btn>

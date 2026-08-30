@@ -12,15 +12,15 @@
     <v-skeleton-loader v-if="isLoading" type="list-item@3" />
     <v-alert v-else-if="!list.length" type="info">Sin categorías — creá la primera</v-alert>
     <template v-else>
-      <div class="d-flex align-center flex-nowrap px-4 py-1 text-caption text-medium-emphasis" style="flex-wrap:nowrap; font-size:12px">
+      <div class="d-flex align-center flex-nowrap px-2 py-0 text-caption text-medium-emphasis" style="flex-wrap:nowrap; font-size:12px; min-height:36px; height:36px">
         <span style="flex:1; min-width:0; font-size:12px" class="text-truncate">Nombre</span>
         <span style="width:150px; flex-shrink:0; font-size:12px" class="text-right">Acciones</span>
       </div>
       <v-divider />
       <v-list density="compact" lines="one">
-        <v-list-item v-for="c in list" :key="c.id" density="compact" class="py-1">
+        <v-list-item v-for="c in list" :key="c.id" density="compact" style="min-height:36px; height:36px" class="py-0 px-2">
           <template #default>
-            <div class="d-flex align-center flex-nowrap" style="flex:1; min-width:0; overflow:hidden"><span class="font-weight-medium text-truncate" style="font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ c.name }}</span><span class="ml-2 text-caption text-medium-emphasis flex-shrink-0" style="font-size:12px; white-space:nowrap">#{{ c.position }} · {{ c.is_active ? 'Activa' : 'Inactiva' }}</span></div>
+            <div class="d-flex align-center flex-nowrap" style="flex:1; min-width:0; overflow:hidden"><span class="font-weight-medium text-truncate" style="font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ c.name }}</span><span class="ml-2 text-caption text-medium-emphasis flex-shrink-0" style="font-size:12px; white-space:nowrap">#{{ c.position }} · {{ c.is_active ? 'Activa' : 'Inactiva' }}</span></div>
           </template>
           <template #append>
             <v-btn size="small" variant="text" :disabled="!isAdmin" @click="openEdit(c)">Editar</v-btn>
