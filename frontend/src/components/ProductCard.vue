@@ -1,9 +1,10 @@
 <template>
-  <v-card>
+  <v-card style="height:260px; display:flex; flex-direction:column">
     <v-img :src="img" height="140" cover loading="lazy" />
     <v-card-title class="text-body-2" style="font-family:Comfortaa">{{ p.name }}</v-card-title>
-    <v-card-text v-if="needsFlavors" class="pb-0">
-      <div class="text-caption text-center text-medium-emphasis">{{ hint }}</div>
+    <v-card-text class="pb-0" style="min-height:24px; flex-grow:1">
+      <div v-if="needsFlavors" class="text-caption text-center text-medium-emphasis">{{ hint }}</div>
+      <div v-else style="min-height:16px"></div>
     </v-card-text>
     <v-card-actions class="d-flex align-center justify-space-between">
       <div class="d-flex align-center ga-2">

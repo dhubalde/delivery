@@ -1,6 +1,16 @@
+from django.http import QueryDict
+
 from rest_framework import serializers
+from rest_framework.fields import empty
 
 from apps.catalog.models import Category, Flavor, Product
+
+
+class PreserveBooleanField(serializers.BooleanField):
+    def get_value(self, dictionary):
+        if isinstance(dictionary, QueryDict) and self.field_name not in dictionary:
+            return empty
+        return super().get_value(dictionary)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -16,6 +26,7 @@ class ProductSerializer(serializers.ModelSerializer):
     max_flavors = serializers.IntegerField(required=False, allow_null=True)
     pote_size = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     image = serializers.ImageField(required=False, allow_null=True, write_only=True)
+    is_active = PreserveBooleanField(required=False)
 
     class Meta:
         model = Product
