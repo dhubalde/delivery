@@ -43,6 +43,7 @@ import { api } from '@/api/client'
 import { useCartStore } from '@/stores/cart.store'
 import { useMenu } from '@/composables/useMenu'
 import { useAuthStore } from '@/stores/auth.store'
+import { addMyOrderId } from '@/composables/useMyOrders'
 import ClosedBanner from '@/components/ClosedBanner.vue'
 const cart = useCartStore()
 const auth = useAuthStore()
@@ -109,7 +110,8 @@ async function submit(){
     if(hasTarjeta.value){
       body.card = { number: cardNumber.value.replace(/\s/g,''), expiry: cardExpiry.value.trim(), cvv: cardCvv.value.trim() }
     }
-    await api.post(`/public/${slug}/orders`, body, { headers: { 'Idempotency-Key': crypto.randomUUID() } })
+    const { data: created } = await api.post(`/public/${slug}/orders`, body, { headers: { 'Idempotency-Key': crypto.randomUUID() } }) as { data: { id: number } }
+    if (created && typeof created.id === 'number') addMyOrderId(created.id)
     cart.clear(); ok.value=true; setTimeout(()=>router.push('/'), 800)
   }catch(e:any){
     const d=e?.response?.data

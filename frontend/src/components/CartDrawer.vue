@@ -14,6 +14,7 @@
       </template>
     </v-card-text>
   </v-card>
+  <MyOrders />
 </template>
 <script setup lang="ts">
 import { computed } from 'vue'
@@ -21,6 +22,7 @@ import { useCartStore } from '@/stores/cart.store'
 import { useMenu } from '@/composables/useMenu'
 import { useAuthStore } from '@/stores/auth.store'
 import CartItem from '@/components/CartItem.vue'
+import MyOrders from '@/components/MyOrders.vue'
 defineProps<{ loading?: boolean; inlineError?: string | null }>()
 const cart = useCartStore()
 const auth = useAuthStore()
