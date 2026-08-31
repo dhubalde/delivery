@@ -13,8 +13,9 @@
             <v-col cols="6" md="2"><strong>EFECTIVO</strong><div>${{ totals.EFECTIVO }}</div></v-col>
             <v-col cols="6" md="2"><strong>BILLETERAS</strong><div>${{ totals.BILLETERAS_VIRTUALES }}</div></v-col>
             <v-col cols="6" md="2"><strong>TARJETAS</strong><div>${{ totals.TARJETAS }}</div></v-col>
-            <v-col cols="6" md="3"><strong>ENTREGADOS</strong><div>{{ totals.TOTAL_ENTREGADOS }}</div></v-col>
-            <v-col cols="6" md="3"><strong>RECHAZADOS</strong><div>{{ totals.TOTAL_RECHAZADOS }}</div></v-col>
+            <v-col cols="6" md="2"><strong>TOTAL</strong><div>${{ totals.TOTAL ?? totalImporte }}</div></v-col>
+            <v-col cols="6" md="2"><strong>ENTREGADOS</strong><div>{{ totals.TOTAL_ENTREGADOS }}</div></v-col>
+            <v-col cols="6" md="2"><strong>RECHAZADOS</strong><div>{{ totals.TOTAL_RECHAZADOS }}</div></v-col>
           </v-row>
           <v-alert v-if="closeErr" type="error" density="compact" class="mt-4">{{ closeErr }}</v-alert>
         </v-card-text>
@@ -47,8 +48,9 @@ const auth = useAuthStore()
 const isAdmin = computed(()=> hasAnyRole(auth.roles, ['ADMIN']))
 const { data, isLoading: loading, error } = useCashPreview()
 const errStatus = computed(()=> error.value ? cashErrStatus(error.value) : undefined)
-const preview = computed(()=> data.value as { totals: { EFECTIVO: string; BILLETERAS_VIRTUALES: string; TARJETAS: string; TOTAL_ENTREGADOS: number; TOTAL_RECHAZADOS: number }; ticket_payload: Record<string,unknown>; already_closed?: boolean } | undefined)
-const totals = computed(()=> preview.value?.totals ?? { EFECTIVO:'0.00', BILLETERAS_VIRTUALES:'0.00', TARJETAS:'0.00', TOTAL_ENTREGADOS:0, TOTAL_RECHAZADOS:0 })
+const preview = computed(()=> data.value as { totals: { EFECTIVO: string; BILLETERAS_VIRTUALES: string; TARJETAS: string; TOTAL?: string; TOTAL_ENTREGADOS: number; TOTAL_RECHAZADOS: number }; ticket_payload: Record<string,unknown>; already_closed?: boolean } | undefined)
+const totals = computed(()=> preview.value?.totals ?? { EFECTIVO:'0.00', BILLETERAS_VIRTUALES:'0.00', TARJETAS:'0.00', TOTAL:'0.00', TOTAL_ENTREGADOS:0, TOTAL_RECHAZADOS:0 })
+const totalImporte = computed(()=> (Number.parseFloat(String(totals.value.EFECTIVO ?? 0)) + Number.parseFloat(String(totals.value.BILLETERAS_VIRTUALES ?? 0)) + Number.parseFloat(String(totals.value.TARJETAS ?? 0))).toFixed(2))
 const ticket = computed(()=> preview.value?.ticket_payload ?? null)
 const alreadyClosed = computed(()=> !!preview.value?.already_closed)
 const closing=ref(false); const closeErr=ref('')

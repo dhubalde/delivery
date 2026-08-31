@@ -88,10 +88,12 @@ def _compute_preview(merchant, business_date):
     total_rechazados = Order.objects.filter(merchant=merchant, business_date=business_date, state=Order.State.CANCELADO).count()
     def _fmt(d):
         return format(d.quantize(Decimal("0.00")), "f")
+    total = total_efectivo + total_billeteras + total_tarjetas
     totals = {
         "EFECTIVO": _fmt(total_efectivo),
         "BILLETERAS_VIRTUALES": _fmt(total_billeteras),
         "TARJETAS": _fmt(total_tarjetas),
+        "TOTAL": _fmt(total),
         "TOTAL_ENTREGADOS": total_entregados,
         "TOTAL_RECHAZADOS": total_rechazados,
     }
@@ -112,14 +114,24 @@ class CashCloseView(APIView):
         business_date = _parse_business_date(request)
         closure = CashClosure.objects.filter(merchant=merchant, business_date=business_date).first()
         if closure is not None:
-            return Response({
-                "totals": closure.ticket_payload.get("totals") if closure.ticket_payload else {
+            totals = closure.ticket_payload.get("totals") if closure.ticket_payload else None
+            if not totals:
+                totals = {
                     "EFECTIVO": format(closure.total_efectivo, ".2f"),
                     "BILLETERAS_VIRTUALES": format(closure.total_billeteras, ".2f"),
                     "TARJETAS": format(closure.total_tarjetas, ".2f"),
+                    "TOTAL": format(closure.total_efectivo + closure.total_billeteras + closure.total_tarjetas, ".2f"),
                     "TOTAL_ENTREGADOS": closure.total_entregados,
                     "TOTAL_RECHAZADOS": closure.total_rechazados,
-                },
+                }
+            elif "TOTAL" not in totals:
+                try:
+                    _t = Decimal(totals.get("EFECTIVO", "0")) + Decimal(totals.get("BILLETERAS_VIRTUALES", "0")) + Decimal(totals.get("TARJETAS", "0"))
+                    totals = {**totals, "TOTAL": format(_t.quantize(Decimal("0.00")), "f")}
+                except Exception:
+                    pass
+            return Response({
+                "totals": totals,
                 "ticket_payload": closure.ticket_payload,
                 "already_closed": True,
                 "id": closure.pk,

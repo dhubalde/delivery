@@ -24,9 +24,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 const props = defineProps<{ ticket: Record<string,unknown> }>()
-const totals = computed(()=> (props.ticket?.totals as Record<string,unknown> ?? {}) as { EFECTIVO:string; BILLETERAS_VIRTUALES:string; TARJETAS:string; TOTAL_ENTREGADOS:number; TOTAL_RECHAZADOS:number })
+const totals = computed(()=> (props.ticket?.totals as Record<string,unknown> ?? {}) as { EFECTIVO:string; BILLETERAS_VIRTUALES:string; TARJETAS:string; TOTAL?:string; TOTAL_ENTREGADOS:number; TOTAL_RECHAZADOS:number })
 const fmt = (v: unknown) => Number.parseFloat(String(v ?? 0)).toFixed(2)
-const totalImporte = computed(()=> (Number.parseFloat(String(totals.value.EFECTIVO ?? 0)) + Number.parseFloat(String(totals.value.BILLETERAS_VIRTUALES ?? 0)) + Number.parseFloat(String(totals.value.TARJETAS ?? 0))).toFixed(2))
+const totalImporte = computed(()=> (totals.value.TOTAL ?? (Number.parseFloat(String(totals.value.EFECTIVO ?? 0)) + Number.parseFloat(String(totals.value.BILLETERAS_VIRTUALES ?? 0)) + Number.parseFloat(String(totals.value.TARJETAS ?? 0))).toFixed(2)))
 const now = new Date().toLocaleString('es-AR')
 </script>
 <style scoped>
