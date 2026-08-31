@@ -42,8 +42,10 @@ const totalImporte = computed(()=>{
 const now = new Date().toLocaleString('es-AR')
 </script>
 <style scoped>
-.ticket { font-family: monospace; max-width: 320px; margin: 0 auto; padding: 16px; border: 1px dashed #999; background: white; }
-.ticket-header h3 { margin:0 0 4px 0; font-size: 14px; }
-.row { display:flex; justify-content:space-between; padding:4px 0; font-size: 13px; }
+.ticket { font-family: monospace; max-width: 320px; margin: 0 auto; padding: 16px; border: 1px dashed #999; background: white; color: #000; }
+.ticket-header h3 { margin:0 0 4px 0; font-size: 14px; color: #000; }
+.row { display:flex; justify-content:space-between; padding:4px 0; font-size: 13px; color: #000; }
 .row.total { font-weight: 700; border-top: 2px solid #000; margin-top: 4px; padding-top: 8px; }
+.ticket .text-caption { color: #000 !important; }
+.ticket .text-medium-emphasis { color: rgba(0,0,0,0.6) !important; opacity: 1 !important; }
 </style>
