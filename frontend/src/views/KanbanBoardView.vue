@@ -24,12 +24,25 @@ import { useCashPreview } from '@/composables/useCashClose'
 import KanbanColumn from '@/components/KanbanColumn.vue'
 import KanbanTotalsCard from '@/components/KanbanTotalsCard.vue'
 import WeatherForecast from '@/components/WeatherForecast.vue'
-const today = new Date().toISOString().slice(0, 10)
-const tomorrow = (() => {
-  const d = new Date(today)
-  d.setDate(d.getDate() + 1)
+function getBusinessDateStr(d = new Date()): string {
+  const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' })
+  const hourStr = d.toLocaleString('en-GB', { timeZone: 'America/Argentina/Buenos_Aires', hour: '2-digit', hour12: false })
+  const hour = Number.parseInt(hourStr, 10)
+  if (Number.isNaN(hour)) return dateStr
+  if (hour < 3) {
+    const tmp = new Date(`${dateStr}T12:00:00`)
+    tmp.setDate(tmp.getDate() - 1)
+    return tmp.toISOString().slice(0, 10)
+  }
+  return dateStr
+}
+function addDays(iso: string, days: number): string {
+  const d = new Date(`${iso}T12:00:00`)
+  d.setDate(d.getDate() + days)
   return d.toISOString().slice(0, 10)
-})()
+}
+const today = getBusinessDateStr()
+const tomorrow = addDays(today, 1)
 const businessDate = ref(today)
 const { data: cashData } = useCashPreview(businessDate)
 const alreadyClosed = computed(() => !!(cashData.value as { already_closed?: boolean } | undefined)?.already_closed)

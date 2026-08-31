@@ -32,19 +32,16 @@ export function useTransition() {
       const { data } = await api.post(`/v1/orders/${id}/transition`, payload)
       return data
     },
-    onMutate: async ({ id, to_state }) => {
+    onMutate: async ({ id }) => {
       await qc.cancelQueries({ queryKey: ['orders', 'board'] })
       const snapshots = qc.getQueriesData<Order[]>({ queryKey: ['orders', 'board'] })
-      const map = new Map(JSON.stringify(snapshots) ? snapshots : [])
       for (const [key, list] of snapshots) {
         if (!Array.isArray(list)) continue
         const idx = list.findIndex((o) => o.id === id)
         if (idx !== -1) {
           const next = [...list]
-          const [moved] = next.splice(idx, 1)
+          next.splice(idx, 1)
           qc.setQueryData(key, next)
-          void moved
-          void to_state
         }
       }
       return { snapshots }
@@ -72,9 +69,8 @@ export function useTransition() {
       }
       if (status === 401) window.location.href = '/login'
     },
-    onSettled: async (_data, _err, vars) => {
+    onSettled: async () => {
       await qc.invalidateQueries({ queryKey: ['orders', 'board'] })
-      void vars
     },
   })
 }
