@@ -61,6 +61,17 @@ def _resolve_cashier(request, merchant_id):
     return Employee.objects.filter(merchant_id=merchant_id, is_active=True).first()
 
 
+def _parse_business_date(request):
+    raw = request.query_params.get("business_date")
+    if raw:
+        try:
+            from datetime import date as _date
+            return _date.fromisoformat(raw)
+        except Exception:
+            pass
+    return get_business_date()
+
+
 def _compute_preview(merchant, business_date):
     def _sum(method):
         result = Payment.objects.filter(
@@ -98,7 +109,7 @@ class CashCloseView(APIView):
         merchant = Merchant.objects.filter(pk=mid).first() or Merchant.all_objects.filter(pk=mid).first()
         if merchant is None:
             return Response({"error": {"code": "NOT_FOUND", "message": "Merchant not found"}}, status=404)
-        business_date = get_business_date()
+        business_date = _parse_business_date(request)
         closure = CashClosure.objects.filter(merchant=merchant, business_date=business_date).first()
         if closure is not None:
             return Response({

@@ -13,5 +13,5 @@ export const qk = {
   adminDeliveryConfig: () => ['admin', 'deliveryConfig'] as const,
   adminZones: () => ['admin', 'zones'] as const,
   adminEmployees: () => ['admin', 'employees'] as const,
-  adminCashPreview: () => ['admin', 'cashPreview'] as const,
+  adminCashPreview: (businessDate?: string) => ['admin', 'cashPreview', businessDate ?? 'current'] as const,
 }

@@ -31,7 +31,7 @@
   </v-card>
 </template>
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, toRef } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { cashApi } from '@/api/panel/cash.api'
 import { qk } from '@/queries/keys'
@@ -40,11 +40,12 @@ import { INTERVALS } from '@/queries/intervals'
 type FallbackPayment = { method: string; status: string; amount?: string }
 type FallbackOrder = { total: string; payments: FallbackPayment[] }
 
-const props = defineProps<{ fallbackOrders: FallbackOrder[] }>()
+const props = defineProps<{ fallbackOrders: FallbackOrder[]; businessDate?: string }>()
+const businessDateRef = toRef(props, 'businessDate')
 
 const { data, isLoading, isError } = useQuery({
-  queryKey: qk.adminCashPreview(),
-  queryFn: cashApi.preview,
+  queryKey: computed(() => qk.adminCashPreview(businessDateRef.value)),
+  queryFn: () => cashApi.preview(businessDateRef.value),
   retry: false,
   refetchInterval: INTERVALS.BOARD,
   staleTime: 0,
@@ -68,23 +69,25 @@ const fallbackDisplay = computed(() => {
   let tarjetas = 0
   for (const o of props.fallbackOrders ?? []) {
     const pays = o.payments ?? []
-    if (!pays.length) continue
+    if (!pays.length) {
+      const tot = parseFloat(o.total ?? '0')
+      if (!Number.isNaN(tot) && tot !== 0) efectivo += tot
+      continue
+    }
+    let orderHasValid = false
     for (const p of pays) {
       if (p.status === 'REJECTED') continue
       if (p.status === 'PENDING' && p.method === 'EFECTIVO') continue
       const amt = p.amount != null ? parseFloat(p.amount) : 0
       if (Number.isNaN(amt) || amt === 0) continue
+      orderHasValid = true
       if (p.method === 'EFECTIVO') efectivo += amt
       else if (p.method === 'BILLETERA' || p.method === 'BILLETERAS_VIRTUALES' || p.method === 'BILLETERAS') billeteras += amt
       else if (p.method === 'TARJETA' || p.method === 'TARJETAS') tarjetas += amt
     }
-  }
-  if (efectivo === 0 && billeteras === 0 && tarjetas === 0 && props.fallbackOrders?.length) {
-    for (const o of props.fallbackOrders) {
+    if (!orderHasValid) {
       const tot = parseFloat(o.total ?? '0')
-      if (Number.isNaN(tot)) continue
-      efectivo += 0
-      void tot
+      if (!Number.isNaN(tot) && tot !== 0) efectivo += tot
     }
   }
   return { efectivo, billeteras, tarjetas, total: efectivo + billeteras + tarjetas }

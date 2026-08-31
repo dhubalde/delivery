@@ -11,7 +11,7 @@
         <KanbanColumn :title="col.title" :color="col.color" :orders="boards[col.state].data.value ?? []" :is-loading="boards[col.state].isLoading.value" :is-error="boards[col.state].isError.value" :compact="col.state === 'ENTREGADO'" @retry="boards[col.state].refetch()" />
       </v-col>
       <v-col cols="12" md="2">
-        <KanbanTotalsCard :fallback-orders="(boards['ENTREGADO'].data.value ?? []) as any" />
+        <KanbanTotalsCard :fallback-orders="(boards['ENTREGADO'].data.value ?? []) as any" :business-date="businessDate" />
       </v-col>
     </v-row>
   </v-container>
@@ -31,7 +31,7 @@ const tomorrow = (() => {
   return d.toISOString().slice(0, 10)
 })()
 const businessDate = ref(today)
-const { data: cashData } = useCashPreview()
+const { data: cashData } = useCashPreview(businessDate)
 const alreadyClosed = computed(() => !!(cashData.value as { already_closed?: boolean } | undefined)?.already_closed)
 const isTodayClosed = computed(() => alreadyClosed.value && businessDate.value === today)
 const formatDM = (iso: string) => {
