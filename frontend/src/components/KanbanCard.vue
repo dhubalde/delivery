@@ -1,13 +1,13 @@
 <template>
   <v-tooltip v-if="compact" location="top" open-on-hover>
     <template #activator="{ props: tipProps }">
-      <v-card v-bind="tipProps" :loading="pending" class="mb-1" density="compact" height="60">
-        <v-card-text class="py-1 px-2 d-flex flex-column justify-center" style="height: 60px; min-width: 0">
-          <div class="d-flex align-center text-caption font-weight-bold" style="min-width: 0; font-size: 12px; line-height: 1.2">
+      <v-card v-bind="tipProps" :loading="pending" class="mb-1" density="compact" height="60" :color="isRejected ? 'error' : undefined" :variant="isRejected ? 'outlined' : 'elevated'" :style="isRejected ? 'border:2px solid rgb(var(--v-theme-error))' : undefined">
+        <v-card-text class="py-1 px-2 d-flex flex-column justify-center" style="height: 60px; min-width: 0" :class="{ 'text-error': isRejected }">
+          <div class="d-flex align-center text-caption font-weight-bold" style="min-width: 0; font-size: 12px; line-height: 1.2" :class="{ 'text-error': isRejected }">
             <span class="flex-shrink-0">#{{ order.code }} —&nbsp;</span>
             <span class="text-truncate flex-1">{{ order.customer_name ?? order.customer ?? '—' }}</span>
           </div>
-          <div class="text-caption text-medium-emphasis text-truncate" style="font-size: 11px; line-height: 1.2; white-space: nowrap">
+          <div class="text-caption text-truncate" :class="isRejected ? 'text-error' : 'text-medium-emphasis'" style="font-size: 11px; line-height: 1.2; white-space: nowrap">
             <span v-if="hour">{{ hour }} · </span>${{ order.total }}
           </div>
         </v-card-text>
@@ -22,24 +22,35 @@
       <div v-if="orderPhone">{{ orderPhone }}</div>
     </div>
   </v-tooltip>
-  <v-card v-else :loading="pending" class="mb-2" density="compact">
-    <v-card-text class="pb-1">
+  <v-card v-else :loading="pending" class="mb-2" density="compact" :color="isRejected ? 'error' : undefined" :variant="isRejected ? 'outlined' : 'elevated'" :style="isRejected ? 'border:2px solid rgb(var(--v-theme-error))' : undefined" :class="{ 'rejected-card': isRejected }">
+    <v-card-text class="pb-1" :class="{ 'text-error': isRejected }">
       <div class="d-flex justify-space-between align-center">
-        <strong>#{{ order.code }}</strong>
-        <v-chip v-if="hasPending" size="x-small" color="warning" class="blinking">PENDING</v-chip>
+        <strong :class="{ 'text-error': isRejected }">#{{ order.code }}</strong>
+        <v-chip v-if="isRejected" size="x-small" color="error">No entregado</v-chip>
+        <v-chip v-else-if="hasPending" size="x-small" color="warning" class="blinking">PENDING</v-chip>
       </div>
-      <div class="text-caption">{{ order.customer_name ?? order.customer ?? '—' }} · {{ order.fulfillment }}</div>
-      <div class="text-caption font-weight-bold">${{ order.total }}</div>
+      <div class="text-caption" :class="isRejected ? 'text-error' : ''">{{ order.customer_name ?? order.customer ?? '—' }} · {{ order.fulfillment }}</div>
+      <div class="text-caption font-weight-bold" :class="{ 'text-error': isRejected }">${{ order.total }}</div>
+      <div v-if="isRejected && (order as any).cancel_reason" class="text-caption text-error mt-1" style="white-space: normal; line-height: 1.2">{{ (order as any).cancel_reason }}</div>
     </v-card-text>
-    <v-card-actions v-if="!isTerminal" class="d-flex ga-2">
+    <v-card-actions v-if="isRejected" class="d-flex flex-column ga-1">
+      <v-tooltip text="Próximamente">
+        <template #activator="{ props: tipProps }">
+          <span v-bind="tipProps" class="w-100">
+            <v-btn block size="small" variant="outlined" disabled>Revertir</v-btn>
+          </span>
+        </template>
+      </v-tooltip>
+    </v-card-actions>
+    <v-card-actions v-else-if="!isTerminal" :class="isLogistica ? 'd-flex flex-column ga-1' : 'd-flex ga-2'">
       <v-tooltip :text="tooltip">
         <template #activator="{ props }">
-          <span v-bind="props" class="flex-1">
+          <span v-bind="props" :class="isLogistica ? 'w-100' : 'flex-1'">
             <v-btn :disabled="!canAdvanceOk || pending" block size="small" color="primary" @click="onAdvance">Avanzar</v-btn>
           </span>
         </template>
       </v-tooltip>
-      <v-btn v-if="isLogistica" :disabled="pending" size="small" color="error" variant="outlined" @click="openReject">No entregado</v-btn>
+      <v-btn v-if="isLogistica" :disabled="pending" size="small" color="error" variant="outlined" block @click="openReject">No entregado</v-btn>
     </v-card-actions>
   </v-card>
 
@@ -64,7 +75,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { canAdvance, hasAnyRole, nextStateOf, requiredRolesFor } from '@/utils/guards'
 import { useTransition } from '@/composables/useOrders'
 
-const props = defineProps<{ order: { id: number; code: string; state: string; fulfillment: string; cash_declared: boolean; total: string; payments: { method: string; status: string }[]; customer_name?: string; customer?: string; created_at?: string; address?: string; phone?: string; customer_address?: string; customer_phone?: string; delivery_address?: string }; compact?: boolean }>()
+const props = defineProps<{ order: { id: number; code: string; state: string; fulfillment: string; cash_declared: boolean; total: string; payments: { method: string; status: string }[]; customer_name?: string; customer?: string; created_at?: string; address?: string; phone?: string; customer_address?: string; customer_phone?: string; delivery_address?: string; cancel_reason?: string | null; canceled_at?: string | null }; compact?: boolean }>()
 const orderAddress = computed(() => (props.order as unknown as Record<string, string | undefined>).address ?? (props.order as unknown as Record<string, string | undefined>).customer_address ?? (props.order as unknown as Record<string, string | undefined>).delivery_address ?? '')
 const orderPhone = computed(() => (props.order as unknown as Record<string, string | undefined>).phone ?? (props.order as unknown as Record<string, string | undefined>).customer_phone ?? '')
 const auth = useAuthStore()
@@ -74,6 +85,7 @@ const hour = computed(() => {
   if (!raw) return ''
   try { return new Date(raw).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) } catch { return '' }
 })
+const isRejected = computed(() => props.order.state === 'CANCELADO' || !!(props.order as unknown as { cancel_reason?: string | null }).cancel_reason)
 const isTerminal = computed(() => ['ENTREGADO', 'CANCELADO'].includes(props.order.state))
 const isLogistica = computed(() => props.order.state === 'LOGISTICA')
 const hasPending = computed(() => props.order.payments?.some((p) => p.status === 'PENDING'))
