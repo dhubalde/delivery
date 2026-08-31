@@ -24,9 +24,21 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 const props = defineProps<{ ticket: Record<string,unknown> }>()
-const totals = computed(()=> (props.ticket?.totals as Record<string,unknown> ?? {}) as { EFECTIVO:string; BILLETERAS_VIRTUALES:string; TARJETAS:string; TOTAL?:string; TOTAL_ENTREGADOS:number; TOTAL_RECHAZADOS:number })
-const fmt = (v: unknown) => Number.parseFloat(String(v ?? 0)).toFixed(2)
-const totalImporte = computed(()=> (totals.value.TOTAL ?? (Number.parseFloat(String(totals.value.EFECTIVO ?? 0)) + Number.parseFloat(String(totals.value.BILLETERAS_VIRTUALES ?? 0)) + Number.parseFloat(String(totals.value.TARJETAS ?? 0))).toFixed(2)))
+const totals = computed(()=> (props.ticket?.totals as Record<string,unknown> ?? {}) as { EFECTIVO:string; BILLETERAS_VIRTUALES:string; TARJETAS:string; TOTAL?:string | null; TOTAL_ENTREGADOS:number; TOTAL_RECHAZADOS:number })
+const fmt = (v: unknown) => {
+  const n = Number.parseFloat(String(v ?? 0))
+  return Number.isNaN(n) ? '0.00' : n.toFixed(2)
+}
+const totalImporte = computed(()=>{
+  const t = totals.value.TOTAL
+  const pn = t != null && String(t).trim() !== '' ? Number.parseFloat(String(t)) : Number.NaN
+  if (!Number.isNaN(pn)) return pn.toFixed(2)
+  const e = Number.parseFloat(String(totals.value.EFECTIVO ?? 0))
+  const b = Number.parseFloat(String(totals.value.BILLETERAS_VIRTUALES ?? 0))
+  const c = Number.parseFloat(String(totals.value.TARJETAS ?? 0))
+  const sum = (Number.isNaN(e) ? 0 : e) + (Number.isNaN(b) ? 0 : b) + (Number.isNaN(c) ? 0 : c)
+  return sum.toFixed(2)
+})
 const now = new Date().toLocaleString('es-AR')
 </script>
 <style scoped>
@@ -35,8 +47,9 @@ const now = new Date().toLocaleString('es-AR')
 .row { display:flex; justify-content:space-between; padding:4px 0; font-size: 13px; }
 .row.total { font-weight: 700; border-top: 2px solid #000; margin-top: 4px; padding-top: 8px; }
 @media print {
-  :global(body * ) { visibility: hidden; }
-  #printable-ticket, #printable-ticket * { visibility: visible; }
-  #printable-ticket { position: absolute; left:0; top:0; width:100%; border:none; }
+  :global(body *) { visibility: hidden; }
+  :global(#printable-ticket), :global(#printable-ticket *) { visibility: visible; }
+  :global(#printable-ticket) { position: absolute; left:0; top:0; width:100%; border:none; max-width:none; margin:0; padding:16px; }
+  :global(html), :global(body) { height:auto !important; overflow:visible !important; }
 }
 </style>
