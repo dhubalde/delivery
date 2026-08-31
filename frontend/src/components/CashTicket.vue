@@ -1,5 +1,5 @@
 <template>
-  <div id="printable-ticket" class="ticket">
+  <div class="ticket">
     <div class="ticket-header">
       <h3 style="font-family:Comfortaa">ICE ZONE — Cierre de caja</h3>
       <div class="text-caption text-medium-emphasis">{{ ticket.business_date }} — {{ ticket.merchant_slug }}</div>
@@ -46,10 +46,4 @@ const now = new Date().toLocaleString('es-AR')
 .ticket-header h3 { margin:0 0 4px 0; font-size: 14px; }
 .row { display:flex; justify-content:space-between; padding:4px 0; font-size: 13px; }
 .row.total { font-weight: 700; border-top: 2px solid #000; margin-top: 4px; padding-top: 8px; }
-@media print {
-  :global(body *) { visibility: hidden; }
-  :global(#printable-ticket), :global(#printable-ticket *) { visibility: visible; }
-  :global(#printable-ticket) { position: absolute; left:0; top:0; width:100%; border:none; max-width:none; margin:0; padding:16px; }
-  :global(html), :global(body) { height:auto !important; overflow:visible !important; }
-}
 </style>

@@ -33,6 +33,7 @@
         <v-card-actions><v-spacer /><v-btn variant="text" @click="showTicket=false">Cerrar</v-btn><v-btn color="primary" prepend-icon="mdi-printer" :text="alreadyClosed ? 'Reimprimir' : 'Imprimir'" @click="doPrint" /></v-card-actions>
       </v-card>
     </v-dialog>
+    <div id="printable-ticket" aria-hidden="true"><CashTicket v-if="ticket" :ticket="ticket as Record<string,unknown>" /></div>
     <ConfirmDialog v-model="confirm.show.value" :title="confirm.title.value" :message="confirm.message.value" :confirm-text="confirm.confirmText.value" :cancel-text="confirm.cancelText.value" :confirm-color="confirm.confirmColor.value" icon="mdi-lock" @confirm="confirm.onConfirm" @cancel="confirm.onCancel" />
   </v-container>
 </template>
@@ -66,3 +67,14 @@ async function doClose(){
   finally{ closing.value=false }
 }
 </script>
+<style>
+#printable-ticket { display: none; }
+@media print {
+  body * { visibility: hidden !important; }
+  #printable-ticket, #printable-ticket * { visibility: visible !important; }
+  #printable-ticket { display: block !important; position: absolute !important; left: 50% !important; top: 0 !important; transform: translateX(-50%) !important; width: 100% !important; max-width: 360px !important; margin: 0 !important; padding: 16px !important; border: none !important; background: white !important; }
+  #printable-ticket .ticket { border: none !important; max-width: none !important; margin: 0 !important; }
+  html, body { height: auto !important; overflow: visible !important; background: white !important; }
+  .v-overlay, .v-dialog, .v-navigation-drawer, .v-app-bar { display: none !important; }
+}
+</style>
