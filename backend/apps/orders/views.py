@@ -58,7 +58,7 @@ def _serialize_order(order):
             payments.append({"id": p.pk, "method": p.method, "amount": str(p.amount), "status": p.status, "gateway_ref": p.gateway_ref})
     except Exception:
         pass
-    return {"id": order.pk, "code": order.code, "merchant_id": order.merchant_id, "customer_name": order.customer_name, "customer_phone": order.customer_phone, "fulfillment": order.fulfillment, "state": order.state, "business_date": str(order.business_date), "address": order.address, "items_total": str(order.items_total), "delivery_fee": str(order.delivery_fee), "discount": str(order.discount), "total": str(order.total), "cash_declared": order.cash_declared, "items": items, "payments": payments, "created_at": order.created_at.isoformat() if hasattr(order, "created_at") and order.created_at else None}
+    return {"id": order.pk, "code": order.code, "merchant_id": order.merchant_id, "customer_name": order.customer_name, "customer_phone": order.customer_phone, "fulfillment": order.fulfillment, "state": order.state, "business_date": str(order.business_date), "address": order.address, "items_total": str(order.items_total), "delivery_fee": str(order.delivery_fee), "discount": str(order.discount), "total": str(order.total), "cash_declared": order.cash_declared, "cancel_reason": getattr(order, "cancel_reason", None), "canceled_at": order.canceled_at.isoformat() if getattr(order, "canceled_at", None) else None, "items": items, "payments": payments, "created_at": order.created_at.isoformat() if hasattr(order, "created_at") and order.created_at else None}
 
 
 class PublicOrderCreateView(APIView):
@@ -236,12 +236,15 @@ class OrderTransitionView(APIView):
             qs = qs.filter(merchant_id=mid)
         order = get_object_or_404(qs, pk=pk)
         to_state = (request.data or {}).get("to_state")
+        reason = (request.data or {}).get("reason") or (request.data or {}).get("cancel_reason")
         if not to_state:
             return Response({"error": {"code": "VALIDATION_ERROR", "message": "to_state required"}}, status=400)
         if to_state not in Order.State.values:
             return Response({"error": {"code": "VALIDATION_ERROR", "message": f"Invalid to_state {to_state}"}}, status=400)
+        if to_state == Order.State.CANCELADO and order.state == Order.State.LOGISTICA and not reason:
+            return Response({"error": {"code": "VALIDATION_ERROR", "message": "Motivo de cancelación requerido"}}, status=400)
         try:
-            updated = OrderService.transition(order.pk, to_state)
+            updated = OrderService.transition(order.pk, to_state, reason=reason)
         except (InvalidTransitionError, GuardViolationError) as e:
             return Response({"error": {"code": "INVALID_TRANSITION", "message": str(e)}}, status=409)
         except Order.DoesNotExist:

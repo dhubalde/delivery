@@ -46,7 +46,7 @@ class CashClosureService:
                 order__business_date=business_date,
                 method=method,
                 status=Payment.Status.CONFIRMED,
-            ).aggregate(total=Sum("amount"))
+            ).exclude(order__state=Order.State.CANCELADO).aggregate(total=Sum("amount"))
             return result["total"] or Decimal("0.00")
 
         total_efectivo = _sum(Payment.Method.EFECTIVO)

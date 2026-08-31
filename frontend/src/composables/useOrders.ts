@@ -26,8 +26,10 @@ export function useOrdersBoard(state: MaybeRef<string>, businessDate: MaybeRef<s
 export function useTransition() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, to_state }: { id: number; to_state: string }) => {
-      const { data } = await api.post(`/v1/orders/${id}/transition`, { to_state })
+    mutationFn: async ({ id, to_state, reason }: { id: number; to_state: string; reason?: string }) => {
+      const payload: Record<string, string> = { to_state }
+      if (reason) payload.reason = reason
+      const { data } = await api.post(`/v1/orders/${id}/transition`, payload)
       return data
     },
     onMutate: async ({ id, to_state }) => {

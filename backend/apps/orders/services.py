@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.utils import timezone
 
 from apps.orders.models import Order
 from apps.orders.state_machine import OrderStateMachine
@@ -7,7 +8,7 @@ from apps.orders.state_machine import OrderStateMachine
 class OrderService:
     @staticmethod
     @transaction.atomic
-    def transition(order_id, to_state, actor=None):
+    def transition(order_id, to_state, actor=None, reason=None):
         order = Order.objects.select_for_update().get(pk=order_id)
         old_state = order.state
         OrderStateMachine.validate(order, to_state)
@@ -16,7 +17,14 @@ class OrderService:
 
             PaymentService.validate_for_logistics(order)
         order.state = to_state
-        order.save(update_fields=["state", "updated_at"])
+        update_fields = ["state", "updated_at"]
+        if to_state == Order.State.CANCELADO:
+            if reason:
+                order.cancel_reason = reason[:500]
+                update_fields.append("cancel_reason")
+            order.canceled_at = timezone.now()
+            update_fields.append("canceled_at")
+        order.save(update_fields=update_fields)
         from apps.audit.services import emit
 
         emit(

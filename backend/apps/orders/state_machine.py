@@ -17,6 +17,7 @@ TRANSITIONS = {
     (Order.State.FACTURACION, Order.State.LOGISTICA): None,
     (Order.State.LOGISTICA, Order.State.ENTREGADO): None,
     (Order.State.RECIBIDO, Order.State.CANCELADO): None,
+    (Order.State.LOGISTICA, Order.State.CANCELADO): None,
 }
 
 

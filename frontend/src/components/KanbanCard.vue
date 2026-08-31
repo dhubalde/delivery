@@ -31,21 +31,37 @@
       <div class="text-caption">{{ order.customer_name ?? order.customer ?? '—' }} · {{ order.fulfillment }}</div>
       <div class="text-caption font-weight-bold">${{ order.total }}</div>
     </v-card-text>
-    <v-card-actions v-if="!isTerminal">
+    <v-card-actions v-if="!isTerminal" class="d-flex ga-2">
       <v-tooltip :text="tooltip">
         <template #activator="{ props }">
-          <span v-bind="props" class="w-100">
+          <span v-bind="props" class="flex-1">
             <v-btn :disabled="!canAdvanceOk || pending" block size="small" color="primary" @click="onAdvance">Avanzar</v-btn>
           </span>
         </template>
       </v-tooltip>
+      <v-btn v-if="isLogistica" :disabled="pending" size="small" color="error" variant="outlined" @click="openReject">No entregado</v-btn>
     </v-card-actions>
   </v-card>
+
+  <v-dialog v-model="rejectDialog" max-width="480" persistent>
+    <v-card>
+      <v-card-title class="text-subtitle-1">Motivo de no entrega — #{{ order.code }}</v-card-title>
+      <v-card-text class="d-flex flex-column ga-3">
+        <v-select v-model="rejectMotivo" :items="motivoOptions" label="Motivo *" :error="showMotivoError" :error-messages="showMotivoError ? 'Seleccioná un motivo' : ''" density="compact" variant="outlined" hide-details="auto" />
+        <v-textarea v-model="rejectDetalle" label="Detalle (opcional)" rows="2" auto-grow density="compact" variant="outlined" hide-details placeholder="Ej: cliente no atendió timbre, dirección inexistente..." />
+        <div v-if="rejectMotivo === 'Otro' && !hasDetalle" class="text-caption text-error">Si elegís "Otro" detallá el motivo</div>
+      </v-card-text>
+      <v-card-actions class="justify-end ga-2">
+        <v-btn variant="text" :disabled="pending" @click="rejectDialog = false">Cancelar</v-btn>
+        <v-btn color="error" :disabled="!canConfirmReject || pending" :loading="pending" @click="onConfirmReject">Confirmar rechazo</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
-import { canAdvance, nextStateOf } from '@/utils/guards'
+import { canAdvance, hasAnyRole, nextStateOf, requiredRolesFor } from '@/utils/guards'
 import { useTransition } from '@/composables/useOrders'
 
 const props = defineProps<{ order: { id: number; code: string; state: string; fulfillment: string; cash_declared: boolean; total: string; payments: { method: string; status: string }[]; customer_name?: string; customer?: string; created_at?: string; address?: string; phone?: string; customer_address?: string; customer_phone?: string; delivery_address?: string }; compact?: boolean }>()
@@ -59,11 +75,32 @@ const hour = computed(() => {
   try { return new Date(raw).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) } catch { return '' }
 })
 const isTerminal = computed(() => ['ENTREGADO', 'CANCELADO'].includes(props.order.state))
+const isLogistica = computed(() => props.order.state === 'LOGISTICA')
 const hasPending = computed(() => props.order.payments?.some((p) => p.status === 'PENDING'))
 const guard = computed(() => canAdvance(props.order.state, auth.roles, props.order))
 const canAdvanceOk = computed(() => guard.value.ok)
 const tooltip = computed(() => (guard.value.ok ? `Avanzar a ${nextStateOf(props.order.state)}` : guard.value.reason))
 const pending = computed(() => tr.isPending.value)
+const rejectDialog = ref(false)
+const rejectMotivo = ref('')
+const rejectDetalle = ref('')
+const attempted = ref(false)
+const motivoOptions = ['Cliente no atendió', 'Dirección incorrecta', 'Broma', 'Cliente rechazó', 'Otro']
+const hasDetalle = computed(() => rejectDetalle.value.trim().length > 0)
+const showMotivoError = computed(() => attempted.value && !rejectMotivo.value)
+const canConfirmReject = computed(() => {
+  if (!rejectMotivo.value) return false
+  if (rejectMotivo.value === 'Otro' && !hasDetalle.value) return false
+  const roles = requiredRolesFor('LOGISTICA', 'CANCELADO')
+  if (roles.length && !hasAnyRole(auth.roles, roles)) return false
+  return true
+})
+function openReject() {
+  rejectMotivo.value = ''
+  rejectDetalle.value = ''
+  attempted.value = false
+  rejectDialog.value = true
+}
 async function onAdvance() {
   const to = nextStateOf(props.order.state)
   if (!to || !guard.value.ok) return
@@ -85,6 +122,27 @@ async function onAdvance() {
       const msg = serverMsg || 'Error de servidor'
       window.dispatchEvent(new CustomEvent('app:toast', { detail: { msg, type: 'error' } }))
       console.error(`[${status}] ${msg}`)
+    } else if (serverMsg) {
+      window.dispatchEvent(new CustomEvent('app:toast', { detail: { msg: serverMsg, type: 'error' } }))
+    }
+  }
+}
+async function onConfirmReject() {
+  attempted.value = true
+  if (!canConfirmReject.value) return
+  const reason = rejectMotivo.value === 'Otro' ? `Otro: ${rejectDetalle.value.trim()}` : (hasDetalle.value ? `${rejectMotivo.value} - ${rejectDetalle.value.trim()}` : rejectMotivo.value)
+  try {
+    await tr.mutateAsync({ id: props.order.id, to_state: 'CANCELADO', reason })
+    rejectDialog.value = false
+  } catch (e: unknown) {
+    const response = (e as { response?: { status?: number; data?: { error?: { code?: string; message?: string } } } })?.response
+    const status = response?.status
+    const serverMsg = response?.data?.error?.message
+    if (status === 400 && serverMsg) {
+      window.dispatchEvent(new CustomEvent('app:toast', { detail: { msg: serverMsg, type: 'error' } }))
+    } else if (status === 409) {
+      const msg = serverMsg || 'Estado ya cambió'
+      window.dispatchEvent(new CustomEvent('app:toast', { detail: { msg, type: 'warning' } }))
     } else if (serverMsg) {
       window.dispatchEvent(new CustomEvent('app:toast', { detail: { msg: serverMsg, type: 'error' } }))
     }
