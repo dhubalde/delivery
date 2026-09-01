@@ -1,5 +1,5 @@
 <template>
-  <v-tooltip v-if="compact" location="top" open-on-hover>
+  <v-tooltip v-if="effectiveCompact" location="top" open-on-hover>
     <template #activator="{ props: tipProps }">
       <v-card v-bind="tipProps" :loading="pending" class="mb-1" density="compact" height="60" :color="isRejected ? 'error' : undefined" :variant="isRejected ? 'outlined' : 'elevated'" :style="isRejected ? 'border:2px solid rgb(var(--v-theme-error))' : undefined">
         <v-card-text class="py-1 px-2 d-flex flex-column justify-center" style="height: 60px; min-width: 0" :class="{ 'text-error': isRejected }">
@@ -50,7 +50,7 @@
           </span>
         </template>
       </v-tooltip>
-      <v-btn v-if="isLogistica" :disabled="pending" size="small" color="error" variant="outlined" block @click="openReject">No entregado</v-btn>
+      <v-btn v-if="isLogistica" :disabled="pending" size="x-small" color="error" variant="outlined" block density="compact" style="font-size:11px" @click="openReject">NO ENTREGADO</v-btn>
     </v-card-actions>
   </v-card>
 
@@ -86,6 +86,7 @@ const hour = computed(() => {
   try { return new Date(raw).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) } catch { return '' }
 })
 const isRejected = computed(() => props.order.state === 'CANCELADO' || !!(props.order as unknown as { cancel_reason?: string | null }).cancel_reason)
+const effectiveCompact = computed(() => !!props.compact || (isRejected.value && (props.order.state === 'LOGISTICA' || props.order.state === 'CANCELADO')))
 const isTerminal = computed(() => ['ENTREGADO', 'CANCELADO'].includes(props.order.state))
 const isLogistica = computed(() => props.order.state === 'LOGISTICA')
 const hasPending = computed(() => props.order.payments?.some((p) => p.status === 'PENDING'))
