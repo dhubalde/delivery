@@ -9,9 +9,7 @@
     <circle cx="0" cy="0" r="3.3" class="snow-fill"/>
     <circle cx="0" cy="-13.5" r="1.7" class="snow-fill"/>
     <circle cx="0" cy="13.5" r="1.7" class="snow-fill"/>
-    <circle cx="-11.7" cy="-6.75" r="1.7" class="snow-fill"/>
     <circle cx="11.7" cy="6.75" r="1.7" class="snow-fill"/>
-    <circle cx="-11.7" cy="6.75" r="1.7" class="snow-fill"/>
     <circle cx="11.7" cy="-6.75" r="1.7" class="snow-fill"/>
   </g>
   <text x="46" y="27.5" font-family="Comfortaa, sans-serif" font-size="18.5" font-weight="700" letter-spacing="0.04em">
