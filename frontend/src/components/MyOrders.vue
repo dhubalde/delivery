@@ -6,37 +6,31 @@
     </v-card-text>
   </v-card>
   <v-card v-else class="mt-4" variant="outlined">
-    <v-card-title class="text-subtitle-2">Mis pedidos</v-card-title>
+    <v-card-title class="text-subtitle-2">Mi pedido</v-card-title>
     <v-card-text>
       <v-skeleton-loader v-if="isLoading" type="list-item@2" />
-      <div v-else-if="orders.length === 0" class="d-flex align-center ga-2 text-success">
+      <div v-else-if="!currentOrder" class="d-flex align-center ga-2 text-success">
         <v-icon icon="mdi-check-circle" size="20" />
         <span class="text-body-2 font-weight-medium">Sin pedidos pendientes</span>
       </div>
       <div v-else class="d-flex flex-column ga-2">
-        <v-card
-          v-for="order in orders"
-          :key="order.id"
-          variant="tonal"
-          class="pa-2"
-          :color="cardColor(order.state)"
-        >
+        <v-card variant="tonal" class="pa-2" :color="cardColor(currentOrder.state)">
           <div class="d-flex justify-space-between align-center">
             <div>
-              <div class="text-body-2 font-weight-bold">#{{ order.code }} — {{ order.state }}</div>
-              <div class="text-caption">Total: ${{ order.total }}</div>
+              <div class="text-body-2 font-weight-bold">#{{ currentOrder.code }} — {{ currentOrder.state }}</div>
+              <div class="text-caption">Total: ${{ currentOrder.total }}</div>
             </div>
-            <v-chip size="x-small" :color="chipColor(order.state)" variant="flat">{{ order.state }}</v-chip>
+            <v-chip size="x-small" :color="chipColor(currentOrder.state)" variant="flat">{{ currentOrder.state }}</v-chip>
           </div>
           <v-btn
-            v-if="order.state === 'RECIBIDO'"
+            v-if="currentOrder.state === 'RECIBIDO'"
             size="small"
             color="error"
             variant="tonal"
             class="mt-2"
             block
-            :loading="cancellingId === order.id"
-            @click="cancel(order.id)"
+            :loading="cancellingId === currentOrder.id"
+            @click="cancel(currentOrder.id)"
             >Anular pedido</v-btn
           >
         </v-card>
@@ -54,9 +48,14 @@ const cancelMut = useCancelMyOrder()
 const cancellingId = ref<number | null>(null)
 const errorMsg = ref<string | null>(null)
 
-const orders = computed(() => {
+const ACTIVE_STATES = ['RECIBIDO', 'PREPARACION', 'FACTURACION', 'LOGISTICA'] as const
+
+const currentOrder = computed(() => {
   const list = (data.value ?? []) as { id: number; code: number; state: string; total: string }[]
-  return list
+  if (list.length === 0) return null
+  const active = list.filter((o) => (ACTIVE_STATES as readonly string[]).includes(o.state))
+  if (active.length > 0) return active.reduce((a, b) => (a.id > b.id ? a : b))
+  return list.reduce((a, b) => (a.id > b.id ? a : b))
 })
 
 const STATE_CHIP_COLOR: Record<string, string> = {
