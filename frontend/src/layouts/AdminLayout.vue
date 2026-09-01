@@ -32,7 +32,7 @@
       <v-card>
         <v-card-title>Reportes — clave requerida</v-card-title>
         <v-card-text>
-          <v-text-field v-model="reportKey" type="password" label="Clave" density="compact" hide-details autofocus @keydown.enter="submitReportsKey" />
+          <v-text-field v-model="reportKey" :type="showPassword ? 'text' : 'password'" :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'" label="Clave" density="compact" hide-details autofocus @keydown.enter="submitReportsKey" @click:append-inner="showPassword = !showPassword" />
           <v-alert v-if="reportError" type="error" density="compact" class="mt-3">{{ reportError }}</v-alert>
         </v-card-text>
         <v-card-actions>
@@ -63,6 +63,7 @@ onUnmounted(() => window.removeEventListener('app:toast', onToast as EventListen
 const showReportsDialog = ref(false)
 const reportKey = ref('')
 const reportError = ref('')
+const showPassword = ref(false)
 function submitReportsKey() {
   const expected = (import.meta.env.VITE_DASHBOARD_KEY as string | undefined) || 'dueño123'
   if (reportKey.value === expected) {
