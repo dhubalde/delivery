@@ -16,6 +16,7 @@
     "@mdi/font": "^7.4.47",
     "@tanstack/vue-query": "^5.60.0",
     "axios": "^1.7.0",
+    "libphonenumber-js": "^1.13.12",
     "pinia": "^2.1.7",
     "vue": "^3.4.0",
     "vue-router": "^4.3.0",

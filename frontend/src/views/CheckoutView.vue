@@ -8,7 +8,7 @@
       <div class="font-weight-bold mb-2">Total: ${{ cart.total.toFixed(2) }}</div>
       <v-form @submit.prevent="submit">
         <v-text-field v-model="customerName" label="Nombre y apellido *" density="compact" :error-messages="customerNameErr" class="mb-2" />
-        <v-text-field v-model="customerPhone" label="Nº teléfono *" density="compact" :error-messages="customerPhoneErr" class="mb-2" />
+        <v-text-field v-model="customerPhone" label="Nº teléfono *" density="compact" :error-messages="customerPhoneErr" prefix="+54" hint="Ej: 11 1234-5678 o +54 9 11 1234-5678" persistent-hint class="mb-2" />
         <v-text-field v-model="address" label="Dirección de entrega *" density="compact" :error-messages="addressErr" class="mb-2" />
         <v-select v-model="fulfillment" :items="['DELIVERY','PICKUP']" label="Entrega" density="compact" class="mb-2" style="max-width:200px" />
         <v-divider class="my-3" />
@@ -37,6 +37,7 @@
   </v-container>
 </template>
 <script setup lang="ts">
+import { parsePhoneNumberFromString } from 'libphonenumber-js'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '@/api/client'
@@ -83,6 +84,10 @@ async function submit(){
   let hasErr=false
   if(!customerName.value.trim()){ customerNameErr.value='Requerido'; hasErr=true }
   if(!customerPhone.value.trim()){ customerPhoneErr.value='Requerido'; hasErr=true }
+  else {
+    const phone = parsePhoneNumberFromString(customerPhone.value, 'AR')
+    if (!phone || !phone.isValid()) { customerPhoneErr.value='Teléfono inválido'; hasErr=true }
+  }
   if(!address.value.trim()){ addressErr.value='Requerido'; hasErr=true }
   if(hasTarjeta.value){
     if(!cardNumber.value.trim()){ cardNumberErr.value='Requerido'; hasErr=true }
@@ -106,7 +111,9 @@ async function submit(){
   loading.value=true
   try{
     const slug = auth.merchantSlug || 'zona-ice'
-    const body:any = { items: cart.items.map(i=>({ product_id:i.product.id, quantity:i.qty, flavor_ids:i.flavorIds })), payments: payments.value.map(p=>({ method:p.method, amount:String(p.amount) })), fulfillment: fulfillment.value, customer_name: customerName.value.trim(), customer_phone: customerPhone.value.trim(), address: address.value.trim() }
+    const _parsed = parsePhoneNumberFromString(customerPhone.value, 'AR')
+    const _e164 = _parsed && _parsed.isValid() ? _parsed.format('E.164') : customerPhone.value.trim()
+    const body:any = { items: cart.items.map(i=>({ product_id:i.product.id, quantity:i.qty, flavor_ids:i.flavorIds })), payments: payments.value.map(p=>({ method:p.method, amount:String(p.amount) })), fulfillment: fulfillment.value, customer_name: customerName.value.trim(), customer_phone: _e164, address: address.value.trim() }
     if(hasTarjeta.value){
       body.card = { number: cardNumber.value.replace(/\s/g,''), expiry: cardExpiry.value.trim(), cvv: cardCvv.value.trim() }
     }
