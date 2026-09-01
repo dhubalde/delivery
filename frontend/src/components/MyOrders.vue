@@ -48,7 +48,7 @@ const cancelMut = useCancelMyOrder()
 const cancellingId = ref<number | null>(null)
 const errorMsg = ref<string | null>(null)
 
-const ENTREGADO_AUTO_HIDE_MS = 5 * 60 * 1000
+const ENTREGADO_AUTO_HIDE_MS = 1 * 60 * 1000
 
 const now = ref(Date.now())
 let tick: number | null = null

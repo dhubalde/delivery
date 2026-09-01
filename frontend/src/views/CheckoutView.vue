@@ -8,7 +8,7 @@
       <div class="font-weight-bold mb-2">Total: ${{ cart.total.toFixed(2) }}</div>
       <v-form @submit.prevent="submit">
         <v-text-field v-model="customerName" label="Nombre y apellido *" density="compact" :error-messages="customerNameErr" class="mb-2" />
-        <v-text-field v-model="customerPhone" label="Nº teléfono *" density="compact" :error-messages="customerPhoneErr" prefix="+54" hint="Ej: 11 1234-5678 o +54 9 11 1234-5678" persistent-hint class="mb-2" />
+        <v-text-field v-model="customerPhone" label="Nº teléfono *" density="compact" :error-messages="customerPhoneErr" prefix="+54" hint="Sin 0 ni 15. 10 dígitos. Ej: 342 4508000 (Santa Fe) o 11 1234-5678 (CABA)" persistent-hint class="mb-2" />
         <v-text-field v-model="address" label="Dirección de entrega *" density="compact" :error-messages="addressErr" class="mb-2" />
         <v-select v-model="fulfillment" :items="['DELIVERY','PICKUP']" label="Entrega" density="compact" class="mb-2" style="max-width:200px" />
         <v-divider class="my-3" />
@@ -86,7 +86,7 @@ async function submit(){
   if(!customerPhone.value.trim()){ customerPhoneErr.value='Requerido'; hasErr=true }
   else {
     const phone = parsePhoneNumberFromString(customerPhone.value, 'AR')
-    if (!phone || !phone.isValid()) { customerPhoneErr.value='Teléfono inválido'; hasErr=true }
+    if (!phone || !phone.isValid()) { customerPhoneErr.value='Teléfono inválido. Sin 0 ni 15. Ej: 342 4508000'; hasErr=true }
   }
   if(!address.value.trim()){ addressErr.value='Requerido'; hasErr=true }
   if(hasTarjeta.value){
