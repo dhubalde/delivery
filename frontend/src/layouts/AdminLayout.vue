@@ -2,9 +2,6 @@
   <v-app>
     <v-navigation-drawer permanent width="240">
       <v-list density="compact" nav>
-        <v-list-item>
-          <template #prepend><AppLogo :size="110" :with-text="true" /></template>
-        </v-list-item>
         <v-list-item subtitle="Panel" title="" />
         <v-divider />
         <v-list-item to="/panel/board" title="Kanban" prepend-icon="mdi-view-columns" />
