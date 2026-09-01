@@ -13,6 +13,8 @@
         <v-list-item to="/panel/employees" title="Empleados" prepend-icon="mdi-account-group" />
         <v-list-item to="/panel/cash-close" title="Cierre de caja" prepend-icon="mdi-cash-register" />
         <v-list-item to="/panel/merchant" title="Empresa / Logo" prepend-icon="mdi-storefront" />
+        <v-divider class="my-2" />
+        <v-list-item title="Reportes" prepend-icon="mdi-chart-bar" @click="showReportsDialog = true" />
       </v-list>
     </v-navigation-drawer>
     <v-app-bar density="compact" color="primary">
@@ -26,20 +28,51 @@
       </v-container>
     </v-main>
     <v-snackbar v-model="toast.show" :color="toast.type === 'error' ? 'error' : 'warning'" timeout="3000">{{ toast.msg }}</v-snackbar>
+    <v-dialog v-model="showReportsDialog" max-width="360">
+      <v-card>
+        <v-card-title>Reportes — clave requerida</v-card-title>
+        <v-card-text>
+          <v-text-field v-model="reportKey" type="password" label="Clave" density="compact" hide-details autofocus @keydown.enter="submitReportsKey" />
+          <v-alert v-if="reportError" type="error" density="compact" class="mt-3">{{ reportError }}</v-alert>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showReportsDialog = false">Cancelar</v-btn>
+          <v-btn color="primary" @click="submitReportsKey">Entrar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-app>
 </template>
 <script setup lang="ts">
-import { onMounted, onUnmounted, reactive, watch } from 'vue'
+import { onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useTheme } from 'vuetify'
 import { useUiStore } from '@/stores/ui.store'
 import { useOffline } from '@/composables/useOffline'
 import AppLogo from '@/components/AppLogo.vue'
 const ui = useUiStore()
 const theme = useTheme()
+const router = useRouter()
 watch(() => ui.theme, (v) => { theme.global.name.value = v }, { immediate: true })
 useOffline()
 const toast = reactive({ show: false, msg: '', type: 'error' as string })
 function onToast(e: Event) { const d = (e as CustomEvent).detail; toast.msg = d.msg; toast.type = d.type; toast.show = true }
 onMounted(() => window.addEventListener('app:toast', onToast as EventListener))
 onUnmounted(() => window.removeEventListener('app:toast', onToast as EventListener))
+const showReportsDialog = ref(false)
+const reportKey = ref('')
+const reportError = ref('')
+function submitReportsKey() {
+  const expected = (import.meta.env.VITE_DASHBOARD_KEY as string | undefined) || 'dueño123'
+  if (reportKey.value === expected) {
+    reportError.value = ''
+    showReportsDialog.value = false
+    reportKey.value = ''
+    router.push('/panel/dashboard')
+  } else {
+    reportError.value = 'Clave incorrecta'
+  }
+}
+watch(showReportsDialog, (v) => { if (!v) { reportError.value = ''; reportKey.value = '' } })
 </script>

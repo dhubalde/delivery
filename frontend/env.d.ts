@@ -10,4 +10,5 @@ interface ImportMetaEnv {
   readonly VITE_WEATHER_CITY: string
   readonly VITE_WEATHER_LAT: string
   readonly VITE_WEATHER_LON: string
+  readonly VITE_DASHBOARD_KEY?: string
 }
