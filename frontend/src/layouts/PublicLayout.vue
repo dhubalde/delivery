@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <v-app-bar density="compact" color="primary">
-      <template #title><AppLogo :size="130" variant="dark" /></template>
+      <template #title><AppLogo :size="130" variant="auto" /></template>
       <v-app-bar-nav-icon v-if="xs" @click="drawer=!drawer" />
       <v-btn icon="mdi-brightness-6" @click="ui.toggleTheme()" />
     </v-app-bar>

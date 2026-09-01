@@ -16,7 +16,7 @@
       </v-list>
     </v-navigation-drawer>
     <v-app-bar density="compact" color="primary">
-      <template #title><AppLogo :size="120" variant="dark" /></template>
+      <template #title><AppLogo :size="120" variant="auto" /></template>
       <v-btn icon="mdi-brightness-6" @click="ui.toggleTheme()" />
     </v-app-bar>
     <v-banner v-if="ui.offline" color="warning" icon="mdi-wifi-off" class="text-caption">Sin conexión — modo offline</v-banner>

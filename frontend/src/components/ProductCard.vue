@@ -1,6 +1,9 @@
 <template>
   <v-card style="height:260px; display:flex; flex-direction:column">
-    <v-img :src="img" height="140" cover loading="lazy" />
+    <v-img v-if="p.image_url" :src="p.image_url" height="140" cover loading="lazy" />
+    <div v-else style="height:140px; display:flex; align-items:center; justify-content:center; background:#F3F4F6">
+      <v-icon size="64" color="secondary">mdi-package-variant</v-icon>
+    </div>
     <v-card-title class="text-body-2" style="font-family:Comfortaa">{{ p.name }}</v-card-title>
     <v-card-text class="pb-0" style="min-height:24px; flex-grow:1">
       <div v-if="needsFlavors" class="text-caption text-center text-medium-emphasis">{{ hint }}</div>
@@ -77,8 +80,6 @@ const err = computed(() => {
   if (!needsFlavors.value) return null
   return cart.canAdd(props.p, selected.value as number[])
 })
-const img = computed(() => props.p.image_url || `/placeholders/${pick()}.jpg`)
-function pick() { const m: Record<string, string> = { KG_1: 'pote-1kg', KG_HALF: 'pote-medio', KG_QUARTER: 'pote-cuarto' }; return m[props.p.pote_size] ?? 'pote-1kg' }
 function onAddClick() {
   if (!needsFlavors.value) {
     try {
