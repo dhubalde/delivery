@@ -11,6 +11,7 @@ type MyOrder = {
   total: string
   business_date: string
   created_at?: string | null
+  updated_at?: string | null
 }
 
 export function getMyOrderIds(): number[] {
