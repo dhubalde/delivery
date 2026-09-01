@@ -1,21 +1,44 @@
 <template>
-  <v-card v-if="ids.length > 0" class="mt-4" variant="outlined">
+  <v-card v-if="ids.length === 0" class="mt-4" color="success" variant="tonal">
+    <v-card-text class="d-flex align-center ga-2">
+      <v-icon icon="mdi-check-circle" size="20" />
+      <span class="text-body-2 font-weight-medium">Sin pedidos pendientes</span>
+    </v-card-text>
+  </v-card>
+  <v-card v-else class="mt-4" variant="outlined">
     <v-card-title class="text-subtitle-2">Mis pedidos</v-card-title>
     <v-card-text>
       <v-skeleton-loader v-if="isLoading" type="list-item@2" />
-      <div v-else-if="visibleOrders.length === 0" class="text-caption text-medium-emphasis">
-        Sin pedidos pendientes en RECIBIDO
+      <div v-else-if="orders.length === 0" class="d-flex align-center ga-2 text-success">
+        <v-icon icon="mdi-check-circle" size="20" />
+        <span class="text-body-2 font-weight-medium">Sin pedidos pendientes</span>
       </div>
       <div v-else class="d-flex flex-column ga-2">
-        <v-card v-for="order in visibleOrders" :key="order.id" variant="tonal" class="pa-2" color="warning">
+        <v-card
+          v-for="order in orders"
+          :key="order.id"
+          variant="tonal"
+          class="pa-2"
+          :color="cardColor(order.state)"
+        >
           <div class="d-flex justify-space-between align-center">
             <div>
               <div class="text-body-2 font-weight-bold">#{{ order.code }} — {{ order.state }}</div>
               <div class="text-caption">Total: ${{ order.total }}</div>
             </div>
-            <v-chip size="x-small" color="warning">{{ order.state }}</v-chip>
+            <v-chip size="x-small" :color="chipColor(order.state)" variant="flat">{{ order.state }}</v-chip>
           </div>
-          <v-btn size="small" color="error" variant="tonal" class="mt-2" block :loading="cancellingId === order.id" @click="cancel(order.id)">Anular pedido</v-btn>
+          <v-btn
+            v-if="order.state === 'RECIBIDO'"
+            size="small"
+            color="error"
+            variant="tonal"
+            class="mt-2"
+            block
+            :loading="cancellingId === order.id"
+            @click="cancel(order.id)"
+            >Anular pedido</v-btn
+          >
         </v-card>
       </div>
       <div v-if="errorMsg" class="text-caption text-error mt-2">{{ errorMsg }}</div>
@@ -31,10 +54,29 @@ const cancelMut = useCancelMyOrder()
 const cancellingId = ref<number | null>(null)
 const errorMsg = ref<string | null>(null)
 
-const visibleOrders = computed(() => {
+const orders = computed(() => {
   const list = (data.value ?? []) as { id: number; code: number; state: string; total: string }[]
-  return list.filter((o) => o.state === 'RECIBIDO')
+  return list
 })
+
+const STATE_CHIP_COLOR: Record<string, string> = {
+  RECIBIDO: 'warning',
+  PREPARACION: 'deep-orange',
+  FACTURACION: 'primary',
+  LOGISTICA: 'purple',
+  ENTREGADO: 'success',
+  CANCELADO: 'error',
+}
+
+function chipColor(state: string): string {
+  return STATE_CHIP_COLOR[state] ?? 'default'
+}
+
+function cardColor(state: string): string {
+  if (state === 'RECIBIDO') return 'success'
+  if (state === 'ENTREGADO') return 'success'
+  return chipColor(state)
+}
 
 async function cancel(id: number) {
   errorMsg.value = null
