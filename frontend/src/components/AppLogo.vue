@@ -3,19 +3,19 @@
     <img v-if="merchantLogo" :src="merchantLogo" :alt="alt" :width="size" :height="Math.round(size*0.22)" style="object-fit:contain;max-width:100%;" />
     <svg v-else xmlns="http://www.w3.org/2000/svg" :viewBox="`0 0 ${withText ? 200 : 44} 44`" :width="withText ? size : Math.round(size*0.22)" :height="Math.round(size*0.22)" role="img" :aria-label="alt">
       <g transform="translate(22,22)">
-        <line x1="0" y1="-13.5" x2="0" y2="13.5" stroke="#06B6D4" stroke-width="2.6" stroke-linecap="round" />
-        <line x1="-11.7" y1="-6.75" x2="11.7" y2="6.75" stroke="#06B6D4" stroke-width="2.6" stroke-linecap="round" />
-        <line x1="-11.7" y1="6.75" x2="11.7" y2="-6.75" stroke="#06B6D4" stroke-width="2.6" stroke-linecap="round" />
-        <circle cx="0" cy="0" r="3.3" fill="#06B6D4" />
-        <circle cx="0" cy="-13.5" r="1.7" fill="#06B6D4" />
-        <circle cx="0" cy="13.5" r="1.7" fill="#06B6D4" />
-        <circle cx="-11.7" cy="-6.75" r="1.7" fill="#06B6D4" />
-        <circle cx="11.7" cy="6.75" r="1.7" fill="#06B6D4" />
-        <circle cx="-11.7" cy="6.75" r="1.7" fill="#06B6D4" />
-        <circle cx="11.7" cy="-6.75" r="1.7" fill="#06B6D4" />
+        <line x1="0" y1="-13.5" x2="0" y2="13.5" :stroke="graphiteColor" stroke-width="2.6" stroke-linecap="round" />
+        <line x1="-11.7" y1="-6.75" x2="11.7" y2="6.75" :stroke="graphiteColor" stroke-width="2.6" stroke-linecap="round" />
+        <line x1="-11.7" y1="6.75" x2="11.7" y2="-6.75" :stroke="graphiteColor" stroke-width="2.6" stroke-linecap="round" />
+        <circle cx="0" cy="0" r="3.3" :fill="graphiteColor" />
+        <circle cx="0" cy="-13.5" r="1.7" :fill="graphiteColor" />
+        <circle cx="0" cy="13.5" r="1.7" :fill="graphiteColor" />
+        <circle cx="-11.7" cy="-6.75" r="1.7" :fill="graphiteColor" />
+        <circle cx="11.7" cy="6.75" r="1.7" :fill="graphiteColor" />
+        <circle cx="-11.7" cy="6.75" r="1.7" :fill="graphiteColor" />
+        <circle cx="11.7" cy="-6.75" r="1.7" :fill="graphiteColor" />
       </g>
       <text v-if="withText" x="46" y="27.5" font-family="Comfortaa, sans-serif" font-size="18.5" font-weight="700" letter-spacing="0.04em">
-        <tspan fill="#06B6D4">ICE</tspan><tspan :fill="zoneColor" dx="6">ZONE</tspan>
+        <tspan :fill="graphiteColor">ICE</tspan><tspan :fill="graphiteColor" dx="6">ZONE</tspan>
       </text>
     </svg>
   </div>
@@ -49,9 +49,11 @@ const merchantLogo = computed(() => {
   return m.logo || m.logo_url || null
 })
 
-const zoneColor = computed(() => {
-  if (props.variant === 'dark') return '#F8FAFC'
-  if (props.variant === 'light') return '#1E293B'
-  return ui.theme === 'dark' ? '#F8FAFC' : '#1E293B'
+const graphiteColor = computed(() => {
+  if (props.variant === 'dark') return '#E5E7EB'
+  if (props.variant === 'light') return '#2D2D2D'
+  return ui.theme === 'dark' ? '#E5E7EB' : '#2D2D2D'
 })
+
+const zoneColor = graphiteColor
 </script>

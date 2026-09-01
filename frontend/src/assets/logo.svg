@@ -1,26 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 44" width="200" height="44" role="img" aria-labelledby="title desc">
   <title id="title">Ice Zone</title>
-  <desc id="desc">Logo minimalista Ice Zone — copo de nieve turquesa y tipografía Comfortaa</desc>
+  <desc id="desc">Logo minimalista Ice Zone — grafito con buen contraste en claro y oscuro</desc>
   <rect width="200" height="44" rx="8" fill="white" opacity="0"/>
   <g transform="translate(22,22)" aria-hidden="true">
-    <line x1="0" y1="-13.5" x2="0" y2="13.5" stroke="#06B6D4" stroke-width="2.6" stroke-linecap="round"/>
-    <line x1="-11.7" y1="-6.75" x2="11.7" y2="6.75" stroke="#06B6D4" stroke-width="2.6" stroke-linecap="round"/>
-    <line x1="-11.7" y1="6.75" x2="11.7" y2="-6.75" stroke="#06B6D4" stroke-width="2.6" stroke-linecap="round"/>
-    <circle cx="0" cy="0" r="3.3" fill="#06B6D4"/>
-    <circle cx="0" cy="-13.5" r="1.7" fill="#06B6D4"/>
-    <circle cx="0" cy="13.5" r="1.7" fill="#06B6D4"/>
-    <circle cx="-11.7" cy="-6.75" r="1.7" fill="#06B6D4"/>
-    <circle cx="11.7" cy="6.75" r="1.7" fill="#06B6D4"/>
-    <circle cx="-11.7" cy="6.75" r="1.7" fill="#06B6D4"/>
-    <circle cx="11.7" cy="-6.75" r="1.7" fill="#06B6D4"/>
+    <line x1="0" y1="-13.5" x2="0" y2="13.5" class="snow-stroke" stroke-width="2.6" stroke-linecap="round"/>
+    <line x1="-11.7" y1="-6.75" x2="11.7" y2="6.75" class="snow-stroke" stroke-width="2.6" stroke-linecap="round"/>
+    <line x1="-11.7" y1="6.75" x2="11.7" y2="-6.75" class="snow-stroke" stroke-width="2.6" stroke-linecap="round"/>
+    <circle cx="0" cy="0" r="3.3" class="snow-fill"/>
+    <circle cx="0" cy="-13.5" r="1.7" class="snow-fill"/>
+    <circle cx="0" cy="13.5" r="1.7" class="snow-fill"/>
+    <circle cx="-11.7" cy="-6.75" r="1.7" class="snow-fill"/>
+    <circle cx="11.7" cy="6.75" r="1.7" class="snow-fill"/>
+    <circle cx="-11.7" cy="6.75" r="1.7" class="snow-fill"/>
+    <circle cx="11.7" cy="-6.75" r="1.7" class="snow-fill"/>
   </g>
   <text x="46" y="27.5" font-family="Comfortaa, sans-serif" font-size="18.5" font-weight="700" letter-spacing="0.04em">
-    <tspan fill="#06B6D4">ICE</tspan><tspan class="zone" fill="#1E293B" dx="6">ZONE</tspan>
+    <tspan class="label">ICE</tspan><tspan class="label" dx="6">ZONE</tspan>
   </text>
   <style>
-    .zone { fill: #1E293B; }
+    .snow-stroke { stroke: #2D2D2D; }
+    .snow-fill { fill: #2D2D2D; }
+    .label { fill: #2D2D2D; }
     @media (prefers-color-scheme: dark) {
-      .zone { fill: #F8FAFC; }
+      .snow-stroke { stroke: #E5E7EB; }
+      .snow-fill { fill: #E5E7EB; }
+      .label { fill: #E5E7EB; }
     }
   </style>
 </svg>
