@@ -1,7 +1,8 @@
 <template>
   <v-app>
-    <v-app-bar title="Ice Zone" density="compact" color="primary">
-      <template #prepend><img src="@/assets/logo-ice-zone.svg" width="32" height="32" alt="Ice Zone" /></template>
+    <v-app-bar density="compact" color="primary">
+      <template #title><AppLogo :size="130" variant="dark" /></template>
+      <template #prepend><AppLogo :size="28" :with-text="false" variant="dark" class="ml-2" /></template>
       <v-app-bar-nav-icon v-if="xs" @click="drawer=!drawer" />
       <v-btn icon="mdi-brightness-6" @click="ui.toggleTheme()" />
     </v-app-bar>
@@ -30,6 +31,7 @@ import CategoryNav from '@/components/CategoryNav.vue'
 import SearchInput from '@/components/SearchInput.vue'
 import CartDrawer from '@/components/CartDrawer.vue'
 import ClosedBanner from '@/components/ClosedBanner.vue'
+import AppLogo from '@/components/AppLogo.vue'
 const ui = useUiStore()
 const theme = useTheme()
 watch(() => ui.theme, (v) => { theme.global.name.value = v }, { immediate: true })

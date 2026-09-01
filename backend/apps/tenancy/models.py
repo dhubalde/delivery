@@ -9,6 +9,17 @@ class Merchant(BaseModel):
     slug = models.SlugField(unique=True)
     vertical = models.CharField(max_length=20, default="ICE_CREAM")
     is_active = models.BooleanField(default=True)
+    logo = models.ImageField(upload_to="merchant_logos/", null=True, blank=True)
+    logo_url = models.URLField(max_length=500, blank=True, null=True)
+
+    @property
+    def resolved_logo_url(self):
+        if self.logo:
+            try:
+                return self.logo.url
+            except Exception:
+                pass
+        return self.logo_url or ""
 
     def __str__(self):
         return self.name

@@ -14,4 +14,6 @@ export const qk = {
   adminZones: () => ['admin', 'zones'] as const,
   adminEmployees: () => ['admin', 'employees'] as const,
   adminCashPreview: (businessDate?: string) => ['admin', 'cashPreview', businessDate ?? 'current'] as const,
+  merchant: () => ['merchant', 'detail'] as const,
+  publicMerchant: (slug?: string) => ['merchant', 'public', slug ?? 'default'] as const,
 }

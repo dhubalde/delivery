@@ -2,7 +2,10 @@
   <v-app>
     <v-navigation-drawer permanent width="240">
       <v-list density="compact" nav>
-        <v-list-item title="Ice Zone" subtitle="Panel" />
+        <v-list-item>
+          <template #prepend><AppLogo :size="110" :with-text="true" /></template>
+        </v-list-item>
+        <v-list-item subtitle="Panel" title="" />
         <v-divider />
         <v-list-item to="/panel/board" title="Kanban" prepend-icon="mdi-view-columns" />
         <v-list-item to="/panel/categories" title="Categorías" prepend-icon="mdi-shape" />
@@ -12,9 +15,11 @@
         <v-list-item to="/panel/delivery" title="Delivery" prepend-icon="mdi-moped" />
         <v-list-item to="/panel/employees" title="Empleados" prepend-icon="mdi-account-group" />
         <v-list-item to="/panel/cash-close" title="Cierre de caja" prepend-icon="mdi-cash-register" />
+        <v-list-item to="/panel/merchant" title="Empresa / Logo" prepend-icon="mdi-storefront" />
       </v-list>
     </v-navigation-drawer>
-    <v-app-bar density="compact" title="Panel Ice Zone" color="primary">
+    <v-app-bar density="compact" color="primary">
+      <template #title><AppLogo :size="120" variant="dark" /></template>
       <v-btn icon="mdi-brightness-6" @click="ui.toggleTheme()" />
     </v-app-bar>
     <v-banner v-if="ui.offline" color="warning" icon="mdi-wifi-off" class="text-caption">Sin conexión — modo offline</v-banner>
@@ -31,6 +36,7 @@ import { onMounted, onUnmounted, reactive, watch } from 'vue'
 import { useTheme } from 'vuetify'
 import { useUiStore } from '@/stores/ui.store'
 import { useOffline } from '@/composables/useOffline'
+import AppLogo from '@/components/AppLogo.vue'
 const ui = useUiStore()
 const theme = useTheme()
 watch(() => ui.theme, (v) => { theme.global.name.value = v }, { immediate: true })

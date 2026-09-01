@@ -6,7 +6,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.tenancy.models import Schedule, SpecialDate, TimeRange
+from apps.tenancy.models import Merchant, Schedule, SpecialDate, TimeRange
 
 
 def _resolve_merchant_id(request):
@@ -189,3 +189,78 @@ class SpecialDateDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_destroy(self, instance):
         SpecialDate.all_objects.filter(pk=instance.pk).delete()
+
+
+class MerchantSerializer(serializers.ModelSerializer):
+    logo = serializers.ImageField(required=False, allow_null=True)
+    logo_url = serializers.URLField(required=False, allow_null=True, allow_blank=True)
+
+    class Meta:
+        model = Merchant
+        fields = ["id", "name", "slug", "vertical", "is_active", "logo", "logo_url"]
+        read_only_fields = ["id", "slug"]
+
+
+class MerchantDetailView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        mid = _require_merchant_id(request)
+        try:
+            m = Merchant.objects.get(pk=mid)
+        except Merchant.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(MerchantSerializer(m, context={"request": request}).data)
+
+    def patch(self, request):
+        mid = _require_merchant_id(request)
+        try:
+            m = Merchant.objects.get(pk=mid)
+        except Merchant.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        ser = MerchantSerializer(m, data=request.data, partial=True, context={"request": request})
+        ser.is_valid(raise_exception=True)
+        ser.save()
+        return Response(ser.data)
+
+    def put(self, request):
+        return self.patch(request)
+
+
+class MerchantLogoUploadView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        mid = _require_merchant_id(request)
+        try:
+            m = Merchant.objects.get(pk=mid)
+        except Merchant.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        f = request.FILES.get("logo") or request.FILES.get("file")
+        if not f:
+            url = request.data.get("logo_url")
+            if url:
+                m.logo_url = url
+                if m.logo:
+                    m.logo.delete(save=False)
+                    m.logo = None
+                m.save(update_fields=["logo_url", "logo", "updated_at"])
+                return Response(MerchantSerializer(m, context={"request": request}).data)
+            raise ValidationError({"logo": "logo file or logo_url required."})
+        m.logo = f
+        m.logo_url = ""
+        m.save(update_fields=["logo", "logo_url", "updated_at"])
+        return Response(MerchantSerializer(m, context={"request": request}).data)
+
+
+class PublicMerchantView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        slug = request.query_params.get("slug") or request.headers.get("X-Merchant-Slug") or "ice-zone"
+        if slug == "zona-ice":
+            slug = "ice-zone"
+        m = Merchant.objects.filter(slug=slug).first() or Merchant.objects.first()
+        if not m:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(MerchantSerializer(m, context={"request": request}).data)
