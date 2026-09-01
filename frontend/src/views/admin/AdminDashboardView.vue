@@ -6,37 +6,37 @@
     </div>
     <v-skeleton-loader v-if="cashLoading || ordersLoading" type="card" />
     <v-alert v-else-if="cashError" type="warning" class="mb-4">Sin datos para {{ businessDate }} — mostrando cálculo local</v-alert>
-    <v-row class="mb-4">
-      <v-col cols="12" md="3">
-        <v-card>
-          <v-card-text>
+    <v-row class="mb-4" align="stretch">
+      <v-col cols="12" md="3" class="d-flex">
+        <v-card class="flex-grow-1 d-flex flex-column" height="100%" style="min-height: 120px">
+          <v-card-text class="flex-grow-1">
             <div class="text-caption text-medium-emphasis">Total pedidos</div>
             <div class="text-h5 font-weight-bold">{{ totalPedidos }}</div>
             <div class="text-caption">Entregados {{ entregados }} + Rechazados {{ rechazados }}</div>
           </v-card-text>
         </v-card>
       </v-col>
-      <v-col cols="12" md="3">
-        <v-card>
-          <v-card-text>
+      <v-col cols="12" md="3" class="d-flex">
+        <v-card class="flex-grow-1 d-flex flex-column" height="100%" style="min-height: 120px">
+          <v-card-text class="flex-grow-1">
             <div class="text-caption text-medium-emphasis">Total ventas</div>
             <div class="text-h5 font-weight-bold">${{ fmt(totalVentas) }}</div>
             <div class="text-caption">EF ${{ fmt(efectivo) }} · BV ${{ fmt(billeteras) }} · TJ ${{ fmt(tarjetas) }}</div>
           </v-card-text>
         </v-card>
       </v-col>
-      <v-col cols="12" md="3">
-        <v-card>
-          <v-card-text>
+      <v-col cols="12" md="3" class="d-flex">
+        <v-card class="flex-grow-1 d-flex flex-column" height="100%" style="min-height: 120px">
+          <v-card-text class="flex-grow-1">
             <div class="text-caption text-medium-emphasis">Ticket promedio</div>
             <div class="text-h5 font-weight-bold">${{ fmt(ticketPromedio) }}</div>
             <div class="text-caption">sobre {{ entregados }} entregados</div>
           </v-card-text>
         </v-card>
       </v-col>
-      <v-col cols="12" md="3">
-        <v-card>
-          <v-card-text>
+      <v-col cols="12" md="3" class="d-flex">
+        <v-card class="flex-grow-1 d-flex flex-column" height="100%" style="min-height: 120px">
+          <v-card-text class="flex-grow-1">
             <div class="text-caption text-medium-emphasis">Rechazados</div>
             <div class="text-h5 font-weight-bold">{{ rechazados }}</div>
             <div class="text-caption">{{ rechazadosPct }}% del total</div>
