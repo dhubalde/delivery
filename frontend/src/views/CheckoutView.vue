@@ -9,7 +9,7 @@
       <v-form @submit.prevent="submit">
         <v-text-field v-model="customerName" label="Nombre y apellido *" density="compact" :error-messages="customerNameErr" class="mb-2" />
         <v-text-field v-model="customerPhone" label="Nº teléfono *" density="compact" :error-messages="customerPhoneErr" prefix="+54" hint="Sin 0 ni 15. 10 dígitos. Ej: 342 4508000 (Santa Fe) o 11 1234-5678 (CABA)" persistent-hint class="mb-2" />
-        <v-text-field v-model="address" label="Dirección de entrega *" density="compact" :error-messages="addressErr" class="mb-2" />
+        <v-text-field v-model="address" label="Dirección de entrega *" density="compact" :error-messages="addressErr" hint="Ej: San Martín 1234, dpto 2B si corresponde" persistent-hint class="mb-2" />
         <v-select v-model="fulfillment" :items="['DELIVERY','PICKUP']" label="Entrega" density="compact" class="mb-2" style="max-width:200px" />
         <v-divider class="my-3" />
         <div class="text-subtitle-2 mb-2">Pagos</div>
@@ -89,6 +89,7 @@ async function submit(){
     if (!phone || !phone.isValid()) { customerPhoneErr.value='Teléfono inválido. Sin 0 ni 15. Ej: 342 4508000'; hasErr=true }
   }
   if(!address.value.trim()){ addressErr.value='Requerido'; hasErr=true }
+  else if(!/\d/.test(address.value)){ addressErr.value='Incluí altura/número. Ej: San Martín 1234'; hasErr=true }
   if(hasTarjeta.value){
     if(!cardNumber.value.trim()){ cardNumberErr.value='Requerido'; hasErr=true }
     else {
