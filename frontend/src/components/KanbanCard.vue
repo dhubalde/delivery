@@ -50,7 +50,7 @@
           </span>
         </template>
       </v-tooltip>
-      <v-btn v-if="isLogistica" :disabled="pending" size="x-small" color="error" variant="outlined" block density="compact" style="font-size:11px;margin-top:1px;margin-left:1px;margin-right:1px" @click="openReject">NO ENTREGADO</v-btn>
+      <v-btn v-if="isLogistica" :disabled="pending" size="x-small" color="error" variant="outlined" block density="compact" style="font-size:11px;margin-top:1px;margin-left:1px;margin-right:1px;border:1px solid currentColor;border-top:2px solid currentColor" @click="openReject">NO ENTREGADO</v-btn>
     </v-card-actions>
   </v-card>
 
