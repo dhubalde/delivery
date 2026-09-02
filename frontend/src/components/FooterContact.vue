@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!isContact" class="footer-contact">
+  <div class="footer-contact">
     <v-card density="compact" variant="tonal" rounded="lg" elevation="2" class="pa-2">
       <div class="text-caption font-weight-medium d-flex align-center ga-1">
         <v-icon size="14">mdi-storefront</v-icon>
@@ -38,10 +38,22 @@ const { data: merchantData } = usePublicMerchant(slug.value) as any
 
 const m = computed(() => (merchantData.value ?? null) as Record<string, any> | null)
 
-const merchantName = computed(() => (m.value?.name as string) || 'Group-q')
-const phone = computed(() => (m.value?.phone as string) || (m.value?.tel as string) || '3446-200156')
-const email = computed(() => (m.value?.email as string) || 'contacto@group-q.tech')
-const address = computed(() => (m.value?.address as string) || 'Dirección: — TODO: agregar Merchant.address')
+const merchantName = computed(() => {
+  if (isContact.value) return 'Group-q'
+  return (m.value?.name as string) || 'Ice Zone'
+})
+const phone = computed(() => {
+  if (isContact.value) return (m.value?.phone as string) || (m.value?.tel as string) || '3446-200156'
+  return (m.value?.phone as string) || (m.value?.tel as string) || '—'
+})
+const email = computed(() => {
+  if (isContact.value) return (m.value?.email as string) || 'contacto@group-q.tech'
+  return (m.value?.email as string) || '—'
+})
+const address = computed(() => {
+  if (isContact.value) return (m.value?.address as string) || '—'
+  return (m.value?.address as string) || '—'
+})
 const hours = computed(() => (m.value?.hours as string) || '')
 </script>
 <style scoped>

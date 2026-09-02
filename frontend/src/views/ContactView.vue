@@ -14,35 +14,6 @@
         </v-form>
       </v-card-text>
     </v-card>
-    <v-card variant="tonal" rounded="lg" class="mt-4 pa-4 contact-company-footer">
-      <div class="text-subtitle-2 font-weight-bold d-flex align-center ga-2">
-        <v-icon size="18">mdi-domain</v-icon>
-        <span>Empresa Tecnológica</span>
-      </div>
-      <v-divider class="my-3" />
-      <div class="d-flex flex-column ga-2 text-body-2">
-        <div class="d-flex align-center ga-2">
-          <v-icon size="16">mdi-phone</v-icon>
-          <span>Tel: +54 11 5555-0000</span>
-        </div>
-        <div class="d-flex align-center ga-2">
-          <v-icon size="16">mdi-email-outline</v-icon>
-          <span>soporte@empresatec.com</span>
-        </div>
-        <div class="d-flex align-center ga-2">
-          <v-icon size="16">mdi-map-marker-outline</v-icon>
-          <span>Av. Tecnológica 1234, CABA, Argentina</span>
-        </div>
-      </div>
-      <v-divider class="my-3" />
-      <div class="d-flex align-center ga-2">
-        <span class="text-caption text-medium-emphasis">Redes:</span>
-        <v-btn icon="mdi-instagram" variant="text" size="small" density="comfortable" aria-label="Instagram placeholder" />
-        <v-btn icon="mdi-linkedin" variant="text" size="small" density="comfortable" aria-label="LinkedIn placeholder" />
-        <v-btn icon="mdi-web" variant="text" size="small" density="comfortable" aria-label="Sitio web placeholder" />
-        <span class="text-caption text-disabled">placeholder redes</span>
-      </div>
-    </v-card>
   </v-container>
 </template>
 <script setup lang="ts">
