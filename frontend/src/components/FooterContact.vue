@@ -1,5 +1,5 @@
 <template>
-  <div class="footer-contact">
+  <div v-if="!isContact" class="footer-contact">
     <v-card density="compact" variant="tonal" rounded="lg" elevation="2" class="pa-2">
       <div class="text-caption font-weight-medium d-flex align-center ga-1">
         <v-icon size="14">mdi-storefront</v-icon>
@@ -26,9 +26,12 @@
 </template>
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import { usePublicMerchant } from '@/composables/useMerchant'
 
+const route = useRoute()
+const isContact = computed(() => route.path.includes('/contact'))
 const auth = useAuthStore()
 const slug = computed(() => auth.merchantSlug || 'ice-zone')
 const { data: merchantData } = usePublicMerchant(slug.value) as any
@@ -44,10 +47,19 @@ const hours = computed(() => (m.value?.hours as string) || '')
 <style scoped>
 .footer-contact {
   position: fixed;
-  bottom: 8px;
-  right: 8px;
+  bottom: 12px;
+  right: 16px;
   z-index: 1006;
-  max-width: 260px;
-  opacity: 0.96;
+  width: 320px;
+  max-width: calc(100vw - 24px);
+  opacity: 0.98;
+}
+@media (max-width: 960px) {
+  .footer-contact {
+    position: static;
+    width: 100%;
+    max-width: 100%;
+    margin: 12px auto 0;
+  }
 }
 </style>
