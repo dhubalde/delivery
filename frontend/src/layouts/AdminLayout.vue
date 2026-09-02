@@ -29,7 +29,7 @@
       </v-container>
     </v-main>
     <v-snackbar v-model="toast.show" :color="toast.type === 'error' ? 'error' : 'warning'" timeout="3000">{{ toast.msg }}</v-snackbar>
-    <FooterContact v-if="!route.path.includes('/board')" />
+    <FooterContact v-if="!route.path.includes('/board') && !route.path.includes('/contact')" />
     <v-dialog v-model="showReportsDialog" max-width="360">
       <v-card>
         <v-card-title>Reportes — clave requerida</v-card-title>

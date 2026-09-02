@@ -27,6 +27,41 @@
         <v-icon size="12">mdi-clock-outline</v-icon>
         <span>{{ hours }}</span>
       </div>
+      <template v-if="isContact">
+        <v-divider class="my-2" />
+        <div class="d-flex ga-1">
+          <v-btn
+            :href="socials.instagram"
+            target="_blank"
+            rel="noopener"
+            icon="mdi-instagram"
+            size="small"
+            variant="text"
+            density="comfortable"
+            aria-label="Instagram"
+          />
+          <v-btn
+            :href="socials.whatsapp"
+            target="_blank"
+            rel="noopener"
+            icon="mdi-whatsapp"
+            size="small"
+            variant="text"
+            density="comfortable"
+            aria-label="WhatsApp"
+          />
+          <v-btn
+            :href="socials.facebook"
+            target="_blank"
+            rel="noopener"
+            icon="mdi-facebook"
+            size="small"
+            variant="text"
+            density="comfortable"
+            aria-label="Facebook"
+          />
+        </div>
+      </template>
     </v-card>
   </div>
 </template>
@@ -51,6 +86,11 @@
   const email = computed(() => "contacto@group-q.tech");
   const address = computed(() => (m.value?.address as string) || "—");
   const hours = computed(() => (m.value?.hours as string) || "");
+  const socials = {
+    instagram: "https://instagram.com/group-q.tech",
+    whatsapp: "https://wa.me/543446200156",
+    facebook: "https://facebook.com/group-q.tech",
+  };
 </script>
 <style scoped>
   .footer-contact {
@@ -64,10 +104,13 @@
   }
   .footer-contact.is-contact {
     position: static;
-    width: 100%;
-    max-width: 600px;
-    margin: 16px auto 0;
-    transform: translateX(125px);
+    width: 320px;
+    min-width: 280px;
+    max-width: 320px;
+    margin: 0;
+    flex-shrink: 0;
+    align-self: flex-start;
+    transform: none;
   }
   @media (max-width: 960px) {
     .footer-contact {
@@ -77,8 +120,10 @@
       margin: 12px auto 0;
     }
     .footer-contact.is-contact {
-      max-width: 600px;
-      margin: 16px auto 0;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      margin: 0;
     }
   }
 </style>
