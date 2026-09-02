@@ -46,17 +46,9 @@
     () => (merchantData.value ?? null) as Record<string, any> | null,
   );
 
-  const merchantName = computed(() => {
-    if (isContact.value) return "Group-q";
-    return (m.value?.name as string) || "Group-q";
-  });
-  const phone = computed(
-    () =>
-      (m.value?.phone as string) || (m.value?.tel as string) || "3446-200156",
-  );
-  const email = computed(
-    () => (m.value?.email as string) || "contacto@group-q.tech",
-  );
+  const merchantName = computed(() => "Group-q");
+  const phone = computed(() => "3446-200156");
+  const email = computed(() => "contacto@group-q.tech");
   const address = computed(() => (m.value?.address as string) || "—");
   const hours = computed(() => (m.value?.hours as string) || "");
 </script>
