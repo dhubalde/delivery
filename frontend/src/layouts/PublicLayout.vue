@@ -19,6 +19,7 @@
       </v-row>
     </v-container></v-main>
     <v-banner v-if="ui.offline" color="warning" sticky>Sin conexión — datos pueden estar desactualizados</v-banner>
+    <FooterContact />
   </v-app>
 </template>
 <script setup lang="ts">
@@ -31,6 +32,7 @@ import SearchInput from '@/components/SearchInput.vue'
 import CartDrawer from '@/components/CartDrawer.vue'
 import ClosedBanner from '@/components/ClosedBanner.vue'
 import AppLogo from '@/components/AppLogo.vue'
+import FooterContact from '@/components/FooterContact.vue'
 const ui = useUiStore()
 const theme = useTheme()
 watch(() => ui.theme, (v) => { theme.global.name.value = v }, { immediate: true })
