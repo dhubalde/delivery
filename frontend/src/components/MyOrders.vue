@@ -76,7 +76,7 @@ const latestOrder = computed<OrderRow | null>(() => {
 const displayedOrder = computed<OrderRow | null>(() => {
   const o = latestOrder.value
   if (!o) return null
-  if (o.state === 'ENTREGADO') {
+  if (o.state === 'ENTREGADO' || o.state === 'CANCELADO') {
     const tsRaw = o.updated_at || o.created_at
     const ts = tsRaw ? Date.parse(tsRaw) : 0
     if (ts && now.value - ts > ENTREGADO_AUTO_HIDE_MS) return null
