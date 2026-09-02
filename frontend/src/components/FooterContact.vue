@@ -27,41 +27,39 @@
         <v-icon size="12">mdi-clock-outline</v-icon>
         <span>{{ hours }}</span>
       </div>
-      <template v-if="isContact">
-        <v-divider class="my-2" />
-        <div class="d-flex ga-1">
-          <v-btn
-            :href="socials.instagram"
-            target="_blank"
-            rel="noopener"
-            icon="mdi-instagram"
-            size="small"
-            variant="text"
-            density="comfortable"
-            aria-label="Instagram"
-          />
-          <v-btn
-            :href="socials.whatsapp"
-            target="_blank"
-            rel="noopener"
-            icon="mdi-whatsapp"
-            size="small"
-            variant="text"
-            density="comfortable"
-            aria-label="WhatsApp"
-          />
-          <v-btn
-            :href="socials.facebook"
-            target="_blank"
-            rel="noopener"
-            icon="mdi-facebook"
-            size="small"
-            variant="text"
-            density="comfortable"
-            aria-label="Facebook"
-          />
-        </div>
-      </template>
+      <v-divider class="my-2" />
+      <div class="d-flex ga-1">
+        <v-btn
+          :href="socials.instagram"
+          target="_blank"
+          rel="noopener"
+          icon="mdi-instagram"
+          size="small"
+          variant="text"
+          density="comfortable"
+          aria-label="Instagram"
+        />
+        <v-btn
+          :href="socials.whatsapp"
+          target="_blank"
+          rel="noopener"
+          icon="mdi-whatsapp"
+          size="small"
+          variant="text"
+          density="comfortable"
+          aria-label="WhatsApp"
+        />
+        <v-btn
+          :href="socials.facebook"
+          target="_blank"
+          rel="noopener"
+          icon="mdi-facebook"
+          size="small"
+          variant="text"
+          density="comfortable"
+          aria-label="Facebook"
+        />
+      </div>
     </v-card>
   </div>
 </template>
@@ -104,12 +102,9 @@
   }
   .footer-contact.is-contact {
     position: static;
-    width: 320px;
-    min-width: 280px;
-    max-width: 320px;
-    margin: 0;
-    flex-shrink: 0;
-    align-self: flex-start;
+    width: 100%;
+    max-width: 600px;
+    margin: 24px auto 0;
     transform: none;
   }
   @media (max-width: 960px) {

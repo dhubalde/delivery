@@ -5,46 +5,44 @@
       ¿Necesitas ayuda? Dejanos tu mensaje — futuro bot/formulario en caso de
       error.
     </p>
-    <div class="contact-layout">
-      <v-card class="contact-form">
-        <v-card-text>
-          <v-form @submit.prevent="submit">
-            <v-text-field
-              v-model="form.name"
-              label="Nombre"
-              density="compact"
-              :rules="[required]"
-            />
-            <v-text-field
-              v-model="form.email"
-              label="Email"
-              density="compact"
-              type="email"
-              :rules="[required, emailRule]"
-            />
-            <v-textarea
-              v-model="form.message"
-              label="Mensaje"
-              density="compact"
-              rows="4"
-              :rules="[required]"
-            />
-            <v-alert v-if="error" type="error" density="compact" class="mb-3">{{
-              error
-            }}</v-alert>
-            <v-alert
-              v-if="success"
-              type="success"
-              density="compact"
-              class="mb-3"
-              >{{ success }}</v-alert
-            >
-            <v-btn type="submit" color="primary" :loading="sending">Enviar</v-btn>
-          </v-form>
-        </v-card-text>
-      </v-card>
-      <FooterContact />
-    </div>
+    <v-card class="contact-form">
+      <v-card-text>
+        <v-form @submit.prevent="submit">
+          <v-text-field
+            v-model="form.name"
+            label="Nombre"
+            density="compact"
+            :rules="[required]"
+          />
+          <v-text-field
+            v-model="form.email"
+            label="Email"
+            density="compact"
+            type="email"
+            :rules="[required, emailRule]"
+          />
+          <v-textarea
+            v-model="form.message"
+            label="Mensaje"
+            density="compact"
+            rows="4"
+            :rules="[required]"
+          />
+          <v-alert v-if="error" type="error" density="compact" class="mb-3">{{
+            error
+          }}</v-alert>
+          <v-alert
+            v-if="success"
+            type="success"
+            density="compact"
+            class="mb-3"
+            >{{ success }}</v-alert
+          >
+          <v-btn type="submit" color="primary" :loading="sending">Enviar</v-btn>
+        </v-form>
+      </v-card-text>
+    </v-card>
+    <FooterContact />
   </v-container>
 </template>
 <script setup lang="ts">
@@ -85,18 +83,8 @@
   }
 </script>
 <style scoped>
-  .contact-layout {
-    display: flex;
-    gap: 24px;
-    align-items: flex-start;
-  }
   .contact-form {
-    flex: 1 1 0;
-    min-width: 0;
-  }
-  @media (max-width: 960px) {
-    .contact-layout {
-      flex-direction: column;
-    }
+    max-width: 600px;
+    margin: 0 auto;
   }
 </style>
