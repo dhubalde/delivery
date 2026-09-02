@@ -38,9 +38,9 @@ const { data: merchantData } = usePublicMerchant(slug.value) as any
 
 const m = computed(() => (merchantData.value ?? null) as Record<string, any> | null)
 
-const merchantName = computed(() => (m.value?.name as string) || 'Empresa — TODO merchant.name')
-const phone = computed(() => (m.value?.phone as string) || (m.value?.tel as string) || 'Tel: — TODO: agregar Merchant.phone')
-const email = computed(() => (m.value?.email as string) || 'Email: — TODO: agregar Merchant.email')
+const merchantName = computed(() => (m.value?.name as string) || 'Group-q')
+const phone = computed(() => (m.value?.phone as string) || (m.value?.tel as string) || '3446-200156')
+const email = computed(() => (m.value?.email as string) || 'contacto@group-q.tech')
 const address = computed(() => (m.value?.address as string) || 'Dirección: — TODO: agregar Merchant.address')
 const hours = computed(() => (m.value?.hours as string) || '')
 </script>
