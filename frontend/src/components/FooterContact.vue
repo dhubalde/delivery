@@ -67,7 +67,7 @@
     width: 100%;
     max-width: 600px;
     margin: 16px auto 0;
-    transform: translateX(40px);
+    transform: translateX(60px);
   }
   @media (max-width: 960px) {
     .footer-contact {
