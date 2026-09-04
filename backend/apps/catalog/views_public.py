@@ -1,7 +1,9 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions
+from rest_framework.response import Response
+from rest_framework import status
 
-from apps.catalog.models import Category, Flavor, Product
+from apps.catalog.models import Category, Flavor, Product, CatalogStat
 from apps.catalog.serializers import CategorySerializer, FlavorSerializer, ProductSerializer
 from apps.tenancy.models import Merchant
 
@@ -58,3 +60,24 @@ class PublicFlavorListView(generics.ListAPIView):
         if search:
             qs = qs.filter(name__istartswith=search)
         return qs
+
+
+class CatalogStatPublicView(generics.GenericAPIView):
+    """Public endpoint: GET returns stats, POST increments visit count."""
+
+    permission_classes = [permissions.AllowAny]
+
+    def _get_merchant(self):
+        return _get_merchant_by_slug(self.kwargs["slug"])
+
+    def post(self, request, slug):
+        merchant = self._get_merchant()
+        obj, created = CatalogStat.objects.get_or_create(merchant_id=merchant.pk)
+        obj.visit_count += 1
+        obj.save()
+        return Response({"visit_count": obj.visit_count, "buyer_count": obj.buyer_count})
+
+    def get(self, request, slug):
+        merchant = self._get_merchant()
+        obj, created = CatalogStat.objects.get_or_create(merchant_id=merchant.pk)
+        return Response({"visit_count": obj.visit_count, "buyer_count": obj.buyer_count})

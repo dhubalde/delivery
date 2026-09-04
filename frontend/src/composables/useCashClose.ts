@@ -6,14 +6,18 @@ import { computed, unref } from 'vue'
 export const cashErrStatus = (e: unknown) => (e as { response?: { status?: number } })?.response?.status
 export const cashErrCode = (e: unknown) => (e as { response?: { data?: { error?: { code?: string } } } })?.response?.data?.error?.code ?? ''
 export const cashErrMsg = (e: unknown) => (e as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Error'
-export function useCashPreview(businessDate?: Ref<string> | string) {
-  const normalized = computed(() => {
-    const v = unref(businessDate as never) as string | undefined
+export function useCashPreview(startDate?: Ref<string> | string, endDate?: Ref<string> | string) {
+  const normalizedStart = computed(() => {
+    const v = unref(startDate as never) as string | undefined
+    return v ?? undefined
+  })
+  const normalizedEnd = computed(() => {
+    const v = unref(endDate as never) as string | undefined
     return v ?? undefined
   })
   return useQuery({
-    queryKey: computed(() => qk.adminCashPreview(normalized.value)),
-    queryFn: () => cashApi.preview(normalized.value),
+    queryKey: computed(() => qk.adminCashPreview(normalizedStart.value, normalizedEnd.value)),
+    queryFn: () => cashApi.preview(normalizedStart.value, normalizedEnd.value),
     retry: false,
   })
 }

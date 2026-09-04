@@ -27,17 +27,17 @@ const props = defineProps<{ ticket: Record<string,unknown> }>()
 const totals = computed(()=> (props.ticket?.totals as Record<string,unknown> ?? {}) as { EFECTIVO:string; BILLETERAS_VIRTUALES:string; TARJETAS:string; TOTAL?:string | null; TOTAL_ENTREGADOS:number; TOTAL_RECHAZADOS:number })
 const fmt = (v: unknown) => {
   const n = Number.parseFloat(String(v ?? 0))
-  return Number.isNaN(n) ? '0.00' : n.toFixed(2)
+  return Number.isNaN(n) ? '0,00' : n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 const totalImporte = computed(()=>{
   const t = totals.value.TOTAL
   const pn = t != null && String(t).trim() !== '' ? Number.parseFloat(String(t)) : Number.NaN
-  if (!Number.isNaN(pn)) return pn.toFixed(2)
+  if (!Number.isNaN(pn)) return pn.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   const e = Number.parseFloat(String(totals.value.EFECTIVO ?? 0))
   const b = Number.parseFloat(String(totals.value.BILLETERAS_VIRTUALES ?? 0))
   const c = Number.parseFloat(String(totals.value.TARJETAS ?? 0))
   const sum = (Number.isNaN(e) ? 0 : e) + (Number.isNaN(b) ? 0 : b) + (Number.isNaN(c) ? 0 : c)
-  return sum.toFixed(2)
+  return sum.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 })
 const now = new Date().toLocaleString('es-AR')
 </script>

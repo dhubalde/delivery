@@ -72,11 +72,35 @@ def _parse_business_date(request):
     return get_business_date()
 
 
-def _compute_preview(merchant, business_date):
+def _parse_business_date_range(request):
+    """Parse optional business_date and business_date_to query params into a (start, end) tuple."""
+    from datetime import date as _date
+    start_raw = request.query_params.get("business_date")
+    end_raw = request.query_params.get("business_date_to")
+    try:
+        start = _date.fromisoformat(start_raw) if start_raw else None
+    except Exception:
+        start = None
+    try:
+        end = _date.fromisoformat(end_raw) if end_raw else None
+    except Exception:
+        end = None
+    if start is None and end is None:
+        today = get_business_date()
+        return today, today
+    if start is None:
+        start = end
+    if end is None:
+        end = start
+    return start, end
+
+
+def _compute_preview(merchant, start_date, end_date):
     def _sum(method):
         result = Payment.objects.filter(
             order__merchant=merchant,
-            order__business_date=business_date,
+            order__business_date__gte=start_date,
+            order__business_date__lte=end_date,
             method=method,
             status=Payment.Status.CONFIRMED,
         ).aggregate(total=Sum("amount"))
@@ -84,8 +108,18 @@ def _compute_preview(merchant, business_date):
     total_efectivo = _sum(Payment.Method.EFECTIVO)
     total_billeteras = _sum(Payment.Method.BILLETERA)
     total_tarjetas = _sum(Payment.Method.TARJETA)
-    total_entregados = Order.objects.filter(merchant=merchant, business_date=business_date, state=Order.State.ENTREGADO).count()
-    total_rechazados = Order.objects.filter(merchant=merchant, business_date=business_date, state=Order.State.CANCELADO).count()
+    total_entregados = Order.objects.filter(
+        merchant=merchant,
+        business_date__gte=start_date,
+        business_date__lte=end_date,
+        state=Order.State.ENTREGADO,
+    ).count()
+    total_rechazados = Order.objects.filter(
+        merchant=merchant,
+        business_date__gte=start_date,
+        business_date__lte=end_date,
+        state=Order.State.CANCELADO,
+    ).count()
     def _fmt(d):
         return format(d.quantize(Decimal("0.00")), "f")
     total = total_efectivo + total_billeteras + total_tarjetas
@@ -111,8 +145,8 @@ class CashCloseView(APIView):
         merchant = Merchant.objects.filter(pk=mid).first() or Merchant.all_objects.filter(pk=mid).first()
         if merchant is None:
             return Response({"error": {"code": "NOT_FOUND", "message": "Merchant not found"}}, status=404)
-        business_date = _parse_business_date(request)
-        closure = CashClosure.objects.filter(merchant=merchant, business_date=business_date).first()
+        start_date, end_date = _parse_business_date_range(request)
+        closure = CashClosure.objects.filter(merchant=merchant, business_date=start_date).first()
         if closure is not None:
             totals = closure.ticket_payload.get("totals") if closure.ticket_payload else None
             if not totals:
@@ -137,12 +171,13 @@ class CashCloseView(APIView):
                 "id": closure.pk,
                 "business_date": str(closure.business_date),
             }, status=200)
-        totals = _compute_preview(merchant, business_date)
+        totals = _compute_preview(merchant, start_date, end_date)
         cashier = _resolve_cashier(request, merchant.pk)
+        date_str = f"{start_date.isoformat()} to {end_date.isoformat()}" if start_date != end_date else start_date.isoformat()
         ticket_preview = {
             "merchant_id": merchant.pk,
             "merchant_slug": getattr(merchant, "slug", ""),
-            "business_date": business_date.isoformat(),
+            "business_date": date_str,
             "cashier_id": getattr(cashier, "pk", None),
             "cashier_name": getattr(cashier, "display_name", "") if cashier else "",
             "totals": totals,

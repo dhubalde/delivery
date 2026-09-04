@@ -147,3 +147,22 @@ class ProductFlavor(models.Model):
 
     def __str__(self):
         return f"{self.product} -> {self.flavor}"
+
+
+class CatalogStat(BaseModel):
+    merchant = models.OneToOneField(
+        "tenancy.Merchant", on_delete=models.CASCADE, related_name="catalog_stat"
+    )
+    visit_count = models.PositiveIntegerField(default=0)
+    buyer_count = models.PositiveIntegerField(default=0)  # orders delivered
+
+    class Meta:
+        verbose_name = "Catálogo stat"
+        verbose_name_plural = "Catálogos stat"
+
+    def __str__(self):
+        return f"{self.merchant} — visitas:{self.visit_count} compradores:{self.buyer_count}"
+
+
+# Ensure signals are loaded on import
+import apps.catalog.signals  # noqa: F401

@@ -3,6 +3,7 @@
     <v-app-bar density="compact" color="primary">
       <template #title><AppLogo :size="130" variant="auto" /></template>
       <v-app-bar-nav-icon v-if="xs" @click="drawer=!drawer" />
+      <NotificationBell recipient-type="CUSTOMER" />
       <v-btn icon="mdi-brightness-6" @click="ui.toggleTheme()" />
     </v-app-bar>
     <v-navigation-drawer v-if="xs" v-model="drawer" temporary width="260">
@@ -33,6 +34,7 @@ import CartDrawer from '@/components/CartDrawer.vue'
 import ClosedBanner from '@/components/ClosedBanner.vue'
 import AppLogo from '@/components/AppLogo.vue'
 import FooterContact from '@/components/FooterContact.vue'
+import NotificationBell from '@/components/NotificationBell.vue'
 const ui = useUiStore()
 const theme = useTheme()
 watch(() => ui.theme, (v) => { theme.global.name.value = v }, { immediate: true })

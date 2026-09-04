@@ -1,8 +1,10 @@
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.response import Response
 
-from apps.catalog.models import Category, Flavor, Product
+from apps.catalog.models import Category, Flavor, Product, CatalogStat
 from apps.catalog.serializers import CategorySerializer, FlavorSerializer, ProductSerializer
+from apps.tenancy.models import Merchant
 
 
 def _resolve_merchant_id(request):
@@ -12,8 +14,6 @@ def _resolve_merchant_id(request):
     slug = request.query_params.get("merchant_slug") or request.headers.get("X-Merchant-Slug") or request.META.get("HTTP_X_MERCHANT_SLUG")
     if slug:
         try:
-            from apps.tenancy.models import Merchant
-
             m = Merchant.objects.filter(slug=slug).first()
             if m:
                 return m.pk
@@ -203,3 +203,28 @@ class FlavorDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_destroy(self, instance):
         instance.delete()
+
+
+class CatalogStatView(generics.GenericAPIView):
+    """Endpoint to increment visit count and get catalog stats (visitors vs buyers)."""
+
+    def post(self, request, *args, **kwargs):
+        """Increment visit count for the merchant."""
+        mid = _resolve_merchant_id(request)
+        if mid is None:
+            return Response({"error": "merchant context required"}, status=status.HTTP_400_BAD_REQUEST)
+        obj, created = CatalogStat.objects.get_or_create(merchant_id=mid)
+        obj.visit_count += 1
+        obj.save()
+        return Response({"visit_count": obj.visit_count}, status=status.HTTP_200_OK)
+
+    def get(self, request, *args, **kwargs):
+        """Get catalog stats: visit count and buyer count."""
+        mid = _resolve_merchant_id(request)
+        if mid is None:
+            return Response({"error": "merchant context required"}, status=status.HTTP_400_BAD_REQUEST)
+        obj, created = CatalogStat.objects.get_or_create(merchant_id=mid)
+        return Response(
+            {"visit_count": obj.visit_count, "buyer_count": obj.buyer_count},
+            status=status.HTTP_200_OK,
+        )

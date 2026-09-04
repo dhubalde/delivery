@@ -11,21 +11,27 @@
         <v-skeleton-loader type="text" />
       </div>
       <div v-else>
-        <div class="d-flex justify-space-between py-1 text-body-2">
-          <span>Efectivo</span><strong>${{ fmt(display.efectivo) }}</strong>
+        <div class="totals-centered">
+          <div class="total-item">
+            <span class="total-label">Efectivo</span>
+            <strong class="total-amount" :class="{ 'small-amount': hasAnyLarge }">${{ fmt(display.efectivo) }}</strong>
+          </div>
+          <div class="total-item">
+            <span class="total-label">Billeteras</span>
+            <strong class="total-amount" :class="{ 'small-amount': hasAnyLarge }">${{ fmt(display.billeteras) }}</strong>
+          </div>
+          <div class="total-item">
+            <span class="total-label">Tarjetas</span>
+            <strong class="total-amount" :class="{ 'small-amount': hasAnyLarge }">${{ fmt(display.tarjetas) }}</strong>
+          </div>
+          <v-divider class="my-2" />
+          <div class="total-item total-item--total">
+            <span class="total-label font-weight-bold">Total</span>
+            <strong class="total-amount total-amount--big" :class="{ 'small-amount': hasAnyLarge }">${{ fmt(display.total) }}</strong>
+          </div>
         </div>
-        <div class="d-flex justify-space-between py-1 text-body-2">
-          <span>Billeteras</span><strong>${{ fmt(display.billeteras) }}</strong>
-        </div>
-        <div class="d-flex justify-space-between py-1 text-body-2">
-          <span>Tarjetas</span><strong>${{ fmt(display.tarjetas) }}</strong>
-        </div>
-        <v-divider class="my-2" />
-        <div class="d-flex justify-space-between py-1 text-body-2 font-weight-bold">
-          <span>Total</span><span>${{ fmt(display.total) }}</span>
-        </div>
-        <div v-if="isFallback" class="text-caption text-medium-emphasis mt-2">* estimado local (ENTREGADO)</div>
-        <div v-if="isError && !hasPreview" class="text-caption text-medium-emphasis mt-2">Sin preview — usando cálculo local</div>
+        <div v-if="isFallback" class="text-caption text-medium-emphasis mt-2 text-center">* estimado local (ENTREGADO)</div>
+        <div v-if="isError && !hasPreview" class="text-caption text-medium-emphasis mt-2 text-center">Sin preview — usando cálculo local</div>
       </div>
     </v-card-text>
   </v-card>
@@ -95,8 +101,53 @@ const fallbackDisplay = computed(() => {
 
 const display = computed(() => previewDisplay.value ?? fallbackDisplay.value)
 const isFallback = computed(() => !previewDisplay.value)
+const isLarge = computed(() => (display.value?.total ?? 0) >= 1_000_000)
+const hasAnyLarge = computed(() => {
+  const d = display.value
+  if (!d) return false
+  return d.efectivo >= 1_000_000 || d.billeteras >= 1_000_000 || d.tarjetas >= 1_000_000 || d.total >= 1_000_000
+})
 
 function fmt(n: number) {
-  return n.toFixed(2)
+  return n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 </script>
+
+<style scoped>
+.totals-centered {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.total-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+}
+.total-label {
+  font-size: 0.85rem;
+  color: rgba(0, 0, 0, 0.6);
+  letter-spacing: 0.02em;
+}
+.total-amount {
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.2;
+  word-break: break-all;
+  max-width: 100%;
+}
+.total-amount--big {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #06B6D4;
+}
+.small-amount {
+  font-size: 0.88rem !important;
+  letter-spacing: -0.02em;
+}
+.total-item--total .small-amount {
+  font-size: 1rem !important;
+}
+</style>

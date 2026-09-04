@@ -1,6 +1,7 @@
 from django.urls import path
 
 from apps.catalog.views import (
+    CatalogStatView,
     CategoryDetailView,
     CategoryListCreateView,
     FlavorDetailView,
@@ -8,10 +9,13 @@ from apps.catalog.views import (
     FlavorListView,
     ProductDetailView,
     ProductListCreateView,
-    ProductListView,
 )
 
+ProductListView = ProductListCreateView
+FlavorListView = FlavorListCreateView
+
 urlpatterns = [
+    path("stat/", CatalogStatView.as_view(), name="catalog-stat"),
     path("categories/", CategoryListCreateView.as_view(), name="category-list-create"),
     path("categories/<int:pk>/", CategoryDetailView.as_view(), name="category-detail"),
     path("products/", ProductListCreateView.as_view(), name="product-list-create"),

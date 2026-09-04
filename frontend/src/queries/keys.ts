@@ -3,7 +3,7 @@ export const qk = {
   categories: (p: { slug: string }) => ['categories', p] as const,
   products: (p: { slug: string; category?: number; search?: string }) => ['products', p] as const,
   flavors: (p: { slug: string; category?: number; search?: string }) => ['flavors', p] as const,
-  ordersBoard: (p: { state: string; businessDate: string }) => ['orders', 'board', p] as const,
+  ordersBoard: (p: { state: string; businessDate: string; endDate?: string }) => ['orders', 'board', p] as const,
   forecast: (p: { days: number }) => ['weather', 'forecast', p] as const,
   adminCategories: () => ['admin', 'categories'] as const,
   adminProducts: (p?: { category?: number; search?: string }) => ['admin', 'products', p ?? {}] as const,
@@ -13,7 +13,7 @@ export const qk = {
   adminDeliveryConfig: () => ['admin', 'deliveryConfig'] as const,
   adminZones: () => ['admin', 'zones'] as const,
   adminEmployees: () => ['admin', 'employees'] as const,
-  adminCashPreview: (businessDate?: string) => ['admin', 'cashPreview', businessDate ?? 'current'] as const,
+  adminCashPreview: (businessDate?: string, businessDateTo?: string) => ['admin', 'cashPreview', businessDate ?? 'current', businessDateTo ?? ''] as const,
   merchant: () => ['merchant', 'detail'] as const,
   publicMerchant: (slug?: string) => ['merchant', 'public', slug ?? 'default'] as const,
 }

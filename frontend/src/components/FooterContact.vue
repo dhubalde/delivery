@@ -2,12 +2,14 @@
   <div class="footer-contact" :class="{ 'is-contact': isContact }">
     <v-card
       density="compact"
-      variant="tonal"
+      variant="elevated"
       rounded="lg"
       elevation="2"
-      class="pa-2"
+      class="pa-2 footer-card"
     >
-      <div class="text-caption font-weight-medium d-flex align-center ga-1">
+      <div
+        class="text-caption font-weight-medium d-flex align-center ga-1 footer-title"
+      >
         <v-icon size="14">mdi-storefront</v-icon>
         <span>{{ merchantName }}</span>
       </div>
@@ -26,6 +28,10 @@
       <div v-if="hours" class="text-caption d-flex align-center ga-1">
         <v-icon size="12">mdi-clock-outline</v-icon>
         <span>{{ hours }}</span>
+      </div>
+      <div v-if="version" class="text-caption d-flex align-center ga-1">
+        <v-icon size="12">mdi-information-outline</v-icon>
+        <span>{{ version }}</span>
       </div>
       <v-divider class="my-2" />
       <div class="d-flex ga-1">
@@ -72,18 +78,23 @@
   const route = useRoute();
   const isContact = computed(() => route.path.includes("/contact"));
   const auth = useAuthStore();
-  const slug = computed(() => auth.merchantSlug || "ice-zone");
+  const slug = computed(() => auth.merchantSlug || "Group-q Tech");
   const { data: merchantData } = usePublicMerchant(slug.value) as any;
 
   const m = computed(
     () => (merchantData.value ?? null) as Record<string, any> | null,
   );
 
-  const merchantName = computed(() => "Group-q");
-  const phone = computed(() => "3446-200156");
+  const merchantName = computed(() => "Group-q Tech");
+  const phone = computed(() => "+54 9 3446-200156");
   const email = computed(() => "contacto@group-q.tech");
-  const address = computed(() => (m.value?.address as string) || "—");
+  const address = computed(
+    () => (m.value?.address as string) || "Gualeguaychú, Entre Ríos, Argentina",
+  );
   const hours = computed(() => (m.value?.hours as string) || "");
+  const version = computed(
+    () => (m.value?.version as string) || "Version 1.0.0",
+  );
   const socials = {
     instagram: "https://instagram.com/group-q.tech",
     whatsapp: "https://wa.me/543446200156",
@@ -99,6 +110,24 @@
     width: 320px;
     max-width: calc(100vw - 24px);
     opacity: 0.98;
+  }
+  .footer-contact .footer-card {
+    background-color: #ffffff;
+  }
+  .footer-contact .footer-title {
+    color: rgb(var(--v-theme-primary));
+  }
+  .footer-contact .text-caption {
+    color: rgb(var(--v-theme-primary));
+  }
+  .footer-contact .v-icon {
+    color: rgb(var(--v-theme-primary));
+  }
+  .footer-contact .v-btn {
+    color: rgb(var(--v-theme-primary));
+  }
+  .v-theme--dark .footer-contact .footer-card {
+    background-color: rgb(var(--v-theme-surface));
   }
   .footer-contact.is-contact {
     position: static;

@@ -8,13 +8,23 @@ import { INTERVALS } from '@/queries/intervals'
 type Order = { id: number; code: string; state: string; fulfillment: string; cash_declared: boolean; total: string; payments: { method: string; status: string }[]; customer_name?: string }
 type MaybeRef<T> = T | Ref<T>
 
-export function useOrdersBoard(state: MaybeRef<string>, businessDate: MaybeRef<string>) {
+export function useOrdersBoard(state: MaybeRef<string>, businessDate: MaybeRef<string>, endDate?: MaybeRef<string>) {
+  const normalizedEnd = computed(() => {
+    const v = unref(endDate as never) as string | undefined
+    return v ?? undefined
+  })
   return useQuery({
-    queryKey: computed(() => qk.ordersBoard({ state: unref(state), businessDate: unref(businessDate) })),
+    queryKey: computed(() => {
+      const params = { state: unref(state), businessDate: unref(businessDate) }
+      if (normalizedEnd.value) (params as { endDate?: string }).endDate = normalizedEnd.value
+      return qk.ordersBoard(params)
+    }),
     queryFn: async () => {
       const s = unref(state)
       const d = unref(businessDate)
-      const { data } = await api.get('/v1/orders', { params: { state: s, business_date: d } })
+      const params: Record<string, string> = { state: s, business_date: d }
+      if (normalizedEnd.value) params.business_date_to = normalizedEnd.value
+      const { data } = await api.get('/v1/orders', { params })
       return (Array.isArray(data) ? data : (data.results ?? data.items ?? data)) as Order[]
     },
     refetchInterval: INTERVALS.BOARD,

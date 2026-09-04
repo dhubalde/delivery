@@ -25,6 +25,9 @@ class OrderService:
             order.canceled_at = timezone.now()
             update_fields.append("canceled_at")
         order.save(update_fields=update_fields)
+        from apps.notifications.signals import notify_state_transition
+
+        notify_state_transition(order, old_state)
         from apps.audit.services import emit
 
         emit(

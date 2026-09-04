@@ -20,6 +20,8 @@
     </v-navigation-drawer>
     <v-app-bar density="compact" color="primary">
       <template #title><AppLogo :size="120" variant="auto" /></template>
+      <v-spacer />
+      <NotificationBell recipient-type="EMPLOYEE" />
       <v-btn icon="mdi-brightness-6" @click="ui.toggleTheme()" />
     </v-app-bar>
     <v-banner v-if="ui.offline" color="warning" icon="mdi-wifi-off" class="text-caption">Sin conexión — modo offline</v-banner>
@@ -29,7 +31,7 @@
       </v-container>
     </v-main>
     <v-snackbar v-model="toast.show" :color="toast.type === 'error' ? 'error' : 'warning'" timeout="3000">{{ toast.msg }}</v-snackbar>
-    <FooterContact v-if="!route.path.includes('/board') && !route.path.includes('/contact')" />
+    <FooterContact v-if="!route.path.includes('/panel/')" />
     <v-dialog v-model="showReportsDialog" max-width="360">
       <v-card>
         <v-card-title>Reportes — clave requerida</v-card-title>
@@ -54,6 +56,7 @@ import { useUiStore } from '@/stores/ui.store'
 import { useOffline } from '@/composables/useOffline'
 import AppLogo from '@/components/AppLogo.vue'
 import FooterContact from '@/components/FooterContact.vue'
+import NotificationBell from '@/components/NotificationBell.vue'
 const ui = useUiStore()
 const theme = useTheme()
 const router = useRouter()

@@ -11,9 +11,8 @@
     </v-row>
     <v-alert v-if="isForbidden" type="error" class="mb-2">403 — ADMIN requerido</v-alert>
     <v-skeleton-loader v-if="isLoading" type="list-item@3" />
-    <v-alert v-else-if="!list.length" type="info">Sin productos — ajustá filtros o creá uno</v-alert>
-    <template v-else>
-      <div class="d-flex align-center flex-nowrap px-2 py-0 text-caption text-medium-emphasis" style="flex-wrap:nowrap; font-size:12px; min-height:36px; height:36px">
+<v-alert v-else-if="!list.length" type="info">Sin productos — ajustá filtros o creá uno</v-alert>
+      <div v-else class="d-flex align-center flex-nowrap px-2 py-0 text-caption text-medium-emphasis" style="flex-wrap:nowrap; font-size:12px; min-height:36px; height:36px">
         <span style="flex:1; min-width:0; font-size:12px" class="text-truncate">Nombre — Tipo — Precio</span>
         <span style="width:150px; flex-shrink:0; font-size:12px" class="text-right">Acciones</span>
       </div>
@@ -29,7 +28,6 @@
           </template>
         </v-list-item>
       </v-list>
-    </template>
     <v-dialog v-model="dlg" max-width="520">
       <v-card :title="editing ? 'Editar producto' : 'Nuevo producto'">
         <v-card-text>
@@ -80,9 +78,9 @@ const dlg=ref(false); const editing=ref<number|null>(null); const saving=ref(fal
 const form=reactive({ name:'', category_id: null as number|null, product_type:'POTE' as 'POTE'|'UNIT', pote_size:'KG_1' as 'KG_1'|'KG_HALF'|'KG_QUARTER'|null, has_flavors:true, min_flavors:1 as number|null, max_flavors:4 as number|null, price:'' , image_url:'' as string, imageFile: null as File | File[] | null })
 const filePreview = ref<string | null>(null)
 const previewSrc = computed(()=> filePreview.value || form.image_url || null)
-function onFileChange(v: File | File[] | null){ const f = Array.isArray(v) ? v[0] ?? null : v; if(f){ if(filePreview.value) URL.revokeObjectURL(filePreview.value); filePreview.value = URL.createObjectURL(f); form.imageFile = f as unknown as File } else { if(filePreview.value) URL.revokeObjectURL(filePreview.value); filePreview.value = null; form.imageFile = null } }
+function onFileChange(v: File | File[] | null){ const f = Array.isArray(v) ? v[0] ?? null : v; if(f){ if(filePreview.value) URL.revokeObjectURL(filePreview.value); filePreview.value = URL.createObjectURL(f); form.imageFile = f as unknown as File; form.image_url = '' /* Clear image_url when new file is selected */ } else { if(filePreview.value) URL.revokeObjectURL(filePreview.value); filePreview.value = null; form.imageFile = null; } }
 const details=ref<Record<string,string>>({}); const formError=ref('')
-const fieldErr=(k:string)=>details.value[k]??''
+function fieldErr(k: string): string { return details.value[k] }
 const poteHint=computed(()=> form.has_flavors ? hint(form.pote_size, form.product_type) : '')
 const qc = useQueryClient()
 const createM=useCreateProduct(qkRef.value as never); const updateM=useUpdateProduct(qkRef.value as never); const deleteM=useDeleteProduct(qkRef.value as never)
@@ -124,7 +122,7 @@ async function save(){
     finally{ saving.value=false }
     return
   }
-  const payload: Record<string,unknown>={ name:form.name, category_id:form.category_id, product_type:form.product_type, pote_size: form.product_type==='UNIT'?null:form.pote_size, min_flavors: form.has_flavors?form.min_flavors:null, max_flavors: form.has_flavors?form.max_flavors:null, price:form.price, image_url: form.image_url?.trim() || null }
+  const imageUrl = form.image_url?.trim() || ''; const payload: Record<string,unknown>={ name:form.name, category_id:form.category_id, product_type:form.product_type, pote_size: form.product_type==='UNIT'?null:form.pote_size, min_flavors: form.has_flavors?form.min_flavors:null, max_flavors: form.has_flavors?form.max_flavors:null, price:form.price, image_url: imageUrl, ...(!file && !imageUrl ? {image: null} : {}) }
   try{ if(editing.value) await updateM.mutateAsync({ id:editing.value, ...payload } as never); else await createM.mutateAsync(payload as never); dlg.value=false }
   catch(e: unknown){ const d=errDetails(e); if(Object.keys(d).length) details.value=d as Record<string,string>; else formError.value=(e as {response?:{data?:{error?:{message?:string}}}})?.response?.data?.error?.message ?? 'Error al guardar' }
   finally{ saving.value=false }

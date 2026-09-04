@@ -208,7 +208,10 @@ class OrderBoardView(APIView):
         if state:
             qs = qs.filter(state=state)
         business_date = request.query_params.get("business_date")
-        if business_date:
+        business_date_to = request.query_params.get("business_date_to")
+        if business_date and business_date_to:
+            qs = qs.filter(business_date__gte=business_date, business_date__lte=business_date_to)
+        elif business_date:
             qs = qs.filter(business_date=business_date)
         data = [_serialize_order(o) for o in qs]
         return Response(data)
