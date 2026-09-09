@@ -8,18 +8,26 @@ from django.utils.deprecation import MiddlewareMixin
 from apps.common.context import set_tenant_merchant_id, tenant_merchant_id
 
 
-def _decode_jwt_merchant_id(request):
+def _verified_jwt_payload(request):
+    """Decode AND verify the Bearer JWT signature. Returns payload dict or None."""
     auth = request.META.get("HTTP_AUTHORIZATION", "")
     if not auth.startswith("Bearer "):
         return None
     token = auth.split(" ", 1)[1].strip()
-    parts = token.split(".")
-    if len(parts) != 3:
+    try:
+        from rest_framework_simplejwt.tokens import UntypedToken
+
+        return dict(UntypedToken(token).payload)
+    except Exception:
+        return None
+
+
+def _decode_jwt_merchant_id(request):
+    payload = _verified_jwt_payload(request)
+    if not payload:
         return None
     try:
-        payload_b64 = parts[1] + "=" * (-len(parts[1]) % 4)
-        payload = json.loads(base64.urlsafe_b64decode(payload_b64).decode())
-        mid = payload.get("merchant_id") or payload.get("merchant")
+        mid = payload.get("merchant_id")
         if mid is not None:
             return int(mid)
     except Exception:
@@ -27,8 +35,98 @@ def _decode_jwt_merchant_id(request):
     return None
 
 
+def _is_tenant_api_path(path):
+    return path.startswith("/api/v1/") or path.startswith("/api/catalog/") or path.startswith("/api/master/")
+
+
+def _is_public_path(path):
+    return (
+        path.startswith("/api/public/")
+        or path.startswith("/api/auth/")
+        or path.startswith("/admin/")
+    )
+
+
+PASSWORD_CHANGE_PATHS = (
+    "/api/v1/users/change-password/",
+    "/api/v1/users/reset-confirm/",
+    "/api/auth/token/",
+    "/api/auth/token/refresh/",
+)
+
+
+def _password_change_required(path):
+    return not path.startswith(PASSWORD_CHANGE_PATHS)
+
+
+def _session_revoked(payload):
+    jti = (payload or {}).get("jti")
+    if not jti:
+        return False
+    try:
+        from apps.tenancy.models import SessionRecord
+
+        return SessionRecord.objects.filter(jti=jti, revoked_at__isnull=False).exists()
+    except Exception:
+        return False
+
+
+def _must_change_password(payload):
+    user_id = (payload or {}).get("user_id")
+    if not user_id:
+        return False
+    try:
+        from apps.tenancy.models import PlatformUser
+        from django.contrib.auth.models import User
+
+        user = User.objects.filter(pk=user_id).first()
+        if user is None:
+            return False
+        profile = getattr(user, "platform_profile", None)
+        return bool(profile and profile.must_change_password)
+    except Exception:
+        return False
+
+
 class TenantContextMiddleware(MiddlewareMixin):
     def process_request(self, request):
+        from django.conf import settings
+
+        path = request.path or ""
+        payload = _verified_jwt_payload(request)
+        if payload is not None:
+            # A platform (master) token MUST never act as a tenant.
+            # Master routes are the exception: masters operate there.
+            if (
+                payload.get("merchant_id") is None
+                and _is_tenant_api_path(path)
+                and not path.startswith("/api/master/")
+            ):
+                return JsonResponse(
+                    {"error": {"code": "MASTER_TENANT_FORBIDDEN", "message": "Master tokens are only valid on /master/* routes."}},
+                    status=403,
+                )
+            revoked = _session_revoked(payload)
+            if revoked:
+                return JsonResponse(
+                    {"error": {"code": "SESSION_REVOKED", "message": "Session was revoked by a newer login."}},
+                    status=401,
+                )
+            must_change = _must_change_password(payload)
+            if must_change and _password_change_required(path):
+                return JsonResponse(
+                    {"error": {"code": "PASSWORD_CHANGE_REQUIRED", "message": "Change your password first."}},
+                    status=403,
+                )
+            mid = _decode_jwt_merchant_id(request)
+            set_tenant_merchant_id(mid)
+            request.tenant_merchant_id = mid
+            return None
+        if getattr(settings, "AUTH_V2", False) and _is_tenant_api_path(path) and not _is_public_path(path):
+            return JsonResponse(
+                {"error": {"code": "AUTH_REQUIRED", "message": "Valid JWT required."}},
+                status=401,
+            )
         mid = None
         header_mid = request.META.get("HTTP_X_MERCHANT_ID")
         if header_mid:
@@ -36,8 +134,6 @@ class TenantContextMiddleware(MiddlewareMixin):
                 mid = int(header_mid)
             except ValueError:
                 mid = None
-        if mid is None:
-            mid = _decode_jwt_merchant_id(request)
         if mid is None:
             path = request.path or ""
             if path.startswith("/api/public/"):

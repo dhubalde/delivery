@@ -1,18 +1,20 @@
 <template>
-  <v-card v-if="ids.length === 0" class="mt-4" color="success" variant="tonal">
+  <v-card v-if="ids.length === 0" class="mt-4" elevation="2" rounded="lg">
     <v-card-text class="d-flex align-center ga-2">
-      <v-icon icon="mdi-check-circle" size="20" />
-      <span class="text-body-2 font-weight-medium">Sin pedidos pendientes</span>
+      <v-icon icon="mdi-check-circle" size="20" color="success" />
+      <span class="text-body-2 font-weight-medium text-success">Sin pedidos pendientes</span>
     </v-card-text>
   </v-card>
-  <v-card v-else class="mt-4" variant="outlined">
+  <v-card v-else class="mt-4" elevation="2" rounded="lg">
     <v-card-title class="text-subtitle-2">Mi pedido</v-card-title>
     <v-card-text>
       <v-skeleton-loader v-if="isLoading" type="list-item@2" />
-      <div v-else-if="!displayedOrder" class="d-flex align-center ga-2 text-success">
-        <v-icon icon="mdi-check-circle" size="20" />
-        <span class="text-body-2 font-weight-medium">Sin pedidos pendientes</span>
-      </div>
+      <v-card v-else-if="!displayedOrder" class="mt-2" elevation="2" rounded="lg" color="success" variant="tonal">
+        <v-card-text class="d-flex align-center ga-2">
+          <v-icon icon="mdi-check-circle" size="20" />
+          <span class="text-body-2 font-weight-medium">Sin pedidos pendientes</span>
+        </v-card-text>
+      </v-card>
       <div v-else class="d-flex flex-column ga-2">
         <v-card variant="tonal" class="pa-2" :color="cardColor(displayedOrder.state)">
           <div class="d-flex justify-space-between align-center">

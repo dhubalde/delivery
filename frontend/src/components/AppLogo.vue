@@ -2,20 +2,9 @@
   <div class="app-logo" :style="{ width: size + 'px', height: (size * 0.22) + 'px' }" :class="variant">
     <img v-if="merchantLogo" :src="merchantLogo" :alt="alt" :width="size" :height="Math.round(size*0.22)" style="object-fit:contain;max-width:100%;" />
     <svg v-else xmlns="http://www.w3.org/2000/svg" :viewBox="`0 0 ${withText ? 200 : 44} 44`" :width="withText ? size : Math.round(size*0.22)" :height="Math.round(size*0.22)" role="img" :aria-label="alt">
-      <g transform="translate(22,22)">
-        <line x1="0" y1="-13.5" x2="0" y2="13.5" :stroke="graphiteColor" stroke-width="2.6" stroke-linecap="round" />
-        <line x1="-11.7" y1="-6.75" x2="11.7" y2="6.75" :stroke="graphiteColor" stroke-width="2.6" stroke-linecap="round" />
-        <line x1="-11.7" y1="6.75" x2="11.7" y2="-6.75" :stroke="graphiteColor" stroke-width="2.6" stroke-linecap="round" />
-        <circle cx="0" cy="0" r="3.3" :fill="graphiteColor" />
-        <circle cx="0" cy="-13.5" r="1.7" :fill="graphiteColor" />
-        <circle cx="0" cy="13.5" r="1.7" :fill="graphiteColor" />
-        <circle cx="-11.7" cy="-6.75" r="1.7" :fill="graphiteColor" />
-        <circle cx="11.7" cy="6.75" r="1.7" :fill="graphiteColor" />
-        <circle cx="-11.7" cy="6.75" r="1.7" :fill="graphiteColor" />
-        <circle cx="11.7" cy="-6.75" r="1.7" :fill="graphiteColor" />
-      </g>
+      <text x="22" y="22" text-anchor="middle" dominant-baseline="central" font-family="Comfortaa, sans-serif" font-size="26" font-weight="700" :fill="graphiteColor">W</text>
       <text v-if="withText" x="46" y="27.5" font-family="Comfortaa, sans-serif" font-size="18.5" font-weight="700" letter-spacing="0.04em">
-        <tspan :fill="graphiteColor">ICE</tspan><tspan :fill="graphiteColor" dx="6">ZONE</tspan>
+        <tspan :fill="graphiteColor">WORK</tspan><tspan :fill="graphiteColor" dx="6">ZONE</tspan>
       </text>
     </svg>
   </div>
@@ -35,7 +24,7 @@ const props = withDefaults(defineProps<{
   size: 160,
   variant: 'auto',
   withText: true,
-  alt: 'Ice Zone',
+  alt: 'Work Zone',
   forceDefault: false,
 })
 

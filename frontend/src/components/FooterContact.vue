@@ -107,13 +107,13 @@
     bottom: 12px;
     right: 16px;
     z-index: 1006;
-    width: 320px;
-    max-width: calc(100vw - 24px);
+    width: 320px !important;
+    min-width: 320px !important;
+    max-width: 320px !important;
+    box-sizing: border-box;
     opacity: 0.98;
   }
-  .footer-contact .footer-card {
-    background-color: #ffffff;
-  }
+  
   .footer-contact .footer-title {
     color: rgb(var(--v-theme-primary));
   }
@@ -126,15 +126,22 @@
   .footer-contact .v-btn {
     color: rgb(var(--v-theme-primary));
   }
-  .v-theme--dark .footer-contact .footer-card {
-    background-color: rgb(var(--v-theme-surface));
-  }
   .footer-contact.is-contact {
     position: static;
     width: 100%;
     max-width: 600px;
     margin: 24px auto 0;
     transform: none;
+  }
+  .footer-contact.inside-cart {
+    position: static !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 16px 0 0 0 !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: none !important;
   }
   @media (max-width: 960px) {
     .footer-contact {

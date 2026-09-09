@@ -16,16 +16,17 @@
       <v-row>
         <v-col v-if="!xs" cols="2"><SearchInput class="mb-3" /><CategoryNav /></v-col>
         <v-col :cols="xs?12:7"><router-view /></v-col>
-        <v-col v-if="!xs" cols="3"><CartDrawer /></v-col>
+        <v-col v-if="!xs" cols="3" style="max-width: 320px !important; flex: 0 0 320px !important; min-width: 320px !important"><CartDrawer /><FooterContact v-if="!isContact" class="inside-cart mt-4" /></v-col>
       </v-row>
     </v-container></v-main>
     <v-banner v-if="ui.offline" color="warning" sticky>Sin conexión — datos pueden estar desactualizados</v-banner>
-    <FooterContact />
+    <FooterContact v-if="xs || isContact" />
   </v-app>
 </template>
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useDisplay, useTheme } from 'vuetify'
+import { useRoute } from 'vue-router'
 import { useUiStore } from '@/stores/ui.store'
 import { useOffline } from '@/composables/useOffline'
 import CategoryNav from '@/components/CategoryNav.vue'
@@ -40,5 +41,7 @@ const theme = useTheme()
 watch(() => ui.theme, (v) => { theme.global.name.value = v }, { immediate: true })
 useOffline()
 const { xs } = useDisplay()
+const route = useRoute()
+const isContact = computed(() => route.path.includes('/contact'))
 const drawer = ref(false)
 </script>

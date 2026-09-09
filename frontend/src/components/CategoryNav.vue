@@ -27,6 +27,10 @@ function iconFor(name: string): string {
   if (n.includes('pote')) return 'mdi-ice-cream'
   if (n.includes('bombon')) return 'mdi-candy'
   if (n.includes('cono')) return 'mdi-ice-cream-outline'
+  if (n.includes('pizza')) return 'mdi-pizza'
+  if (n.includes('empanada')) return 'mdi-food'
+  if (n.includes('hamburguesa') || n.includes('burger')) return 'mdi-hamburger'
+  if (n.includes('bebida') || n.includes('gaseosa')) return 'mdi-bottle-soda'
   return 'mdi-shape-outline'
 }
 function go(id?: number) {

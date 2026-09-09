@@ -1,7 +1,7 @@
 <template>
   <v-container fluid>
     <div class="d-flex justify-space-between align-center mb-4">
-      <h2>Kanban — Ice Zone</h2>
+      <h2>Kanban — {{ merchantName }}</h2>
       <v-text-field v-model="businessDate" type="date" density="compact" hide-details style="max-width: 180px" />
     </div>
     <v-alert v-if="alreadyClosed" type="info" class="mb-4">Caja del {{ formatDM(today) }} cerrada — pedidos nuevos irán al {{ formatDM(tomorrow) }}. Pedidos del día archivados.</v-alert>
@@ -24,6 +24,17 @@ import { useCashPreview } from '@/composables/useCashClose'
 import KanbanColumn from '@/components/KanbanColumn.vue'
 import KanbanTotalsCard from '@/components/KanbanTotalsCard.vue'
 import WeatherForecast from '@/components/WeatherForecast.vue'
+import { useMerchant } from '@/composables/useMerchant'
+import { useAuthStore } from '@/stores/auth.store'
+const { data: merchantData } = useMerchant()
+const merchantName = computed(() => (merchantData.value as { name?: string } | undefined)?.name ?? 'Work Zone')
+const auth = useAuthStore()
+const stationSector = computed(() => {
+  const u = auth.user as { kind?: string; sector?: string | null; role?: string } | null
+  if (!u || u.role === 'ADMIN' || u.role === 'MASTER') return null
+  if (u.kind === 'STATION' && u.sector) return u.sector
+  return null
+})
 function getBusinessDateStr(d = new Date()): string {
   const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' })
   const hourStr = d.toLocaleString('en-GB', { timeZone: 'America/Argentina/Buenos_Aires', hour: '2-digit', hour12: false })
@@ -58,15 +69,18 @@ watch(
   },
   { immediate: true },
 )
-const cols = [
+const allCols = [
   { state: 'RECIBIDO', title: 'Recibido', color: COLUMN_COLORS.RECIBIDO },
   { state: 'PREPARACION', title: 'Preparación', color: COLUMN_COLORS.PREPARACION },
   { state: 'FACTURACION', title: 'Facturación', color: COLUMN_COLORS.FACTURACION },
   { state: 'LOGISTICA', title: 'Logística', color: COLUMN_COLORS.LOGISTICA },
   { state: 'ENTREGADO', title: 'Entregado', color: COLUMN_COLORS.ENTREGADO },
 ] as const
+const cols = computed(() =>
+  stationSector.value ? allCols.filter((c) => c.state === stationSector.value) : [...allCols],
+)
 const boards: Record<string, ReturnType<typeof useOrdersBoard>> = {}
-for (const c of cols) boards[c.state] = useOrdersBoard(c.state, businessDate)
+for (const c of allCols) boards[c.state] = useOrdersBoard(c.state, businessDate)
 const canceladoBoard = useOrdersBoard('CANCELADO', businessDate)
 function getOrdersFor(state: string) {
   if (state === 'LOGISTICA') {

@@ -1,0 +1,25 @@
+project: delivery
+artifact_store: hybrid
+language: en
+
+projects:
+  - path: backend
+    stack: Django 5 + DRF
+    test_command: python manage.py test
+    alt_test_command: pytest
+    linter: none
+    typechecker: none
+  - path: frontend
+    stack: Vue 3 + Vite + TypeScript
+    test_command: npm run test
+    linter: npm run lint
+    typechecker: npm run typecheck
+
+testing:
+  strict_tdd: false
+  reason: No single workspace-level test command covers backend and frontend.
+
+delivery:
+  strategy: ask-on-risk
+  review_budget_lines: 400
+  execution_mode: interactive

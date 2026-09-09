@@ -11,8 +11,16 @@
         <v-list-item to="/panel/schedules" title="Horarios" prepend-icon="mdi-clock-outline" />
         <v-list-item to="/panel/delivery" title="Delivery" prepend-icon="mdi-moped" />
         <v-list-item to="/panel/employees" title="Empleados" prepend-icon="mdi-account-group" />
+        <v-list-item v-if="isAdmin" to="/panel/users" title="Usuarios" prepend-icon="mdi-account-key" />
         <v-list-item to="/panel/cash-close" title="Cierre de caja" prepend-icon="mdi-cash-register" />
         <v-list-item to="/panel/merchant" title="Empresa / Logo" prepend-icon="mdi-storefront" />
+        <template v-if="isPlatform">
+          <v-divider class="my-2" />
+          <v-list-item subtitle="Work Zone" title="" />
+          <v-list-item to="/master/companies" title="Empresas" prepend-icon="mdi-domain" />
+          <v-list-item to="/master/users" title="Internos" prepend-icon="mdi-account-cog" />
+          <v-list-item to="/master/audit" title="Auditoría" prepend-icon="mdi-clipboard-text-clock" />
+        </template>
         <v-divider class="my-2" />
         <v-list-item title="Reportes" prepend-icon="mdi-chart-bar" @click="showReportsDialog = true" />
         <v-list-item to="/panel/contact" title="Contacto" prepend-icon="mdi-contacts" />
@@ -49,15 +57,19 @@
   </v-app>
 </template>
 <script setup lang="ts">
-import { onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTheme } from 'vuetify'
+import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
 import { useOffline } from '@/composables/useOffline'
 import AppLogo from '@/components/AppLogo.vue'
 import FooterContact from '@/components/FooterContact.vue'
 import NotificationBell from '@/components/NotificationBell.vue'
 const ui = useUiStore()
+const auth = useAuthStore()
+const isAdmin = computed(() => auth.hasAnyRole(['ADMIN', 'MASTER']))
+const isPlatform = computed(() => auth.merchantId === null || auth.hasAnyRole(['MASTER']))
 const theme = useTheme()
 const router = useRouter()
 const route = useRoute()

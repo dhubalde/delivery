@@ -4,8 +4,8 @@
       <v-col cols="12" sm="8" md="5" lg="4">
         <v-card elevation="6" rounded="xl" class="overflow-hidden">
           <div class="login-header pa-6 text-center">
-            <v-icon size="40" color="white">mdi-snowflake</v-icon>
-            <h1 class="text-h5 font-weight-bold mt-2" style="font-family: Comfortaa, sans-serif; color: white">Ice Zone</h1>
+            <v-icon size="40" color="white">mdi-storefront</v-icon>
+            <h1 class="text-h5 font-weight-bold mt-2" style="font-family: Comfortaa, sans-serif; color: white">Work Zone</h1>
             <p class="text-body-2 mt-1" style="color: rgba(255,255,255,0.9)">Panel de administración</p>
           </div>
 
@@ -58,12 +58,7 @@
               </v-btn>
             </v-form>
 
-            <v-divider class="my-4"><span class="text-caption text-medium-emphasis px-2">o</span></v-divider>
-
-            <v-btn block size="large" variant="flat" class="dev-btn mb-2" prepend-icon="mdi-shield-crown" @click="enterDev">
-              Entrar como ADMIN (dev)
-            </v-btn>
-            <p class="text-caption text-center text-medium-emphasis">Modo principal para probar CRUDs sin backend auth</p>
+            <p class="text-caption text-center text-medium-emphasis mt-4">El acceso lo crea el ADMIN de tu empresa o el equipo Work Zone.</p>
           </v-card-text>
         </v-card>
       </v-col>
@@ -104,68 +99,40 @@ function validate(): boolean {
   return ok
 }
 
-const endpoints = ['/auth/token/', '/token/', '/v1/auth/token/'] as const
-
 async function onLogin() {
   errorMsg.value = ''
   warningMsg.value = ''
   if (!validate()) return
   loading.value = true
-  let lastStatus: number | null = null
-  for (const ep of endpoints) {
-    try {
-      const res = await api.post(ep, { username: username.value, password: password.value })
-      const access = res.data?.access ?? res.data?.token ?? res.data?.access_token ?? ''
-      const refresh = res.data?.refresh ?? res.data?.refresh_token ?? access
-      const user = res.data?.user ?? { username: username.value, roles: ['ADMIN'] }
-      if (access) {
-        auth.setTokens(access, refresh)
-        auth.setUser(user)
-        router.push('/panel/categories')
-        return
-      }
+  try {
+    const res = await api.post('/auth/token/', { username: username.value, password: password.value })
+    const access = res.data?.access ?? ''
+    const refresh = res.data?.refresh ?? access
+    const user = res.data?.user
+    if (!access || !user) {
       errorMsg.value = 'Respuesta inesperada del servidor'
       return
-    } catch (e: unknown) {
-      const err = e as { response?: { status?: number; data?: unknown } }
-      const status = err.response?.status
-      lastStatus = status ?? null
-      if (status === 404) continue
-      if (status === 401 || status === 400) {
-        errorMsg.value = 'Credenciales inválidas'
-        return
-      }
-      if (status && status >= 500) {
-        warningMsg.value = 'Backend auth no disponible (JWT no cableado). Usá el modo ADMIN (dev).'
-        return
-      }
-      if (status === 422) {
-        errorMsg.value = 'Datos inválidos'
-        return
-      }
-      if (!err.response) {
-        warningMsg.value = 'No se pudo conectar al backend. Usá el modo ADMIN (dev).'
-        return
-      }
-      continue
-    } finally {
-      //
     }
+    auth.setTokens(access, refresh)
+    auth.setUser(user)
+    if (user.must_change_password) {
+      router.push('/change-password')
+      return
+    }
+    router.push('/panel/board')
+  } catch (e: unknown) {
+    const err = e as { response?: { status?: number; data?: { detail?: string; password?: string } } }
+    const status = err.response?.status
+    if (status === 401) {
+      errorMsg.value = err.response?.data?.password ?? 'Credenciales inválidas'
+    } else if (!err.response) {
+      warningMsg.value = 'No se pudo conectar al backend.'
+    } else {
+      errorMsg.value = 'No se pudo ingresar'
+    }
+  } finally {
+    loading.value = false
   }
-  if (lastStatus === 404) {
-    warningMsg.value = 'Endpoint de auth no encontrado (404). Backend sin JWT — usá el modo ADMIN (dev).'
-  } else if (warningMsg.value === '' && errorMsg.value === '') {
-    warningMsg.value = 'No se pudo autenticar. Usá el modo ADMIN (dev) para probar CRUDs.'
-  }
-  loading.value = false
-  if (warningMsg.value || errorMsg.value) loading.value = false
-  loading.value = false
-}
-
-function enterDev() {
-  auth.setTokens('dev-token', 'dev-refresh')
-  auth.setUser({ username: 'admin', roles: ['ADMIN'] })
-  router.push('/panel/categories')
 }
 
 function goPanel() {
@@ -180,15 +147,5 @@ function logout() {
 <style scoped>
 .login-header {
   background: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%);
-}
-.dev-btn {
-  background: #06B6D4 !important;
-  color: white !important;
-  font-family: Comfortaa, sans-serif;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-.dev-btn:hover {
-  filter: brightness(1.05);
 }
 </style>

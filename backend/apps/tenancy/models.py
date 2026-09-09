@@ -11,6 +11,8 @@ class Merchant(BaseModel):
     is_active = models.BooleanField(default=True)
     logo = models.ImageField(upload_to="merchant_logos/", null=True, blank=True)
     logo_url = models.URLField(max_length=500, blank=True, null=True)
+    seat_limit = models.PositiveIntegerField(default=10)
+    has_branches = models.BooleanField(default=False)
 
     @property
     def resolved_logo_url(self):
@@ -117,25 +119,37 @@ class Employee(BaseModel):
     merchant = models.ForeignKey(
         Merchant, on_delete=models.CASCADE, related_name="employees"
     )
-    display_name = models.CharField(max_length=120)
+    fullname = models.CharField(max_length=120)
+    cuil = models.CharField(max_length=13)
+    address = models.CharField(max_length=200, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    display_name = models.CharField(max_length=120, blank=True)
     is_active = models.BooleanField(default=True)
 
     class Meta:
         indexes = [
             models.Index(fields=["merchant", "is_active"]),
-            models.Index(fields=["merchant", "display_name"]),
+            models.Index(fields=["merchant", "fullname"]),
         ]
-        ordering = ["display_name"]
+        ordering = ["fullname"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["merchant", "cuil"],
+                name="unique_employee_cuil_per_merchant",
+            ),
+        ]
 
     def clean(self):
         errors = {}
-        if not self.display_name or not str(self.display_name).strip():
-            errors["display_name"] = "display_name is required."
+        if not self.fullname or not str(self.fullname).strip():
+            errors["fullname"] = "fullname is required."
+        if not self.cuil or not str(self.cuil).strip():
+            errors["cuil"] = "cuil is required."
         if errors:
             raise ValidationError(errors)
 
     def __str__(self):
-        return f"{self.display_name} ({self.merchant_id})"
+        return f"{self.fullname} ({self.merchant_id})"
 
 
 class EmployeeRole(models.Model):
@@ -171,3 +185,134 @@ class EmployeeRole(models.Model):
 
     def __str__(self):
         return f"{self.employee_id} {self.role}"
+
+
+class Branch(BaseModel):
+    merchant = models.ForeignKey(
+        Merchant, on_delete=models.CASCADE, related_name="branches"
+    )
+    name = models.CharField(max_length=120)
+    address = models.CharField(max_length=200, blank=True)
+    phone = models.CharField(max_length=40, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["merchant", "is_active"]),
+        ]
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["merchant", "name"],
+                name="unique_branch_name_per_merchant",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.merchant_id})"
+
+
+class PlatformUser(BaseModel):
+    """System login profile: identity separate from the Employee HR record."""
+
+    class Kind(models.TextChoices):
+        PERSONAL = "PERSONAL", "Personal"
+        STATION = "STATION", "Station"
+
+    user = models.OneToOneField(
+        "auth.User", on_delete=models.CASCADE, related_name="platform_profile"
+    )
+    # Null merchant = platform owner (master/internal), scoped via assigned_merchants.
+    merchant = models.ForeignKey(
+        Merchant, null=True, blank=True, on_delete=models.CASCADE, related_name="platform_users"
+    )
+    role = models.CharField(max_length=20)
+    kind = models.CharField(max_length=10, choices=Kind.choices, default=Kind.PERSONAL)
+    sector = models.CharField(max_length=20, null=True, blank=True)
+    branch = models.ForeignKey(
+        Branch, null=True, blank=True, on_delete=models.SET_NULL, related_name="platform_users"
+    )
+    assigned_merchants = models.ManyToManyField(Merchant, blank=True, related_name="assigned_staff")
+    must_change_password = models.BooleanField(default=True)
+    password_changed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["merchant", "role"]),
+        ]
+
+    @property
+    def is_platform(self):
+        return self.merchant_id is None
+
+    def __str__(self):
+        return f"{self.user} [{self.role}] ({self.merchant_id})"
+
+
+class AuditEntry(models.Model):
+    actor = models.ForeignKey(
+        "auth.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="audit_entries"
+    )
+    action = models.CharField(max_length=120)
+    merchant = models.ForeignKey(
+        Merchant, null=True, blank=True, on_delete=models.SET_NULL, related_name="audit_entries"
+    )
+    detail = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["merchant", "created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.created_at} {self.actor_id} {self.action} {self.merchant_id}"
+
+
+class PasswordResetToken(models.Model):
+    user = models.ForeignKey(
+        "auth.User", on_delete=models.CASCADE, related_name="password_reset_tokens"
+    )
+    token_hash = models.CharField(max_length=64, unique=True)
+    created_by = models.ForeignKey(
+        "auth.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "created_at"]),
+        ]
+
+    @property
+    def is_burned(self):
+        return self.used_at is not None
+
+    def __str__(self):
+        return f"reset {self.user_id} used={self.is_burned}"
+
+
+class SessionRecord(models.Model):
+    user = models.ForeignKey(
+        "auth.User", on_delete=models.CASCADE, related_name="session_records"
+    )
+    jti = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["created_at"]
+        indexes = [
+            models.Index(fields=["user", "revoked_at"]),
+        ]
+
+    @property
+    def is_active(self):
+        return self.revoked_at is None
+
+    def __str__(self):
+        return f"session {self.user_id} active={self.is_active}"

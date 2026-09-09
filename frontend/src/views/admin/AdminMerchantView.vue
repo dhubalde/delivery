@@ -11,7 +11,7 @@
             <div>
               <div class="text-h6" style="font-family:Comfortaa">{{ merchant?.name }}</div>
               <div class="text-caption text-medium-emphasis">slug: {{ merchant?.slug }} · vertical: {{ merchant?.vertical }}</div>
-              <div class="text-caption">Logo actual: {{ merchant?.logo || merchant?.logo_url || 'default Ice Zone' }}</div>
+              <div class="text-caption">Logo actual: {{ merchant?.logo || merchant?.logo_url || 'default Work Zone' }}</div>
             </div>
           </div>
           <v-divider class="mb-4" />
@@ -28,7 +28,7 @@
         <v-card-text v-if="formSuccess"><v-alert type="success" density="compact">{{ formSuccess }}</v-alert></v-card-text>
       </v-card>
       <v-alert type="info" variant="tonal">
-        El logo se muestra automáticamente en <strong>AppLogo</strong>. Si el merchant tiene <code>logo</code> o <code>logo_url</code> configurado, se usa ese; si no, se usa el default minimalista Ice Zone (turquesa #06B6D4).
+        El logo se muestra automáticamente en <strong>AppLogo</strong>. Si el merchant tiene <code>logo</code> o <code>logo_url</code> configurado, se usa ese; si no, se usa el default minimalista Work Zone (turquesa #06B6D4).
       </v-alert>
     </template>
   </v-container>
