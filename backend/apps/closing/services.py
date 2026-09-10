@@ -14,8 +14,11 @@ class ClosureError(Exception):
     pass
 
 
-class NotAdminError(ClosureError):
+class NotAllowedError(ClosureError):
     pass
+
+
+NotAdminError = NotAllowedError
 
 
 class AlreadyClosedError(ClosureError):
@@ -25,15 +28,25 @@ class AlreadyClosedError(ClosureError):
 class CashClosureService:
     @staticmethod
     @transaction.atomic
-    def close(merchant, business_date, cashier):
-        if cashier is None:
-            raise NotAdminError("Cashier required")
-        if getattr(cashier, "deleted_at", None) is not None or not getattr(cashier, "is_active", True):
-            raise NotAdminError("Cashier inactive or deleted")
-        if cashier.merchant_id != merchant.pk:
-            raise NotAdminError("Cashier does not belong to merchant")
-        if not has_role(cashier, EmployeeRole.Role.ADMIN):
-            raise NotAdminError("Only ADMIN can close cash (BR-CIE-01)")
+    def close(merchant, business_date, cashier=None, closed_by=None):
+        """Any active employee of the merchant (any role) or any active
+        platform user of the merchant may close (rotating shifts)."""
+        closed_by = closed_by or {}
+        if cashier is not None:
+            if getattr(cashier, "deleted_at", None) is not None or not getattr(cashier, "is_active", True):
+                raise NotAllowedError("Cashier inactive or deleted")
+            if cashier.merchant_id != merchant.pk:
+                raise NotAllowedError("Cashier does not belong to merchant")
+            closer_name = cashier.display_name
+            closer_role = "EMPLOYEE"
+            closer_username = ""
+        elif closed_by.get("username") and closed_by.get("merchant_id") == merchant.pk:
+            closer_name = closed_by["username"]
+            closer_role = closed_by.get("role", "")
+            closer_username = closed_by["username"]
+            cashier = None
+        else:
+            raise NotAllowedError("Close requires an active employee or user of the merchant")
 
         from apps.closing.models import CashClosure
 
@@ -69,8 +82,9 @@ class CashClosureService:
             "merchant_id": merchant.pk,
             "merchant_slug": getattr(merchant, "slug", ""),
             "business_date": business_date.isoformat() if hasattr(business_date, "isoformat") else str(business_date),
-            "cashier_id": cashier.pk,
-            "cashier_name": cashier.display_name,
+            "cashier_id": cashier.pk if cashier is not None else None,
+            "cashier_name": closer_name,
+            "closed_by": {"username": closer_username, "role": closer_role},
             "totals": {
                 "EFECTIVO": _fmt(total_efectivo),
                 "BILLETERAS_VIRTUALES": _fmt(total_billeteras),
@@ -86,6 +100,8 @@ class CashClosureService:
             merchant=merchant,
             business_date=business_date,
             cashier=cashier,
+            closed_by_username=closer_username,
+            closed_by_role=closer_role,
             total_efectivo=total_efectivo,
             total_billeteras=total_billeteras,
             total_tarjetas=total_tarjetas,

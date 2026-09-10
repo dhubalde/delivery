@@ -61,6 +61,29 @@ def _resolve_cashier(request, merchant_id):
     return Employee.objects.filter(merchant_id=merchant_id, is_active=True).first()
 
 
+def _resolve_closer(request, merchant_id):
+    """Authenticated platform user of this merchant, or None (legacy flow)."""
+    try:
+        from rest_framework_simplejwt.authentication import JWTAuthentication
+
+        auth_result = JWTAuthentication().authenticate(request)
+    except Exception:
+        return None
+    if auth_result is None:
+        return None
+    user, _token = auth_result
+    if not user.is_active:
+        return None
+    profile = getattr(user, "platform_profile", None)
+    if profile is None or profile.merchant_id != merchant_id:
+        return None
+    return {
+        "username": user.username,
+        "role": profile.role,
+        "merchant_id": profile.merchant_id,
+    }
+
+
 def _parse_business_date(request):
     raw = request.query_params.get("business_date")
     if raw:
@@ -194,9 +217,12 @@ class CashCloseView(APIView):
         if merchant is None:
             return Response({"error": {"code": "NOT_FOUND", "message": "Merchant not found"}}, status=404)
         business_date = get_business_date()
-        cashier = _resolve_cashier(request, merchant.pk)
+        closed_by = _resolve_closer(request, merchant.pk)
+        cashier = None if closed_by else _resolve_cashier(request, merchant.pk)
         try:
-            closure = CashClosureService.close(merchant, business_date, cashier)
+            closure = CashClosureService.close(
+                merchant, business_date, cashier, closed_by=closed_by
+            )
         except NotAdminError as e:
             return Response({"error": {"code": "FORBIDDEN", "message": str(e)}}, status=403)
         except AlreadyClosedError as e:

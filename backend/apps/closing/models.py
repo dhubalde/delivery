@@ -11,9 +11,13 @@ class CashClosure(BaseModel):
     business_date = models.DateField()
     cashier = models.ForeignKey(
         "tenancy.Employee",
+        null=True,
+        blank=True,
         on_delete=models.PROTECT,
         related_name="closures_closed",
     )
+    closed_by_username = models.CharField(max_length=150, blank=True, default="")
+    closed_by_role = models.CharField(max_length=20, blank=True, default="")
     total_efectivo = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_billeteras = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_tarjetas = models.DecimalField(max_digits=10, decimal_places=2, default=0)

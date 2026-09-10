@@ -36,18 +36,31 @@ class TestBrCie01AdminOnlyAndImmutable:
         assert closure.pk is not None
         assert closure.total_efectivo == Decimal("0.00")
 
-    def test_non_admin_cajero_rejected(self):
+    def test_any_active_employee_can_close(self):
         merchant = MerchantFactory()
         emp = EmployeeFactory(merchant=merchant)
         EmployeeRoleFactory(employee=emp, role=EmployeeRole.Role.CAJERO)
-        with pytest.raises(NotAdminError):
-            CashClosureService.close(merchant, _today(), emp)
+        closure = CashClosureService.close(merchant, _today(), emp)
+        assert closure.pk is not None
+        assert closure.ticket_payload["cashier_id"] == emp.pk
 
-    def test_employee_without_role_rejected(self):
+    def test_employee_without_role_can_close(self):
         merchant = MerchantFactory()
         emp = EmployeeFactory(merchant=merchant)
-        with pytest.raises(NotAdminError):
-            CashClosureService.close(merchant, _today(), emp)
+        closure = CashClosureService.close(merchant, _today(), emp)
+        assert closure.pk is not None
+
+    def test_platform_user_can_close(self):
+        merchant = MerchantFactory()
+        closure = CashClosureService.close(
+            merchant,
+            _today(),
+            closed_by={"username": "caja1", "role": "CAJERO", "merchant_id": merchant.pk},
+        )
+        assert closure.pk is not None
+        assert closure.cashier_id is None
+        assert closure.closed_by_username == "caja1"
+        assert closure.ticket_payload["closed_by"] == {"username": "caja1", "role": "CAJERO"}
 
     def test_inactive_admin_rejected(self):
         merchant = MerchantFactory()
