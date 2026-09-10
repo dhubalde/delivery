@@ -7,8 +7,8 @@
     </v-card-title>
     <v-divider />
     <v-card-text class="pa-2">
-      <div class="d-flex ga-2 w-100" style="display:flex;width:100%">
-        <v-card v-for="d in days" :key="d.date" variant="tonal" class="pa-2 text-center flex-grow-1" style="flex:1 1 0;min-width:0;width:100%">
+      <div class="d-flex ga-2 w-100 mx-0 px-0 ma-0 pa-0" style="display:flex;gap:8px;width:100%;margin:0;padding:0;box-sizing:border-box">
+        <v-card v-for="d in days" :key="d.date" variant="tonal" class="pa-2 text-center flex-grow-1 ma-0" style="flex:1 1 0;min-width:0;width:100%;margin:0;box-sizing:border-box">
           <div class="text-caption font-weight-bold">{{ formatWeekday(d.date) }}</div>
           <div class="text-caption">{{ formatDate(d.date) }}</div>
           <v-icon :icon="d.icon" size="28" color="primary" class="my-1" />
