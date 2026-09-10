@@ -18,12 +18,11 @@ const MOCK: ForecastDay[] = [
   { date: isoDate(2), tempMin: 15, tempMax: 22, condition: 'Nublado', icon: 'mdi-weather-cloudy' },
   { date: isoDate(3), tempMin: 14, tempMax: 20, condition: 'Lluvia', icon: 'mdi-weather-rainy' },
   { date: isoDate(4), tempMin: 17, tempMax: 25, condition: 'Soleado', icon: 'mdi-weather-sunny' },
-  { date: isoDate(5), tempMin: 19, tempMax: 27, condition: 'Soleado', icon: 'mdi-weather-sunny' },
 ]
 
 function genMockFallback(): ForecastDay[] {
   const conds: ForecastDay[] = []
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 5; i++) {
     const tMax = 20 + Math.round(Math.random() * 8)
     const tMin = tMax - 6 - Math.round(Math.random() * 3)
     const icons = ['mdi-weather-sunny', 'mdi-weather-partly-cloudy', 'mdi-weather-cloudy', 'mdi-weather-rainy']
@@ -67,7 +66,7 @@ function loadCache(): { at: number; data: ForecastDay[]; isDemo: boolean } | nul
     if (!raw) return null
     const parsed = JSON.parse(raw) as { at: number; data: ForecastDay[]; isDemo?: boolean }
     if (Date.now() - parsed.at > TTL) return null
-    if (!Array.isArray(parsed.data) || parsed.data.length !== 6) return null
+    if (!Array.isArray(parsed.data) || parsed.data.length < 5) return null
     return { at: parsed.at, data: parsed.data, isDemo: parsed.isDemo ?? true }
   } catch { return null }
 }
@@ -77,7 +76,7 @@ function saveCache(data: ForecastDay[], isDemo: boolean) {
 }
 
 /**
- * API chain: 1) GET /api/v1/weather/forecast?days=6 (backend propio) -> live
+ * API chain: 1) GET /api/v1/weather/forecast?days=5 (backend propio) -> live
  *            2) OpenWeatherMap https://api.openweathermap.org/data/2.5/forecast con VITE_WEATHER_KEY -> live
  *               Usa lat/lon si VITE_WEATHER_LAT/LON están seteados (-34.61,-58.38 CABA), sino q=VITE_WEATHER_CITY
  *            3) Mock local con fechas ISO (isoDate) -> demo
@@ -86,11 +85,11 @@ async function fetchForecast(): Promise<{ data: ForecastDay[]; isDemo: boolean }
   const cached = loadCache()
   if (cached) return { data: cached.data, isDemo: cached.isDemo }
   try {
-    const res = await api.get('/v1/weather/forecast', { params: { days: 6 } })
+    const res = await api.get('/v1/weather/forecast', { params: { days: 5 } })
     const d = res.data as ForecastDay[] | { data?: ForecastDay[]; results?: ForecastDay[]; days?: ForecastDay[] }
     const arr = Array.isArray(d) ? d : (d as { data?: ForecastDay[] }).data ?? (d as { results?: ForecastDay[] }).results ?? (d as { days?: ForecastDay[] }).days ?? null
-    if (Array.isArray(arr) && arr.length >= 6) {
-      const mapped: ForecastDay[] = arr.slice(0, 6).map((x: ForecastDay) => ({
+    if (Array.isArray(arr) && arr.length >= 5) {
+      const mapped: ForecastDay[] = arr.slice(0, 5).map((x: ForecastDay) => ({
         date: x.date, tempMin: Math.round(x.tempMin), tempMax: Math.round(x.tempMax), condition: x.condition, icon: x.icon || 'mdi-weather-cloudy',
       }))
       saveCache(mapped, false)
@@ -124,11 +123,11 @@ async function fetchForecast(): Promise<{ data: ForecastDay[]; isDemo: boolean }
             cur.max = Math.max(cur.max, e.main.temp_max)
           }
         }
-        const mapped: ForecastDay[] = [...byDay.entries()].slice(0, 6).map(([date, v]) => ({ date, tempMin: Math.round(v.min), tempMax: Math.round(v.max), condition: v.cond, icon: v.icon }))
-        if (mapped.length >= 6) { saveCache(mapped, false); return { data: mapped, isDemo: false } }
+        const mapped: ForecastDay[] = [...byDay.entries()].slice(0, 5).map(([date, v]) => ({ date, tempMin: Math.round(v.min), tempMax: Math.round(v.max), condition: v.cond, icon: v.icon }))
+        if (mapped.length >= 5) { saveCache(mapped, false); return { data: mapped, isDemo: false } }
       } catch { /* fallback to mock */ }
     }
-    const fallback = MOCK.length === 6 ? MOCK : genMockFallback()
+    const fallback = MOCK.length === 5 ? MOCK : genMockFallback()
     saveCache(fallback, true)
     return { data: fallback, isDemo: true }
   }
@@ -136,7 +135,7 @@ async function fetchForecast(): Promise<{ data: ForecastDay[]; isDemo: boolean }
 
 export function useForecast() {
   const q = useQuery({
-    queryKey: qk.forecast({ days: 6 }),
+    queryKey: qk.forecast({ days: 5 }),
     queryFn: fetchForecast,
     staleTime: TTL,
     gcTime: TTL * 2,
@@ -145,7 +144,7 @@ export function useForecast() {
   })
   const days = computed(() => {
     const d = q.data.value?.data
-    return d && Array.isArray(d) && d.length === 6 ? d : MOCK
+    return d && Array.isArray(d) && d.length >= 5 ? d : MOCK
   })
   const isDemo = computed(() => q.data.value?.isDemo ?? true)
   return { ...q, days, isDemo }

@@ -1,15 +1,15 @@
 <template>
   <v-card class="mb-4" elevation="1">
     <v-card-title class="d-flex align-center justify-space-between text-subtitle-2">
-      <span><v-icon size="small" class="mr-1">mdi-weather-cloudy</v-icon>Pronóstico 6 días</span>
+      <span><v-icon size="small" class="mr-1">mdi-weather-cloudy</v-icon>Pronóstico 5 días</span>
       <v-chip v-if="isDemo" size="x-small" color="secondary" variant="tonal">demo</v-chip>
       <v-chip v-else size="x-small" color="primary" variant="tonal">live</v-chip>
     </v-card-title>
     <v-divider />
     <v-card-text class="pa-2">
-      <v-row dense>
-        <v-col v-for="d in days" :key="d.date" cols="6" sm="2" class="text-center">
-          <v-card variant="tonal" class="pa-2">
+      <v-row dense style="display:flex;width:100%">
+        <v-col v-for="d in days" :key="d.date" cols="auto" class="text-center flex-grow-1" style="flex:1 1 0;min-width:0;max-width:none">
+          <v-card variant="tonal" class="pa-2" style="width:100%;height:100%">
             <div class="text-caption font-weight-bold">{{ d.date }}</div>
             <v-icon :icon="d.icon" size="28" color="primary" class="my-1" />
             <div class="text-caption">{{ d.condition }}</div>

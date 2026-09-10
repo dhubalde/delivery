@@ -7,8 +7,8 @@
     </v-card-title>
     <v-divider />
     <v-card-text class="pa-2">
-      <div class="d-flex ga-2 overflow-x-auto pb-1">
-        <v-card v-for="d in days" :key="d.date" variant="tonal" class="pa-2 text-center flex-shrink-0" style="min-width:110px">
+      <div class="d-flex ga-2 w-100" style="display:flex;width:100%">
+        <v-card v-for="d in days" :key="d.date" variant="tonal" class="pa-2 text-center flex-grow-1" style="flex:1 1 0;min-width:0;width:100%">
           <div class="text-caption font-weight-bold">{{ formatWeekday(d.date) }}</div>
           <div class="text-caption">{{ formatDate(d.date) }}</div>
           <v-icon :icon="d.icon" size="28" color="primary" class="my-1" />
@@ -23,7 +23,7 @@
   </v-card>
 </template>
 <script setup lang="ts">
-// API chain: 1) GET /api/v1/weather/forecast?days=6 2) OpenWeatherMap (VITE_WEATHER_KEY) 3) mock local
+// API chain: 1) GET /api/v1/weather/forecast?days=5 2) OpenWeatherMap (VITE_WEATHER_KEY) 3) mock local
 import { useForecast } from '@/composables/useForecast'
 import { getWeatherTag } from '@/utils/weatherTag'
 const { days, isDemo, isLoading, isError, refetch } = useForecast()
