@@ -1,5 +1,5 @@
 <template>
-  <v-card :style="{ borderTop: `4px solid #06B6D4`, width: '100%', margin: '0', boxSizing: 'border-box' } as any" class="ma-0" style="min-height:420px;width:100%;margin:0;box-sizing:border-box;display:flex;flex-direction:column;flex:1 1 auto;min-width:0;max-width:none">
+  <v-card :style="{ borderTop: `4px solid #06B6D4`, width: '100%', margin: '0', boxSizing: 'border-box' } as any" class="ma-0" style="min-height:420px;width:100%;margin:0;box-sizing:border-box;display:flex;flex-direction:column;flex:1 1 0">
     <v-card-title style="background-color:#06B6D4;color:white;margin:0;box-sizing:border-box;width:100%" class="text-subtitle-2 ma-0">
       Totales del día
     </v-card-title>
