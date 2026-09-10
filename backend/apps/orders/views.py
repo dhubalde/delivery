@@ -252,7 +252,7 @@ class OrderTransitionView(APIView):
                 if profile.merchant_id is not None and profile.merchant_id != order.merchant_id:
                     return Response({"error": {"code": "TENANT_MISMATCH", "message": "Order belongs to another merchant."}}, status=403)
                 sector = getattr(profile, "sector", None)
-                if sector and order.state != sector:
+                if sector and sector != "TODAS" and order.state != sector:
                     return Response({"error": {"code": "SECTOR_FORBIDDEN", "message": f"This user only operates {sector}."}}, status=403)
         to_state = (request.data or {}).get("to_state")
         reason = (request.data or {}).get("reason") or (request.data or {}).get("cancel_reason")

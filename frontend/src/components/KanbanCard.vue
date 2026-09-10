@@ -90,7 +90,7 @@ const effectiveCompact = computed(() => !!props.compact || (isRejected.value && 
 const isTerminal = computed(() => ['ENTREGADO', 'CANCELADO'].includes(props.order.state))
 const isLogistica = computed(() => props.order.state === 'LOGISTICA')
 const hasPending = computed(() => props.order.payments?.some((p) => p.status === 'PENDING'))
-const guard = computed(() => canAdvance(props.order.state, auth.roles, props.order))
+const guard = computed(() => canAdvance(props.order.state, auth.roles, props.order, (auth.user as { sector?: string | null } | null)?.sector ?? null))
 const canAdvanceOk = computed(() => guard.value.ok)
 const tooltip = computed(() => (guard.value.ok ? `Avanzar a ${nextStateOf(props.order.state)}` : guard.value.reason))
 const pending = computed(() => tr.isPending.value)
@@ -105,6 +105,8 @@ const canConfirmReject = computed(() => {
   if (!rejectMotivo.value) return false
   if (rejectMotivo.value === 'Otro' && !hasDetalle.value) return false
   const roles = requiredRolesFor('LOGISTICA', 'CANCELADO')
+  const sector = (auth.user as { sector?: string | null } | null)?.sector
+  if (sector === 'TODAS' || auth.roles.includes('ADMIN') || auth.roles.includes('MASTER')) return true
   if (roles.length && !hasAnyRole(auth.roles, roles)) return false
   return true
 })

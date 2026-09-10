@@ -2,8 +2,13 @@
   <v-container class="pa-6" style="max-width: 480px">
     <h2 class="text-h6 mb-1">Cambiar clave</h2>
     <p class="text-body-2 text-medium-emphasis mb-4">Tu clave es inicial o venció. Definí una nueva para seguir.</p>
-    <v-text-field v-model="current" label="Clave actual *" type="password" density="compact" />
-    <v-text-field v-model="next" label="Nueva clave *" type="password" density="compact" hint="8-12 caracteres, número, mayúscula y especial" />
+    <v-text-field v-model="current" label="Clave actual *" :type="show1 ? 'text' : 'password'"
+      :append-inner-icon="show1 ? 'mdi-eye-off' : 'mdi-eye'" density="compact"
+      @click:append-inner="show1 = !show1" />
+    <v-text-field v-model="next" label="Nueva clave *" :type="show2 ? 'text' : 'password'"
+      :append-inner-icon="show2 ? 'mdi-eye-off' : 'mdi-eye'" density="compact"
+      hint="8-12 caracteres, número, mayúscula y especial"
+      @click:append-inner="show2 = !show2" />
     <v-alert v-if="err" type="error" density="compact" class="mb-2">{{ err }}</v-alert>
     <v-btn color="primary" block :loading="saving" @click="save">Guardar y entrar</v-btn>
   </v-container>
@@ -21,6 +26,8 @@ const current = ref('')
 const next = ref('')
 const err = ref('')
 const saving = ref(false)
+const show1 = ref(false)
+const show2 = ref(false)
 async function save() {
   saving.value = true; err.value = ''
   try {

@@ -29,8 +29,12 @@
     <v-app-bar density="compact" color="primary">
       <template #title><AppLogo :size="120" variant="auto" /></template>
       <v-spacer />
+      <v-chip v-if="auth.user?.username" size="small" prepend-icon="mdi-account-circle" class="mr-1">
+        {{ auth.user.username }}{{ auth.user?.role ? ` · ${auth.user.role}` : '' }}
+      </v-chip>
       <NotificationBell recipient-type="EMPLOYEE" />
       <v-btn icon="mdi-brightness-6" @click="ui.toggleTheme()" />
+      <v-btn icon="mdi-logout" title="Salir" @click="logout" />
     </v-app-bar>
     <v-banner v-if="ui.offline" color="warning" icon="mdi-wifi-off" class="text-caption">Sin conexión — modo offline</v-banner>
     <v-main>
@@ -83,6 +87,10 @@ const showReportsDialog = ref(false)
 const reportKey = ref('')
 const reportError = ref('')
 const showPassword = ref(false)
+function logout() {
+  auth.clear()
+  router.push('/login')
+}
 function submitReportsKey() {
   const expected = (import.meta.env.VITE_DASHBOARD_KEY as string | undefined) || 'dueño123'
   if (reportKey.value === expected) {

@@ -18,6 +18,8 @@ export const masterApi = {
   companies: async () => unwrap<Company>((await api.get('/master/companies/')).data),
   onboard: async (b: { name: string; slug: string; logo_url?: string; seat_limit: number; has_branches: boolean; admin_username: string; admin_password: string }) =>
     (await api.post('/master/companies/', b)).data,
+  updateCompany: async (id: number, b: { name?: string; logo_url?: string; seat_limit?: number; has_branches?: boolean; is_active?: boolean }) =>
+    (await api.patch(`/master/companies/${id}/`, b)).data as Company,
   internalUsers: async () => unwrap<InternalUser>((await api.get('/master/users/')).data),
   createInternal: async (b: { username: string; password: string; role: string; assigned_merchants?: number[] }) =>
     (await api.post('/master/users/', b)).data as InternalUser,

@@ -470,6 +470,98 @@ class CompanyOnboardingView(APIView):
         )
 
 
+class MasterCompanyDetailView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsMaster]
+
+    def _scoped(self, request, pk):
+        queryset = Merchant.objects.filter(pk=pk)
+        if not _is_full_master(request):
+            profile = _requester_profile(request)
+            assigned = set()
+            if profile is not None:
+                assigned = set(profile.assigned_merchants.values_list("pk", flat=True))
+                if profile.merchant_id is not None:
+                    assigned.add(profile.merchant_id)
+            queryset = queryset.filter(pk__in=assigned)
+        return queryset.first()
+
+    def get(self, request, pk):
+        merchant = self._scoped(request, pk)
+        if merchant is None:
+            return Response({"error": {"code": "NOT_FOUND", "message": "Company not found."}}, status=404)
+        return Response(_serialize_company(merchant))
+
+    def patch(self, request, pk):
+        from apps.tenancy.serializers import SEAT_TIERS
+
+        if not _is_full_master(request):
+            from rest_framework.exceptions import PermissionDenied
+
+            raise PermissionDenied("Only MASTER edits companies.")
+        merchant = Merchant.objects.filter(pk=pk).first()
+        if merchant is None:
+            return Response({"error": {"code": "NOT_FOUND", "message": "Company not found."}}, status=404)
+        data = request.data or {}
+        if "name" in data:
+            merchant.name = data["name"]
+        if "logo_url" in data:
+            merchant.logo_url = data["logo_url"] or None
+        if "seat_limit" in data:
+            try:
+                seats = int(data["seat_limit"])
+            except (TypeError, ValueError):
+                seats = -1
+            if seats not in SEAT_TIERS:
+                return Response({"error": {"code": "VALIDATION_ERROR", "message": f"seat_limit must be one of {SEAT_TIERS}."}}, status=400)
+            merchant.seat_limit = seats
+        if "has_branches" in data:
+            merchant.has_branches = bool(data["has_branches"])
+        if "is_active" in data:
+            merchant.is_active = bool(data["is_active"])
+        merchant.save()
+        AuditEntry.objects.create(
+            actor=request.user,
+            action="COMPANY_UPDATED",
+            merchant=merchant,
+            detail={"seat_limit": merchant.seat_limit, "has_branches": merchant.has_branches},
+        )
+        return Response(_serialize_company(merchant))
+
+    def delete(self, request, pk):
+        if not _is_full_master(request):
+            from rest_framework.exceptions import PermissionDenied
+
+            raise PermissionDenied("Only MASTER deactivates companies.")
+        merchant = Merchant.objects.filter(pk=pk).first()
+        if merchant is None:
+            return Response({"error": {"code": "NOT_FOUND", "message": "Company not found."}}, status=404)
+        merchant.is_active = False
+        merchant.save(update_fields=["is_active"])
+        AuditEntry.objects.create(
+            actor=request.user,
+            action="COMPANY_DEACTIVATED",
+            merchant=merchant,
+            detail={},
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+def _serialize_company(merchant):
+    return {
+        "id": merchant.pk,
+        "name": merchant.name,
+        "slug": merchant.slug,
+        "seat_limit": merchant.seat_limit,
+        "has_branches": merchant.has_branches,
+        "is_active": merchant.is_active,
+        "logo_url": merchant.logo_url,
+        "active_users": PlatformUser.objects.filter(
+            merchant_id=merchant.pk, user__is_active=True
+        ).count(),
+    }
+
+
 class InternalUserListCreateView(generics.ListCreateAPIView):
     serializer_class = InternalUserSerializer
     authentication_classes = [JWTAuthentication]

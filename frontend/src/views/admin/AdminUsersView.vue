@@ -30,10 +30,13 @@
             El rol ADMIN administra usuarios, caja y configuración. Solo para mandos medios o quien mejor maneje el sistema.
           </v-alert>
           <v-text-field v-model="form.username" label="Usuario *" density="compact" :disabled="!!editing" :error-messages="details.username ?? ''" />
-          <v-text-field v-if="!editing" v-model="form.password" label="Clave inicial *" type="password" density="compact" hint="8-12 caracteres, número, mayúscula y especial" :error-messages="details.password ?? ''" />
+          <v-text-field v-if="!editing" v-model="form.password" label="Clave inicial *" :type="showPass ? 'text' : 'password'"
+            :append-inner-icon="showPass ? 'mdi-eye-off' : 'mdi-eye'" density="compact"
+            hint="8-12 caracteres, número, mayúscula y especial" :error-messages="details.password ?? ''"
+            @click:append-inner="showPass = !showPass" />
           <v-select v-model="form.role" :items="roleOpts" label="Rol *" density="compact" :error-messages="details.role ?? ''" />
           <v-select v-model="form.kind" :items="['PERSONAL','STATION']" label="Tipo" density="compact" />
-          <v-text-field v-model="form.sector" label="Sector (solo estación)" density="compact" hint="RECIBIDO, PREPARACION, FACTURACION, LOGISTICA" />
+          <v-select v-model="form.sector" :items="['', 'RECIBIDO', 'PREPARACION', 'FACTURACION', 'LOGISTICA', 'TODAS']" label="Sector" density="compact" hint="Vacío = por rol. TODAS = todas las estaciones (negocio chico)" />
           <v-switch v-model="form.is_active" label="Activo" color="primary" />
         </v-card-text>
         <v-card-actions>
@@ -91,6 +94,7 @@ const editing = ref<number | null>(null)
 const saving = ref(false)
 const details = ref<Record<string, string>>({})
 const formError = ref('')
+const showPass = ref(false)
 const form = reactive({ username: '', password: '', role: 'CAJERO' as OperativeRole, kind: 'PERSONAL' as UserKind, sector: '', is_active: true })
 
 const removeDlg = ref(false)

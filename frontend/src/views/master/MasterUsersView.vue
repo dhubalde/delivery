@@ -21,7 +21,10 @@
         <v-card-title>{{ editing ? 'Editar interno' : 'Nuevo interno' }}</v-card-title>
         <v-card-text>
           <v-text-field v-model="form.username" label="Usuario *" density="compact" :disabled="!!editing" />
-          <v-text-field v-if="!editing" v-model="form.password" label="Clave *" type="password" density="compact" />
+          <v-text-field v-if="!editing" v-model="form.password" label="Clave *" :type="showPass ? 'text' : 'password'"
+            :append-inner-icon="showPass ? 'mdi-eye-off' : 'mdi-eye'" density="compact"
+            hint="8-12 caracteres, número, mayúscula y especial"
+            @click:append-inner="showPass = !showPass" />
           <v-select v-model="form.role" :items="['MASTER','ADMIN','DEV','TECNICO','JUNIOR']" label="Rol *" density="compact" />
           <v-select v-model="form.assigned" :items="companyOpts" item-title="slug" item-value="id" label="Empresas asignadas" multiple chips density="compact" />
           <v-alert v-if="err" type="error" density="compact">{{ err }}</v-alert>
@@ -67,7 +70,18 @@ const dlg = ref(false)
 const editing = ref<number | null>(null)
 const saving = ref(false)
 const err = ref('')
+const showPass = ref(false)
 const form = reactive({ username: '', password: '', role: 'TECNICO', assigned: [] as number[] })
+function apiErrText(e: unknown): string {
+  const d = (e as { response?: { data?: unknown } })?.response?.data as Record<string, unknown> | undefined
+  if (!d || typeof d !== 'object') return 'Error de red o servidor'
+  const parts: string[] = []
+  for (const [k, v] of Object.entries(d)) {
+    const msg = Array.isArray(v) ? v.join(' ') : typeof v === 'object' ? JSON.stringify(v) : String(v)
+    parts.push(`${k}: ${msg}`)
+  }
+  return parts.join(' · ') || 'Error'
+}
 function openEdit(u: InternalUser) {
   editing.value = u.id
   Object.assign(form, { username: u.username, password: '', role: u.role, assigned: (u.assigned_merchants ?? []).map(m => m.id) })
@@ -81,7 +95,7 @@ async function save() {
     dlg.value = false; editing.value = null
     Object.assign(form, { username: '', password: '', role: 'TECNICO', assigned: [] })
   } catch (e: unknown) {
-    err.value = (e as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Error'
+    err.value = apiErrText(e)
   } finally { saving.value = false }
 }
 // open create resets

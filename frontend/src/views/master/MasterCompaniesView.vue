@@ -7,7 +7,11 @@
     <v-card>
       <v-list v-if="list.length" lines="two">
         <v-list-item v-for="c in list" :key="c.id" :title="`${c.name} (${c.slug})`"
-          :subtitle="`Cupo ${c.seat_limit} · ${c.has_branches ? 'Con sucursales' : 'Sin sucursales'} · ${c.is_active ? 'Activa' : 'Inactiva'}`" />
+          :subtitle="`Cupo ${c.seat_limit} · ${c.has_branches ? 'Con sucursales' : 'Sin sucursales'} · ${c.is_active ? 'Activa' : 'Inactiva'}`">
+          <template #append>
+            <v-btn icon="mdi-pencil" variant="text" size="small" @click="openEdit(c)" />
+          </template>
+        </v-list-item>
       </v-list>
       <v-card-text v-else class="text-medium-emphasis">Sin empresas.</v-card-text>
     </v-card>
@@ -21,13 +25,34 @@
           <v-select v-model="form.seat_limit" :items="[10,20,30]" label="Cupo de usuarios *" density="compact" />
           <v-switch v-model="form.has_branches" label="Tiene sucursales" color="primary" />
           <v-text-field v-model="form.admin_username" label="Admin inicial *" density="compact" />
-          <v-text-field v-model="form.admin_password" label="Clave inicial *" type="password" density="compact" hint="8-12, número, mayúscula y especial" />
+          <v-text-field v-model="form.admin_password" label="Clave inicial *" :type="showPass ? 'text' : 'password'"
+            :append-inner-icon="showPass ? 'mdi-eye-off' : 'mdi-eye'" density="compact"
+            hint="8-12, número, mayúscula y especial"
+            @click:append-inner="showPass = !showPass" />
           <v-alert v-if="err" type="error" density="compact">{{ err }}</v-alert>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
           <v-btn variant="text" @click="dlg=false">Cancelar</v-btn>
           <v-btn color="primary" :loading="saving" @click="save">Crear</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model="edlg" max-width="520">
+      <v-card>
+        <v-card-title>Editar empresa</v-card-title>
+        <v-card-text>
+          <v-text-field v-model="eform.name" label="Nombre fantasía *" density="compact" />
+          <v-text-field v-model="eform.logo_url" label="Logo URL" density="compact" />
+          <v-select v-model="eform.seat_limit" :items="[10,20,30]" label="Cupo de usuarios *" density="compact" />
+          <v-switch v-model="eform.has_branches" label="Tiene sucursales" color="primary" />
+          <v-switch v-model="eform.is_active" label="Activa" color="primary" />
+          <v-alert v-if="err" type="error" density="compact">{{ err }}</v-alert>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="edlg=false">Cancelar</v-btn>
+          <v-btn color="primary" :loading="saving" @click="saveEdit">Guardar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -44,6 +69,7 @@ const list = computed(() => data.value ?? [])
 const dlg = ref(false)
 const saving = ref(false)
 const err = ref('')
+const showPass = ref(false)
 const form = reactive({ name: '', slug: '', logo_url: '', seat_limit: 10, has_branches: false, admin_username: '', admin_password: '' })
 async function save() {
   saving.value = true; err.value = ''
@@ -54,6 +80,25 @@ async function save() {
   } catch (e: unknown) {
     err.value = (e as { response?: { data?: { error?: { message?: string }, slug?: string } } })?.response?.data?.error?.message
       ?? (e as { response?: { data?: { slug?: string } } })?.response?.data?.slug ?? 'Error'
+  } finally { saving.value = false }
+}
+import type { Company } from '@/api/panel/master.api'
+const edlg = ref(false)
+const editing = ref<number | null>(null)
+const eform = reactive({ name: '', logo_url: '', seat_limit: 10, has_branches: false, is_active: true })
+function openEdit(c: Company) {
+  editing.value = c.id
+  Object.assign(eform, { name: c.name, logo_url: '', seat_limit: c.seat_limit, has_branches: c.has_branches, is_active: c.is_active })
+  err.value = ''; edlg.value = true
+}
+async function saveEdit() {
+  if (!editing.value) return
+  saving.value = true; err.value = ''
+  try {
+    await masterApi.updateCompany(editing.value, { ...eform })
+    edlg.value = false; editing.value = null
+  } catch (e: unknown) {
+    err.value = (e as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Error'
   } finally { saving.value = false }
 }
 </script>

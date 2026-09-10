@@ -32,7 +32,7 @@ const auth = useAuthStore()
 const stationSector = computed(() => {
   const u = auth.user as { kind?: string; sector?: string | null; role?: string } | null
   if (!u || u.role === 'ADMIN' || u.role === 'MASTER') return null
-  if (u.kind === 'STATION' && u.sector) return u.sector
+  if (u.sector && u.sector !== 'TODAS') return u.sector
   return null
 })
 function getBusinessDateStr(d = new Date()): string {

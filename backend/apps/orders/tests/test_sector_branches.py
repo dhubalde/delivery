@@ -93,6 +93,17 @@ class TestSectorGuard:
         )
         assert response.status_code == 403
 
+    def test_todas_covers_all_stations(self):
+        clerk = PlatformUserFactory(
+            role="TOMA_PEDIDOS", kind="PERSONAL", sector="TODAS"
+        )
+        order = OrderFactory(merchant=clerk.merchant, state=Order.State.LOGISTICA)
+        client = _authed(clerk)
+        response = client.post(
+            f"/api/v1/orders/{order.pk}/transition/", {"to_state": "ENTREGADO"}, format="json"
+        )
+        assert response.status_code in (200, 201, 204)
+
     def test_admin_bypasses_sector(self):
         admin = PlatformUserFactory(role="ADMIN")
         order = OrderFactory(merchant=admin.merchant, state=Order.State.RECIBIDO)

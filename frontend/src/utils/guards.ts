@@ -27,11 +27,13 @@ export function requiredRolesFor(from: string, to: string): string[] {
   return TRANSITION_ROLES[`${from}->${to}`] ?? []
 }
 
-export function canAdvance(state: string, userRoles: string[], order?: { cash_declared?: boolean; payments?: { status: string; method: string }[]; fulfillment?: string }): { ok: boolean; reason: string } {
+export function canAdvance(state: string, userRoles: string[], order?: { cash_declared?: boolean; payments?: { status: string; method: string }[]; fulfillment?: string }, sector?: string | null): { ok: boolean; reason: string } {
   const to = nextStateOf(state)
   if (!to) return { ok: false, reason: 'Estado terminal' }
   const required = requiredRolesFor(state, to)
-  if (!hasAnyRole(userRoles, required)) return { ok: false, reason: `Requiere ${required.join(' o ')}` }
+  const coversAll = sector === 'TODAS' || userRoles.includes('ADMIN') || userRoles.includes('MASTER')
+  if (!coversAll && !hasAnyRole(userRoles, required)) return { ok: false, reason: `Requiere ${required.join(' o ')}` }
+  if (!coversAll && sector && sector !== 'TODAS' && state !== sector) return { ok: false, reason: `Solo opera ${sector}` }
   if (state === 'PREPARACION' && !order?.cash_declared) {
     const needsCash = (order?.payments ?? []).some((p) => p.method === 'EFECTIVO' && p.status !== 'CONFIRMED')
     if (needsCash) return { ok: false, reason: 'Falta declarar efectivo' }
