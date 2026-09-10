@@ -67,7 +67,7 @@ function loadCache(): { at: number; data: ForecastDay[]; isDemo: boolean } | nul
     if (!raw) return null
     const parsed = JSON.parse(raw) as { at: number; data: ForecastDay[]; isDemo?: boolean }
     if (Date.now() - parsed.at > TTL) return null
-    if (!Array.isArray(parsed.data) || parsed.data.length < 5) return null
+    if (!Array.isArray(parsed.data) || parsed.data.length !== 6) return null
     return { at: parsed.at, data: parsed.data, isDemo: parsed.isDemo ?? true }
   } catch { return null }
 }
@@ -89,7 +89,7 @@ async function fetchForecast(): Promise<{ data: ForecastDay[]; isDemo: boolean }
     const res = await api.get('/v1/weather/forecast', { params: { days: 6 } })
     const d = res.data as ForecastDay[] | { data?: ForecastDay[]; results?: ForecastDay[]; days?: ForecastDay[] }
     const arr = Array.isArray(d) ? d : (d as { data?: ForecastDay[] }).data ?? (d as { results?: ForecastDay[] }).results ?? (d as { days?: ForecastDay[] }).days ?? null
-    if (Array.isArray(arr) && arr.length >= 5) {
+    if (Array.isArray(arr) && arr.length >= 6) {
       const mapped: ForecastDay[] = arr.slice(0, 6).map((x: ForecastDay) => ({
         date: x.date, tempMin: Math.round(x.tempMin), tempMax: Math.round(x.tempMax), condition: x.condition, icon: x.icon || 'mdi-weather-cloudy',
       }))
@@ -125,7 +125,7 @@ async function fetchForecast(): Promise<{ data: ForecastDay[]; isDemo: boolean }
           }
         }
         const mapped: ForecastDay[] = [...byDay.entries()].slice(0, 6).map(([date, v]) => ({ date, tempMin: Math.round(v.min), tempMax: Math.round(v.max), condition: v.cond, icon: v.icon }))
-        if (mapped.length >= 5) { saveCache(mapped, false); return { data: mapped, isDemo: false } }
+        if (mapped.length >= 6) { saveCache(mapped, false); return { data: mapped, isDemo: false } }
       } catch { /* fallback to mock */ }
     }
     const fallback = MOCK.length === 6 ? MOCK : genMockFallback()
@@ -145,7 +145,7 @@ export function useForecast() {
   })
   const days = computed(() => {
     const d = q.data.value?.data
-    return d && Array.isArray(d) && d.length >= 5 ? d : MOCK
+    return d && Array.isArray(d) && d.length === 6 ? d : MOCK
   })
   const isDemo = computed(() => q.data.value?.isDemo ?? true)
   return { ...q, days, isDemo }
