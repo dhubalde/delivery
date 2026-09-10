@@ -1,5 +1,5 @@
 <template>
-  <v-card :style="{ borderTop: `4px solid ${color}`, width: '100%', margin: '0', boxSizing: 'border-box' } as any" class="d-flex flex-column ma-0" style="min-height:420px;width:100%;margin:0;box-sizing:border-box;display:flex;flex:1 1 0">
+  <v-card :style="{ borderTop: `4px solid ${color}`, width: '100%', margin: '0', boxSizing: 'border-box' } as any" class="d-flex flex-column ma-0" style="min-height:420px;width:100%;margin:0;box-sizing:border-box;display:flex;flex:1 1 auto;min-width:0;max-width:none">
     <v-card-title class="d-flex justify-space-between text-subtitle-2 ma-0" style="margin:0;box-sizing:border-box;width:100%">
       <span>{{ title }}</span>
       <v-chip size="x-small">{{ orders.length }}</v-chip>

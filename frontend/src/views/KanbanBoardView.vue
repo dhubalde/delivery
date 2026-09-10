@@ -6,14 +6,15 @@
     </div>
     <v-alert v-if="alreadyClosed" type="info" class="mb-4 ma-0" style="margin:0 0 16px 0;box-sizing:border-box;width:100%">Caja del {{ formatDM(today) }} cerrada — pedidos nuevos irán al {{ formatDM(tomorrow) }}. Pedidos del día archivados.</v-alert>
     <WeatherForecast />
-    <v-row no-gutters class="ma-0 pa-0 mx-0" style="margin:0;padding:0;box-sizing:border-box;display:flex;width:100%;gap:8px;flex-wrap:wrap">
-      <v-col v-for="col in cols" :key="col.state" cols="12" md="2" class="pa-1 ma-0 d-flex" style="padding:4px;margin:0;box-sizing:border-box;flex:1 1 0;min-width:180px;max-width:none;display:flex">
+    <!-- CSS grid is cross-browser consistent; avoids flex-basis:0 vs md="2" (16.66% max-width) divergence that made Edge narrow -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;width:100%;margin:0;padding:0;box-sizing:border-box">
+      <div v-for="col in cols" :key="col.state" style="min-width:0;display:flex;box-sizing:border-box;width:100%">
         <KanbanColumn :title="col.title" :color="col.color" :orders="getOrdersFor(col.state)" :is-loading="getLoadingFor(col.state)" :is-error="getErrorFor(col.state)" :compact="col.state === 'ENTREGADO'" @retry="boards[col.state].refetch()" />
-      </v-col>
-      <v-col cols="12" md="2" class="pa-1 ma-0 d-flex" style="padding:4px;margin:0;box-sizing:border-box;flex:1 1 0;min-width:180px;max-width:none;display:flex">
+      </div>
+      <div style="min-width:0;display:flex;box-sizing:border-box;width:100%">
         <KanbanTotalsCard :fallback-orders="(boards['ENTREGADO'].data.value ?? []) as any" :business-date="businessDate" />
-      </v-col>
-    </v-row>
+      </div>
+    </div>
   </v-container>
 </template>
 <script setup lang="ts">
