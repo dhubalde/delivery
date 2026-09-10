@@ -1,10 +1,10 @@
 <template>
-  <v-card :style="{ borderTop: `4px solid #06B6D4` }" style="min-height: 420px">
-    <v-card-title style="background-color: #06B6D4; color: white" class="text-subtitle-2">
+  <v-card :style="{ borderTop: `4px solid #06B6D4`, width: '100%', margin: '0', boxSizing: 'border-box' } as any" class="ma-0" style="min-height:420px;width:100%;margin:0;box-sizing:border-box;display:flex;flex-direction:column;flex:1 1 0">
+    <v-card-title style="background-color:#06B6D4;color:white;margin:0;box-sizing:border-box;width:100%" class="text-subtitle-2 ma-0">
       Totales del día
     </v-card-title>
-    <v-divider />
-    <v-card-text>
+    <v-divider class="ma-0" style="margin:0;box-sizing:border-box" />
+    <v-card-text class="ma-0 pa-2 w-100" style="margin:0;padding:8px;box-sizing:border-box;width:100%;flex:1 1 0">
       <div v-if="isLoading" class="d-flex flex-column ga-2">
         <v-skeleton-loader type="text" />
         <v-skeleton-loader type="text" />

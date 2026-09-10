@@ -1,8 +1,8 @@
 <template>
   <v-tooltip v-if="effectiveCompact" location="top" open-on-hover>
     <template #activator="{ props: tipProps }">
-      <v-card v-bind="tipProps" :loading="pending" class="mb-1" density="compact" height="60" :color="isRejected ? 'error' : undefined" :variant="isRejected ? 'outlined' : 'elevated'" :style="isRejected ? 'border:2px solid rgb(var(--v-theme-error))' : undefined">
-        <v-card-text class="py-1 px-2 d-flex flex-column justify-center" style="height: 60px; min-width: 0" :class="{ 'text-error': isRejected }">
+      <v-card v-bind="tipProps" :loading="pending" class="mb-1 ma-0 w-100" density="compact" height="60" :color="isRejected ? 'error' : undefined" :variant="isRejected ? 'outlined' : 'elevated'" :style="isRejected ? 'border:2px solid rgb(var(--v-theme-error));width:100%;margin:0 0 4px 0;box-sizing:border-box' : 'width:100%;margin:0 0 4px 0;box-sizing:border-box'">
+        <v-card-text class="py-1 px-2 d-flex flex-column justify-center ma-0 w-100" style="height:60px;min-width:0;margin:0;box-sizing:border-box;width:100%" :class="{ 'text-error': isRejected }">
           <div class="d-flex align-center text-caption font-weight-bold" style="min-width: 0; font-size: 12px; line-height: 1.2" :class="{ 'text-error': isRejected }">
             <span class="flex-shrink-0">#{{ order.code }} —&nbsp;</span>
             <span class="text-truncate flex-1">{{ order.customer_name ?? order.customer ?? '—' }}</span>
@@ -22,8 +22,8 @@
       <div v-if="orderPhone">{{ orderPhone }}</div>
     </div>
   </v-tooltip>
-  <v-card v-else :loading="pending" class="mb-2" density="compact" :color="isRejected ? 'error' : undefined" :variant="isRejected ? 'outlined' : 'elevated'" :style="isRejected ? 'border:2px solid rgb(var(--v-theme-error))' : undefined" :class="{ 'rejected-card': isRejected }">
-    <v-card-text class="pb-1" :class="{ 'text-error': isRejected }">
+  <v-card v-else :loading="pending" class="mb-2 ma-0 w-100" density="compact" :color="isRejected ? 'error' : undefined" :variant="isRejected ? 'outlined' : 'elevated'" :style="isRejected ? 'border:2px solid rgb(var(--v-theme-error));width:100%;margin:0 0 8px 0;box-sizing:border-box' : 'width:100%;margin:0 0 8px 0;box-sizing:border-box'" :class="{ 'rejected-card': isRejected }">
+    <v-card-text class="pb-1 ma-0 w-100" style="margin:0;box-sizing:border-box;width:100%" :class="{ 'text-error': isRejected }">
       <div class="d-flex justify-space-between align-center">
         <strong :class="{ 'text-error': isRejected }">#{{ order.code }}</strong>
         <v-chip v-if="isRejected" size="x-small" color="error">No entregado</v-chip>

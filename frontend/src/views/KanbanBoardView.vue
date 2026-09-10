@@ -1,16 +1,16 @@
 <template>
-  <v-container fluid>
-    <div class="d-flex justify-space-between align-center mb-4">
+  <v-container fluid class="ma-0 pa-2" style="margin:0;padding:8px;box-sizing:border-box;max-width:100%;width:100%">
+    <div class="d-flex justify-space-between align-center mb-4 w-100 ma-0 pa-0" style="margin:0;padding:0;box-sizing:border-box;width:100%">
       <h2>Kanban — {{ merchantName }}</h2>
       <v-text-field v-model="businessDate" type="date" density="compact" hide-details style="max-width: 180px" />
     </div>
-    <v-alert v-if="alreadyClosed" type="info" class="mb-4">Caja del {{ formatDM(today) }} cerrada — pedidos nuevos irán al {{ formatDM(tomorrow) }}. Pedidos del día archivados.</v-alert>
+    <v-alert v-if="alreadyClosed" type="info" class="mb-4 ma-0" style="margin:0 0 16px 0;box-sizing:border-box;width:100%">Caja del {{ formatDM(today) }} cerrada — pedidos nuevos irán al {{ formatDM(tomorrow) }}. Pedidos del día archivados.</v-alert>
     <WeatherForecast />
-    <v-row>
-      <v-col v-for="col in cols" :key="col.state" cols="12" md="2">
+    <v-row no-gutters class="ma-0 pa-0 mx-0" style="margin:0;padding:0;box-sizing:border-box;display:flex;width:100%;gap:8px;flex-wrap:wrap">
+      <v-col v-for="col in cols" :key="col.state" cols="12" md="2" class="pa-1 ma-0 d-flex" style="padding:4px;margin:0;box-sizing:border-box;flex:1 1 0;min-width:180px;max-width:none;display:flex">
         <KanbanColumn :title="col.title" :color="col.color" :orders="getOrdersFor(col.state)" :is-loading="getLoadingFor(col.state)" :is-error="getErrorFor(col.state)" :compact="col.state === 'ENTREGADO'" @retry="boards[col.state].refetch()" />
       </v-col>
-      <v-col cols="12" md="2">
+      <v-col cols="12" md="2" class="pa-1 ma-0 d-flex" style="padding:4px;margin:0;box-sizing:border-box;flex:1 1 0;min-width:180px;max-width:none;display:flex">
         <KanbanTotalsCard :fallback-orders="(boards['ENTREGADO'].data.value ?? []) as any" :business-date="businessDate" />
       </v-col>
     </v-row>
