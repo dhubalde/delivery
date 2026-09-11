@@ -279,5 +279,12 @@ class OrderTransitionView(APIView):
                     p.save(update_fields=["status", "confirmed_at", "updated_at"])
             except Exception:
                 pass
+            # Clear any unread PAYMENT_PENDING reminders so bell stops showing
+            try:
+                from apps.notifications.models import Notification, NotificationType
+
+                Notification.objects.filter(order=updated, type=NotificationType.PAYMENT_PENDING, is_read=False).update(is_read=True)
+            except Exception:
+                pass
         updated = Order.objects.prefetch_related("items", "payments").get(pk=updated.pk)
         return Response(_serialize_order(updated))

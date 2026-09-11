@@ -11,7 +11,7 @@ from apps.notifications.serializers import NotificationSerializer
 
 logger = logging.getLogger(__name__)
 
-LOGISTICS_REMINDER_MINUTES = 15
+LOGISTICS_REMINDER_MINUTES = 25
 
 
 def _require_merchant_id(request):
@@ -47,7 +47,15 @@ def _maybe_create_cash_reminders(mid: int) -> None:
         from apps.payments.models import Payment
 
         cutoff = timezone.now() - timedelta(minutes=LOGISTICS_REMINDER_MINUTES)
-        # Orders in logistics/billing with pending cash payment older than 15 min
+        # Early return if no relevant orders exist — avoids creating notifications when empty
+        has_relevant = Order.objects.for_merchant(mid).filter(
+            state__in=[Order.State.LOGISTICA, Order.State.FACTURACION],
+            payments__method=Payment.Method.EFECTIVO,
+            payments__status=Payment.Status.PENDING,
+        ).exists()
+        if not has_relevant:
+            return
+        # Orders in logistics/billing with pending cash payment older than 25 min
         orders = (
             Order.objects.for_merchant(mid)
             .filter(
@@ -88,7 +96,15 @@ class NotificationListView(generics.ListAPIView):
     def get_queryset(self):
         mid = _require_merchant_id(self.request)
         # Best-effort reminder generation - never break listing
-        _maybe_create_cash_reminders(mid)
+        # Guard: with zero orders, do not create any notification
+        try:
+            from apps.orders.models import Order as _Order
+
+            if _Order.objects.for_merchant(mid).exists():
+                _maybe_create_cash_reminders(mid)
+        except Exception:
+            # Fallback: try to create reminders anyway, inner function handles errors
+            _maybe_create_cash_reminders(mid)
         qs = Notification.objects.for_merchant(mid).order_by("-created_at")
         unread = self.request.query_params.get("unread")
         if unread == "true":

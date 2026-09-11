@@ -71,6 +71,11 @@ def _on_payment_created(sender, instance, created, **kwargs):
     if instance.method == Payment.Method.EFECTIVO and instance.status == Payment.Status.PENDING:
         order = instance.order
         if order and order.merchant_id:
+            # Gate: only notify immediately if order is already in LOGISTICA/FACTURACION.
+            # This prevents early notification at RECIBIDO and before logistics.
+            # Periodic engine (_maybe_create_cash_reminders) handles the 25min reminder.
+            if order.state not in (Order.State.LOGISTICA, Order.State.FACTURACION):
+                return
             create_order_notification(
                 order, NotificationRecipientType.EMPLOYEE, "Cajero",
                 f"Pago en efectivo pendiente para pedido #{order.code}",
