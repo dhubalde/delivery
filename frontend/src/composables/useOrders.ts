@@ -28,8 +28,10 @@ export function useOrdersBoard(state: MaybeRef<string>, businessDate: MaybeRef<s
       return (Array.isArray(data) ? data : (data.results ?? data.items ?? data)) as Order[]
     },
     refetchInterval: INTERVALS.BOARD,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
+    staleTime: 5_000,
+    gcTime: 30_000,
+    refetchOnWindowFocus: false,
+    refetchIntervalInBackground: false,
   })
 }
 

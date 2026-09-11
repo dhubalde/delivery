@@ -16,7 +16,10 @@ export function useCategories(slug: MaybeRef<string>) {
       return (Array.isArray(data) ? data : (data as any).results ?? (data as any).items ?? data) as unknown[]
     },
     refetchInterval: INTERVALS.CATALOG,
-    staleTime: 0,
+    staleTime: 15_000,
+    gcTime: 60_000,
+    refetchOnWindowFocus: false,
+    refetchIntervalInBackground: false,
   })
   return query
 }
@@ -35,7 +38,10 @@ export function useProducts(slug: MaybeRef<string>, category: MaybeRef<number | 
       return (Array.isArray(data) ? data : data.results ?? data.items ?? []) as unknown[]
     },
     refetchInterval: INTERVALS.CATALOG,
-    staleTime: 0,
+    staleTime: 15_000,
+    gcTime: 60_000,
+    refetchOnWindowFocus: false,
+    refetchIntervalInBackground: false,
   })
   return query
 }
@@ -54,7 +60,10 @@ export function useFlavors(slug: MaybeRef<string>, category: MaybeRef<number | u
       return (Array.isArray(data) ? data : data.results ?? data.items ?? []) as unknown[]
     },
     refetchInterval: INTERVALS.CATALOG,
-    staleTime: 0,
+    staleTime: 15_000,
+    gcTime: 60_000,
+    refetchOnWindowFocus: false,
+    refetchIntervalInBackground: false,
   })
   return query
 }

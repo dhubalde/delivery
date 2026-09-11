@@ -13,6 +13,9 @@ export function useMenu(slug: string | Ref<string>) {
       return data as { is_open?: boolean; closed?: boolean; next_open_at?: string | null; isOpen?: boolean }
     },
     refetchInterval: INTERVALS.CATALOG,
-    staleTime: 0,
+    staleTime: 15_000,
+    gcTime: 60_000,
+    refetchOnWindowFocus: false,
+    refetchIntervalInBackground: false,
   })
 }

@@ -88,8 +88,11 @@ export function useMyOrders() {
         return db - da
       })
     },
-    refetchInterval: 5000,
-    staleTime: 0,
+    refetchInterval: 15_000,
+    staleTime: 10_000,
+    gcTime: 60_000,
+    refetchOnWindowFocus: false,
+    refetchIntervalInBackground: false,
     enabled: computed(() => ids.value.length > 0),
   })
   return { ...query, ids, refresh }

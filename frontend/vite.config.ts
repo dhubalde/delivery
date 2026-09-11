@@ -8,9 +8,13 @@ export default defineConfig({
   resolve: { alias: { '@': resolve(__dirname, 'src') } },
   server: { proxy: { '/api': 'http://localhost:8000' } },
   build: {
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         manualChunks: {
+          vendor: ['vue', 'vue-router', 'pinia', '@tanstack/vue-query', 'axios'],
+          vuetify: ['vuetify'],
+          phone: ['libphonenumber-js'],
           admin: ['src/views/admin/AdminPlaceholder.vue'],
         },
       },

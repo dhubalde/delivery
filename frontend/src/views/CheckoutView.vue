@@ -6,10 +6,10 @@
     <template v-else>
       <v-card class="pa-3 mb-3" v-for="it in cart.items" :key="it.uid">{{ it.product.name }} × {{ it.qty }} — ${{ it.product.price }}</v-card>
       <div class="font-weight-bold mb-2">Total: ${{ cart.total.toFixed(2) }}</div>
-      <v-form @submit.prevent="submit">
-        <v-text-field v-model="customerName" label="Nombre y apellido *" density="compact" :error-messages="customerNameErr" class="mb-2" />
-        <v-text-field v-model="customerPhone" label="Nº teléfono *" density="compact" :error-messages="customerPhoneErr" prefix="+54" hint="Sin 0 ni 15. 10 dígitos. Ej: 342 4508000 (Santa Fe) o 11 1234-5678 (CABA)" persistent-hint class="mb-2" />
-        <v-text-field v-model="address" label="Dirección de entrega *" density="compact" :error-messages="addressErr" hint="Ej: San Martín 1234, dpto 2B si corresponde" persistent-hint class="mb-2" />
+      <v-form @submit.prevent="submit" @keydown.enter.prevent="submit">
+        <v-text-field v-model="customerName" label="Nombre y apellido *" density="compact" :error-messages="customerNameErr" class="mb-2" @keydown.enter.prevent="submit" />
+        <v-text-field v-model="customerPhone" label="Nº teléfono *" density="compact" :error-messages="customerPhoneErr" prefix="+54" hint="Sin 0 ni 15. 10 dígitos. Ej: 342 4508000 (Santa Fe) o 11 1234-5678 (CABA)" persistent-hint class="mb-2" type="tel" @keydown.enter.prevent="submit" />
+        <v-text-field v-model="address" label="Dirección de entrega *" density="compact" :error-messages="addressErr" hint="Ej: San Martín 1234, dpto 2B si corresponde" persistent-hint class="mb-2" @keydown.enter.prevent="submit" />
         <v-select v-model="fulfillment" :items="['DELIVERY','PICKUP']" label="Entrega" density="compact" class="mb-2" style="max-width:200px" />
         <v-divider class="my-3" />
         <div class="text-subtitle-2 mb-2">Pagos</div>
@@ -23,10 +23,10 @@
         <template v-if="hasTarjeta">
           <v-divider class="my-3" />
           <div class="text-subtitle-2 mb-2">Datos de tarjeta (mock)</div>
-          <v-text-field v-model="cardNumber" label="Número de tarjeta *" density="compact" :error-messages="cardNumberErr" placeholder="4111 1111 1111 1111" hint="Para probar usá 4111 1111 1111 1111" persistent-hint class="mb-2" />
+          <v-text-field v-model="cardNumber" label="Número de tarjeta *" density="compact" :error-messages="cardNumberErr" placeholder="4111 1111 1111 1111" hint="Para probar usá 4111 1111 1111 1111" persistent-hint class="mb-2" @keydown.enter.prevent="submit" />
           <div class="d-flex ga-2">
-            <v-text-field v-model="cardExpiry" label="Vencimiento MM/AA *" density="compact" :error-messages="cardExpiryErr" placeholder="12/30" style="max-width:180px" />
-            <v-text-field v-model="cardCvv" label="CVV *" density="compact" :error-messages="cardCvvErr" placeholder="123" style="max-width:120px" />
+            <v-text-field v-model="cardExpiry" label="Vencimiento MM/AA *" density="compact" :error-messages="cardExpiryErr" placeholder="12/30" style="max-width:180px" @keydown.enter.prevent="submit" />
+            <v-text-field v-model="cardCvv" label="CVV *" density="compact" :error-messages="cardCvvErr" placeholder="123" style="max-width:120px" @keydown.enter.prevent="submit" />
           </div>
         </template>
         <v-alert v-if="inlineError" type="error" variant="tonal" class="mt-2">{{ inlineError }}</v-alert>
@@ -77,17 +77,22 @@ const sumError = computed(() => {
   return null
 })
 function fieldErr(i:number){ return fieldErrs.value[i] || '' }
+function validatePhone(): string {
+  const raw = customerPhone.value.trim()
+  if (!raw) return 'Requerido'
+  const phone = parsePhoneNumberFromString(raw, 'AR')
+  if (!phone || !phone.isValid()) return 'Teléfono inválido. Sin 0 ni 15. Ej: 342 4508000'
+  return ''
+}
 async function submit(){
+  if (loading.value) return
   inlineError.value=null; fieldErrs.value={}
   customerNameErr.value=''; customerPhoneErr.value=''; addressErr.value=''
   cardNumberErr.value=''; cardExpiryErr.value=''; cardCvvErr.value=''
   let hasErr=false
   if(!customerName.value.trim()){ customerNameErr.value='Requerido'; hasErr=true }
-  if(!customerPhone.value.trim()){ customerPhoneErr.value='Requerido'; hasErr=true }
-  else {
-    const phone = parsePhoneNumberFromString(customerPhone.value, 'AR')
-    if (!phone || !phone.isValid()) { customerPhoneErr.value='Teléfono inválido. Sin 0 ni 15. Ej: 342 4508000'; hasErr=true }
-  }
+  const phoneErr = validatePhone()
+  if (phoneErr) { customerPhoneErr.value = phoneErr; hasErr = true }
   if(!address.value.trim()){ addressErr.value='Requerido'; hasErr=true }
   else if(!/\d/.test(address.value)){ addressErr.value='Incluí altura/número. Ej: San Martín 1234'; hasErr=true }
   if(hasTarjeta.value){

@@ -1,6 +1,7 @@
 export const INTERVALS = {
-  BOARD: 5_000,
+  BOARD: 10_000,
   CATALOG: 30_000,
   WEATHER: 3_600_000,
-  TRACK: 10_000,
+  TRACK: 15_000,
+  NOTIFICATIONS: 30_000,
 } as const

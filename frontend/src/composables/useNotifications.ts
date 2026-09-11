@@ -33,9 +33,11 @@ export function useNotifications(options?: { recipientType?: 'CUSTOMER' | 'EMPLO
       })
       return (Array.isArray(data) ? data : (data.results ?? data.items ?? data)) as NotificationRaw[]
     },
-    staleTime: 0,
-    refetchInterval: 10000,
-    refetchOnWindowFocus: true,
+    staleTime: 15_000,
+    gcTime: 60_000,
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: false,
   })
 
   const notifications = computed(() => (data.value ?? []) as NotificationRaw[])
