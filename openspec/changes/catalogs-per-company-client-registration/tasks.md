@@ -33,13 +33,13 @@ Chain strategy: pending
 
 ## Phase 2: Backend
 
-- [ ] 2.1 Add `PublicCatalogAggregateView` in `backend/apps/catalog/views_public.py` + `<slug>/catalog` in `backend/apps/catalog/urls_public.py` — `AllowAny` via `_get_merchant_by_slug`→404. Spec: aggregate/404/AllowAny.
-- [ ] 2.2 Create `backend/apps/customers/auth.py` + `views.py` (register/login/me) + `urls_public.py` `<slug>/customers/*`; SimpleJWT `mid/cid`, header `Customer`. Spec: register/login/me + JWT.
-- [ ] 2.3 Modify `backend/apps/orders/views.py` — parse `Customer` JWT; `mid==slug`→link else guest (no fail). Spec: guest/auth/mismatched.
-- [ ] 2.4 RED — AllowAny: `GET /public/acme/catalog` no auth→200; `POST /public/acme/orders` guest→201 (threat: Bearer).
-- [ ] 2.5 RED — prefix: `Bearer` on `customers/me`→401 vs `Customer`→200 (threat: prefix).
-- [ ] 2.6 RED — inactive: `GET /public/inactive/catalog`→404 (threat: inactive).
-- [ ] 2.7 RED — cross-merchant: `GET /public/acme/catalog` excludes beta (threat: slug leak).
+- [x] 2.1 Add `PublicCatalogAggregateView` in `backend/apps/catalog/views_public.py` + `<slug>/catalog` in `backend/apps/catalog/urls_public.py` — `AllowAny` via `_get_merchant_by_slug`→404. Spec: aggregate/404/AllowAny.
+- [x] 2.2 Create `backend/apps/customers/auth.py` + `views.py` (register/login/me) + `urls_public.py` `<slug>/customers/*`; SimpleJWT `mid/cid`, header `Customer`. Spec: register/login/me + JWT.
+- [x] 2.3 Modify `backend/apps/orders/views.py` — parse `Customer` JWT; `mid==slug`→link else guest (no fail). Spec: guest/auth/mismatched.
+- [x] 2.4 RED — AllowAny: `GET /public/acme/catalog` no auth→200; `POST /public/acme/orders` guest→201 (threat: Bearer).
+- [x] 2.5 RED — prefix: `Bearer` on `customers/me`→401 vs `Customer`→200 (threat: prefix).
+- [x] 2.6 RED — inactive: `GET /public/inactive/catalog`→404 (threat: inactive).
+- [x] 2.7 RED — cross-merchant: `GET /public/acme/catalog` excludes beta (threat: slug leak).
 
 ## Phase 3: Frontend
 

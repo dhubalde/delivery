@@ -9,10 +9,47 @@ from apps.tenancy.models import Merchant
 
 
 def _get_merchant_by_slug(slug):
-    merchant = Merchant.objects.filter(slug=slug).first()
-    if merchant is None:
-        merchant = Merchant.all_objects.filter(slug=slug).first()
-    return get_object_or_404(Merchant.objects.all(), slug=slug) if merchant is None else merchant
+    merchant = Merchant.all_objects.filter(slug=slug).first()
+    if merchant is None or merchant.deleted_at is not None or not merchant.is_active:
+        from django.http import Http404
+
+        raise Http404(f"No Merchant matches slug={slug}")
+    return merchant
+
+
+class PublicCatalogAggregateView(generics.GenericAPIView):
+    permission_classes = [permissions.AllowAny]
+    authentication_classes: list = []
+
+    def get(self, request, slug):
+        merchant = _get_merchant_by_slug(slug)
+        categories = Category.objects.filter(merchant_id=merchant.pk, is_active=True).order_by("position", "name")
+        products = Product.objects.filter(merchant_id=merchant.pk, is_active=True).order_by("name")
+        flavors = Flavor.objects.filter(merchant_id=merchant.pk, is_active=True).order_by("name")
+        try:
+            stat_obj, _created = CatalogStat.objects.get_or_create(merchant_id=merchant.pk)
+            stats = {"visit_count": stat_obj.visit_count, "buyer_count": stat_obj.buyer_count}
+        except Exception:
+            stats = {"visit_count": 0, "buyer_count": 0}
+        cat_data = CategorySerializer(categories, many=True).data
+        prod_data = ProductSerializer(products, many=True, context={"request": request}).data
+        flav_data = FlavorSerializer(flavors, many=True).data
+        merchant_data = {
+            "id": merchant.pk,
+            "slug": merchant.slug,
+            "name": merchant.name,
+            "is_active": merchant.is_active,
+            "logo_url": getattr(merchant, "resolved_logo_url", "") or "",
+        }
+        return Response(
+            {
+                "merchant": merchant_data,
+                "categories": cat_data,
+                "products": prod_data,
+                "flavors": flav_data,
+                "stats": stats,
+            }
+        )
 
 
 class PublicCategoryListView(generics.ListAPIView):

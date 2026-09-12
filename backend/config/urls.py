@@ -37,6 +37,7 @@ urlpatterns = [
     path("api/v1/notifications/", include("apps.notifications.urls")),
     path("api/public/", include("apps.catalog.urls_public")),
     path("api/public/<slug:slug>/", include("apps.orders.urls_public")),
+    path("api/public/<slug:slug>/", include("apps.customers.urls_public")),
 ]
 
 if settings.DEBUG:

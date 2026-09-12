@@ -61,6 +61,48 @@ def _serialize_order(order):
     return {"id": order.pk, "code": order.code, "merchant_id": order.merchant_id, "customer_name": order.customer_name, "customer_phone": order.customer_phone, "fulfillment": order.fulfillment, "state": order.state, "business_date": str(order.business_date), "address": order.address, "items_total": str(order.items_total), "delivery_fee": str(order.delivery_fee), "discount": str(order.discount), "total": str(order.total), "cash_declared": order.cash_declared, "cancel_reason": getattr(order, "cancel_reason", None), "canceled_at": order.canceled_at.isoformat() if getattr(order, "canceled_at", None) else None, "items": items, "payments": payments, "created_at": order.created_at.isoformat() if hasattr(order, "created_at") and order.created_at else None, "updated_at": order.updated_at.isoformat() if hasattr(order, "updated_at") and order.updated_at else None}
 
 
+def _get_customer_for_order(request, merchant):
+    """Parse Customer JWT optionally. Returns Customer or None. Mismatched/invalid → guest (None)."""
+    header = request.META.get("HTTP_AUTHORIZATION", "")
+    if not header.startswith("Customer "):
+        return None
+    token_str = header.split(" ", 1)[1].strip()
+    if not token_str:
+        return None
+    try:
+        from rest_framework_simplejwt.tokens import AccessToken
+
+        payload = AccessToken(token_str).payload
+    except Exception:
+        return None
+    mid = payload.get("mid")
+    cid = payload.get("cid")
+    if mid is None or cid is None:
+        return None
+    try:
+        mid = int(mid)
+        cid = int(cid)
+    except (TypeError, ValueError):
+        return None
+    if mid != merchant.pk:
+        return None
+    try:
+        from apps.customers.models import Customer
+
+        return Customer.objects.get(pk=cid, merchant_id=mid)
+    except Exception:
+        return None
+
+
+def _get_merchant_by_slug_or_404(slug):
+    from django.http import Http404
+
+    merchant = Merchant.all_objects.filter(slug=slug).first()
+    if merchant is None or merchant.deleted_at is not None or not merchant.is_active:
+        raise Http404(f"No Merchant matches slug={slug}")
+    return merchant
+
+
 class PublicOrderCreateView(APIView):
     permission_classes = [permissions.AllowAny]
     authentication_classes: list = []
@@ -69,7 +111,7 @@ class PublicOrderCreateView(APIView):
         key = request.headers.get("Idempotency-Key") or request.META.get("HTTP_IDEMPOTENCY_KEY") or request.META.get("HTTP_IDEMPOTENCY-KEY")
         if not key:
             return Response({"error": {"code": "IDEMPOTENCY_KEY_REQUIRED", "message": "Idempotency-Key header required"}}, status=400)
-        merchant = get_object_or_404(Merchant, slug=slug)
+        merchant = _get_merchant_by_slug_or_404(slug)
         try:
             open_val = is_open(merchant)
         except Exception:
@@ -165,10 +207,11 @@ class PublicOrderCreateView(APIView):
                 today += timedelta(days=1)
         except Exception:
             pass
+        customer = _get_customer_for_order(request, merchant)
         with transaction.atomic():
             max_code = Order.objects.filter(merchant=merchant, business_date=today).aggregate(m=Max("code"))["m"] or 0
             code = max_code + 1
-            order = Order.objects.create(merchant=merchant, code=code, customer_name=data.get("customer_name") or "Guest", customer_phone=data.get("customer_phone") or "", fulfillment=fulfillment, state=Order.State.RECIBIDO, business_date=today, address=data.get("address") or "", items_total=items_total, delivery_fee=delivery_fee, discount=Decimal("0.00"), total=total, cash_declared=any(p["method"] == Payment.Method.EFECTIVO for p in payments))
+            order = Order.objects.create(merchant=merchant, customer=customer, code=code, customer_name=data.get("customer_name") or "Guest", customer_phone=data.get("customer_phone") or "", fulfillment=fulfillment, state=Order.State.RECIBIDO, business_date=today, address=data.get("address") or "", items_total=items_total, delivery_fee=delivery_fee, discount=Decimal("0.00"), total=total, cash_declared=any(p["method"] == Payment.Method.EFECTIVO for p in payments))
             for vi in validated_items:
                 prod = vi["product"]
                 flavors_payload = []

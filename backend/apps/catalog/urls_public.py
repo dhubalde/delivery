@@ -1,8 +1,10 @@
 from django.urls import path
 
-from apps.catalog.views_public import CatalogStatPublicView, PublicCategoryListView, PublicFlavorListView, PublicProductListView
+from apps.catalog.views_public import CatalogStatPublicView, PublicCatalogAggregateView, PublicCategoryListView, PublicFlavorListView, PublicProductListView
 
 urlpatterns = [
+    path("<slug:slug>/catalog", PublicCatalogAggregateView.as_view(), name="public-catalog-aggregate"),
+    path("<slug:slug>/catalog/", PublicCatalogAggregateView.as_view(), name="public-catalog-aggregate-slash"),
     path("<slug:slug>/stat", CatalogStatPublicView.as_view(), name="public-catalog-stat"),
     path("<slug:slug>/stat/", CatalogStatPublicView.as_view(), name="public-catalog-stat-slash"),
     path("<slug:slug>/products", PublicProductListView.as_view(), name="public-product-list"),
