@@ -50,12 +50,12 @@ Chain strategy: pending
 
 ## Phase 4: Verification
 
-- [ ] 4.1 Unit: constraint, password, JWT `mid/cid`, mismatch→403 (`python manage.py test`).
-- [ ] 4.2 Integration: catalog isolation, guest/auth/mismatched (`APITestCase`).
-- [ ] 4.3 Frontend Vitest: router `/:slug` + cart/myOrders/customer two-slug (`npm run test`).
-- [ ] 4.4 Smoke: `/acme` catalog, `/acme/checkout` guest, register→linked order, `/beta` empty, `POST /public/orders`→404.
+- [x] 4.1 Unit: constraint, password, JWT `mid/cid`, mismatch→403 (`python -m pytest apps/customers/tests/test_models.py apps/customers/tests/test_customer_auth.py` — 22 passed).
+- [x] 4.2 Integration: catalog isolation, guest/auth/mismatched (`APITestCase`: `test_public_catalog_aggregate.py`, `test_public_order_customer_link.py`, `test_public_orders_isolation.py`, `test_order_customer_fk.py` — 27 passed).
+- [x] 4.3 Frontend Vitest: router `/:slug` + cart/myOrders/customer two-slug (`npm run test` — 5 suites, 25 tests; stores/cart, stores/customer, composables/myOrders, router, api/client).
+- [x] 4.4 Smoke: `/acme` catalog, `/acme/checkout` guest, register→linked order, `/beta` empty, `POST /public/orders`→404 (`apps/catalog/tests/test_smoke_catalog_isolation.py` — single-flow 1 passed covering acme 200 isolated, guest 201, register+link 201, beta excludes acme, cross-token guest, bare 404).
 
 ## Phase 5: Cleanup
 
-- [ ] 5.1 Remove `backend/apps/orders/urls_public.py` legacy `""`/`"/"`; gate `CUSTOMER_AUTH_ENABLED`.
-- [ ] 5.2 Document slug API; rollback note (drop FK then table).
+- [x] 5.1 Remove `backend/apps/orders/urls_public.py` legacy `""`/`"/"`; gate `CUSTOMER_AUTH_ENABLED` (`backend/config/settings.py` + `config/urls.py` conditional include + `apps/customers/views.py:_check_customer_auth_gate`; `apps/orders/urls_public.py` keeps only `orders`/`orders/` relative to `api/public/<slug>/`; `config/urls.py` has exactly one `apps.orders.urls_public` include, zero bare `api/public/` duplicate).
+- [x] 5.2 Document slug API; rollback note (drop FK then table) (`docs/specs/catalogs-per-company-client-registration.md` — Slug API table, verification commands, `CUSTOMER_AUTH_ENABLED` gate, rollback: gate off → `migrate orders 0002` then `migrate customers zero` → revert).

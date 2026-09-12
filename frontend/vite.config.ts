@@ -7,6 +7,11 @@ export default defineConfig({
   plugins: [vue(), vuetify({ autoImport: true })],
   resolve: { alias: { '@': resolve(__dirname, 'src') } },
   server: { proxy: { '/api': 'http://localhost:8000' } },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    include: ['src/**/*.{test,spec}.{ts,js}'],
+  },
   build: {
     chunkSizeWarningLimit: 600,
     rollupOptions: {

@@ -75,6 +75,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_V2 = os.environ.get("AUTH_V2", "0") == "1"
 
+# Customer auth gate — allows rollback of per-company client registration without dropping tables
+CUSTOMER_AUTH_ENABLED = os.environ.get("CUSTOMER_AUTH_ENABLED", "1") == "1"
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),

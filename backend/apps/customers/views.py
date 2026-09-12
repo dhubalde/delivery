@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status
 from rest_framework.response import Response
@@ -6,6 +7,13 @@ from rest_framework.views import APIView
 from apps.customers.auth import CustomerJWTAuthentication, get_tokens_for_customer
 from apps.customers.models import Customer
 from apps.tenancy.models import Merchant
+
+
+def _check_customer_auth_gate():
+    if not getattr(settings, "CUSTOMER_AUTH_ENABLED", True):
+        from django.http import Http404
+
+        raise Http404("Customer auth disabled")
 
 
 def _get_merchant_by_slug_or_404(slug):
@@ -28,6 +36,7 @@ class CustomerRegisterView(APIView):
     authentication_classes: list = []
 
     def post(self, request, slug):
+        _check_customer_auth_gate()
         merchant = _get_merchant_by_slug_or_404(slug)
         data = request.data or {}
         phone = (data.get("phone") or "").strip()
@@ -59,6 +68,7 @@ class CustomerLoginView(APIView):
     authentication_classes: list = []
 
     def post(self, request, slug):
+        _check_customer_auth_gate()
         merchant = _get_merchant_by_slug_or_404(slug)
         data = request.data or {}
         phone = (data.get("phone") or "").strip()
@@ -88,6 +98,7 @@ class CustomerMeView(APIView):
     authentication_classes: list = []
 
     def get(self, request, slug):
+        _check_customer_auth_gate()
         merchant = _get_merchant_by_slug_or_404(slug)
         header = request.META.get("HTTP_AUTHORIZATION", "")
         if not header.startswith("Customer "):

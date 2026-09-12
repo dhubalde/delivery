@@ -37,8 +37,12 @@ urlpatterns = [
     path("api/v1/notifications/", include("apps.notifications.urls")),
     path("api/public/", include("apps.catalog.urls_public")),
     path("api/public/<slug:slug>/", include("apps.orders.urls_public")),
-    path("api/public/<slug:slug>/", include("apps.customers.urls_public")),
 ]
+
+# Customer auth is gated — unset gate to disable per-company client registration without dropping tables
+# When disabled, customer endpoints return 404 and orders stay guest-only
+if getattr(settings, "CUSTOMER_AUTH_ENABLED", True):
+    urlpatterns.append(path("api/public/<slug:slug>/", include("apps.customers.urls_public")))
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
