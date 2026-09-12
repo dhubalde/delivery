@@ -9,7 +9,7 @@
         <v-divider class="my-2" />
         <div class="font-weight-bold">Total: ${{ cart.total.toFixed(2) }}</div>
         <v-alert v-if="inlineError" type="error" variant="tonal" class="mt-2">{{ inlineError }}</v-alert>
-        <v-btn block color="primary" class="mt-2" :disabled="cart.isEmpty || closed" to="/checkout">Ir a pagar</v-btn>
+        <v-btn block color="primary" class="mt-2" :disabled="cart.isEmpty || closed" :to="checkoutTo">Ir a pagar</v-btn>
         <div v-if="closed" class="text-caption text-warning mt-1">Cerrado — no se puede comprar</div>
       </template>
     </v-card-text>
@@ -17,19 +17,32 @@
   <MyOrders />
 </template>
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useCartStore } from '@/stores/cart.store'
 import { useMenu } from '@/composables/useMenu'
-import { useAuthStore } from '@/stores/auth.store'
 import CartItem from '@/components/CartItem.vue'
 import MyOrders from '@/components/MyOrders.vue'
-defineProps<{ loading?: boolean; inlineError?: string | null }>()
+const props = defineProps<{ loading?: boolean; inlineError?: string | null; slug?: string }>()
 const cart = useCartStore()
-const auth = useAuthStore()
-const { data } = useMenu(computed(() => auth.merchantSlug || 'zona-ice') as any) as any
+const routeSlug = computed(() => {
+  if (props.slug) return props.slug
+  try {
+    const path = window.location.pathname || ''
+    const m = path.match(/^\/([^\/]+)/)
+    if (m && m[1] && !['panel', 'master', 'login', 'change-password'].includes(m[1])) return m[1]
+  } catch {}
+  return 'ice-zone'
+})
+watch(
+  routeSlug,
+  (s) => cart.setSlug(s),
+  { immediate: true },
+)
+const { data } = useMenu(routeSlug as any) as any
 const closed = computed(() => {
   const d = (data as any).value as any
   if (!d) return false
   return d.closed === true || d.is_open === false || d.isOpen === false
 })
+const checkoutTo = computed(() => `/${routeSlug.value}/checkout`)
 </script>

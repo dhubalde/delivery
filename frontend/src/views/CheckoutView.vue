@@ -38,17 +38,27 @@
 </template>
 <script setup lang="ts">
 import { parsePhoneNumberFromString } from 'libphonenumber-js'
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { api } from '@/api/client'
 import { useCartStore } from '@/stores/cart.store'
 import { useMenu } from '@/composables/useMenu'
-import { useAuthStore } from '@/stores/auth.store'
-import { addMyOrderId } from '@/composables/useMyOrders'
+import { useCustomerStore } from '@/stores/customer.store'
+import { addMyOrderIdForSlug } from '@/composables/useMyOrders'
 import ClosedBanner from '@/components/ClosedBanner.vue'
 const cart = useCartStore()
-const auth = useAuthStore()
+const customerStore = useCustomerStore()
 const router = useRouter()
+const route = useRoute()
+const slug = computed(() => (route.params.slug as string) || 'ice-zone')
+watch(
+  slug,
+  (s) => {
+    cart.setSlug(s)
+    customerStore.hydrate(s)
+  },
+  { immediate: true },
+)
 const methods = ['EFECTIVO','BILLETERA','TARJETA']
 const payments = ref<{ method:string; amount:number }[]>([{ method:'EFECTIVO', amount: cart.total }])
 const customerName = ref('')
@@ -68,7 +78,7 @@ const addressErr = ref('')
 const cardNumberErr = ref('')
 const cardExpiryErr = ref('')
 const cardCvvErr = ref('')
-const { data } = useMenu(computed(() => auth.merchantSlug || 'zona-ice') as any) as any
+const { data } = useMenu(slug as any) as any
 const closed = computed(() => { const d=(data as any).value as any; return d ? (d.closed===true||d.is_open===false) : false })
 const hasTarjeta = computed(() => payments.value.some((p) => p.method === 'TARJETA'))
 const sumError = computed(() => {
@@ -116,16 +126,16 @@ async function submit(){
   if (sumError.value) { inlineError.value = sumError.value; return }
   loading.value=true
   try{
-    const slug = auth.merchantSlug || 'zona-ice'
+    const currentSlug = slug.value
     const _parsed = parsePhoneNumberFromString(customerPhone.value, 'AR')
     const _e164 = _parsed && _parsed.isValid() ? _parsed.format('E.164') : customerPhone.value.trim()
     const body:any = { items: cart.items.map(i=>({ product_id:i.product.id, quantity:i.qty, flavor_ids:i.flavorIds })), payments: payments.value.map(p=>({ method:p.method, amount:String(p.amount) })), fulfillment: fulfillment.value, customer_name: customerName.value.trim(), customer_phone: _e164, address: address.value.trim() }
     if(hasTarjeta.value){
       body.card = { number: cardNumber.value.replace(/\s/g,''), expiry: cardExpiry.value.trim(), cvv: cardCvv.value.trim() }
     }
-    const { data: created } = await api.post(`/public/${slug}/orders`, body, { headers: { 'Idempotency-Key': crypto.randomUUID() } }) as { data: { id: number } }
-    if (created && typeof created.id === 'number') addMyOrderId(created.id)
-    cart.clear(); ok.value=true; setTimeout(()=>router.push('/'), 800)
+    const { data: created } = await api.post(`/public/${currentSlug}/orders`, body, { headers: { 'Idempotency-Key': crypto.randomUUID() } }) as { data: { id: number } }
+    if (created && typeof created.id === 'number') addMyOrderIdForSlug(created.id, currentSlug)
+    cart.clear(); ok.value=true; setTimeout(()=>router.push(`/${currentSlug}`), 800)
   }catch(e:any){
     const d=e?.response?.data
     const code=d?.error?.code

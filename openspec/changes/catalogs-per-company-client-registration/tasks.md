@@ -43,10 +43,10 @@ Chain strategy: pending
 
 ## Phase 3: Frontend
 
-- [ ] 3.1 Modify `frontend/src/router/index.ts` — `/:slug` with `checkout`/`my-orders`; invalid→`NotFoundView`. Spec: slug routing/invalid.
-- [ ] 3.2 Create `frontend/src/stores/customer.store.ts` — keys `customer:{slug}`, `register/login/me/logout`. Spec: isolation.
-- [ ] 3.3 Modify `frontend/src/stores/cart.store.ts` (`cart:{slug}`) + `frontend/src/composables/useMyOrders.ts` (`myOrders:{slug}`) + `frontend/src/api/client.ts` attach `Customer` header. Spec: cart/myOrders partition.
-- [ ] 3.4 Modify `frontend/src/views/CatalogView.vue` — `slug=route.params.slug`, fetch `/api/public/{slug}/catalog`, 404→NotFound.
+- [x] 3.1 Modify `frontend/src/router/index.ts` — `/:slug` with `checkout`/`my-orders`; invalid→`NotFoundView`. Spec: slug routing/invalid.
+- [x] 3.2 Create `frontend/src/stores/customer.store.ts` — keys `customer:{slug}`, `register/login/me/logout`. Spec: isolation.
+- [x] 3.3 Modify `frontend/src/stores/cart.store.ts` (`cart:{slug}`) + `frontend/src/composables/useMyOrders.ts` (`myOrders:{slug}`) + `frontend/src/api/client.ts` attach `Customer` header. Spec: cart/myOrders partition.
+- [x] 3.4 Modify `frontend/src/views/CatalogView.vue` — `slug=route.params.slug`, fetch `/api/public/{slug}/catalog`, 404→NotFound.
 
 ## Phase 4: Verification
 

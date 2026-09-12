@@ -1,8 +1,14 @@
 <template>
   <v-app>
     <v-app-bar density="compact" color="primary">
-      <template #title><AppLogo :size="130" variant="auto" /></template>
+      <template #title>
+        <div class="d-flex align-center ga-2">
+          <AppLogo :size="130" variant="auto" />
+          <span v-if="merchantName" class="text-subtitle-2 ml-2" style="opacity:0.9">{{ merchantName }}</span>
+        </div>
+      </template>
       <v-app-bar-nav-icon v-if="xs" @click="drawer=!drawer" />
+      <v-btn v-if="customer.isAuthenticated" variant="text" size="small" @click="onLogout">{{ customer.displayName || 'Salir' }}</v-btn>
       <NotificationBell recipient-type="CUSTOMER" />
       <v-btn icon="mdi-brightness-6" @click="ui.toggleTheme()" />
     </v-app-bar>
@@ -16,7 +22,7 @@
       <v-row>
         <v-col v-if="!xs" cols="2"><SearchInput class="mb-3" /><CategoryNav /></v-col>
         <v-col :cols="xs?12:7"><router-view /></v-col>
-        <v-col v-if="!xs" cols="3" style="max-width: 320px !important; flex: 0 0 320px !important; min-width: 320px !important"><CartDrawer /><FooterContact v-if="!isContact" class="inside-cart mt-4" /></v-col>
+        <v-col v-if="!xs" cols="3" style="max-width: 320px !important; flex: 0 0 320px !important; min-width: 320px !important"><CartDrawer :slug="slug" /><FooterContact v-if="!isContact" class="inside-cart mt-4" /></v-col>
       </v-row>
     </v-container></v-main>
     <v-banner v-if="ui.offline" color="warning" sticky>Sin conexión — datos pueden estar desactualizados</v-banner>
@@ -29,6 +35,9 @@ import { useDisplay, useTheme } from 'vuetify'
 import { useRoute } from 'vue-router'
 import { useUiStore } from '@/stores/ui.store'
 import { useOffline } from '@/composables/useOffline'
+import { useCatalog } from '@/composables/useCatalog'
+import { useCartStore } from '@/stores/cart.store'
+import { useCustomerStore } from '@/stores/customer.store'
 import CategoryNav from '@/components/CategoryNav.vue'
 import SearchInput from '@/components/SearchInput.vue'
 import CartDrawer from '@/components/CartDrawer.vue'
@@ -44,4 +53,23 @@ const { xs } = useDisplay()
 const route = useRoute()
 const isContact = computed(() => route.path.includes('/contact'))
 const drawer = ref(false)
+const slug = computed(() => (route.params.slug as string) || 'ice-zone')
+const cart = useCartStore()
+const customer = useCustomerStore()
+watch(
+  slug,
+  (s) => {
+    cart.setSlug(s)
+    customer.hydrate(s)
+  },
+  { immediate: true },
+)
+const { data: aggregate } = useCatalog(slug) as any
+const merchantName = computed(() => {
+  const agg: any = aggregate?.value
+  return agg?.merchant?.name || ''
+})
+function onLogout() {
+  customer.logout(slug.value)
+}
 </script>

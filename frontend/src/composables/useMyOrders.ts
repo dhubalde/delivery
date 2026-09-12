@@ -3,6 +3,24 @@ import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { api } from '@/api/client'
 
 export const MY_ORDERS_KEY = 'myOrders'
+export const MY_ORDERS_PREFIX = 'myOrders:'
+
+export function myOrdersKey(slug: string): string {
+  return `${MY_ORDERS_PREFIX}${slug}`
+}
+
+function resolveSlugForStorage(explicit?: string): string | null {
+  if (explicit) return explicit
+  try {
+    // try to infer from current location path /:slug/...
+    const path = window.location?.pathname || ''
+    const m = path.match(/^\/([^\/]+)/)
+    if (m && m[1] && !['panel', 'master', 'login', 'change-password', 'api'].includes(m[1])) {
+      return m[1]
+    }
+  } catch {}
+  return null
+}
 
 type MyOrder = {
   id: number
@@ -14,9 +32,13 @@ type MyOrder = {
   updated_at?: string | null
 }
 
-export function getMyOrderIds(): number[] {
+export function getMyOrderIds(slug?: string): number[] {
+  const targetSlug = resolveSlugForStorage(slug)
+  const key = targetSlug ? myOrdersKey(targetSlug) : MY_ORDERS_KEY
+  // fallback: if no slug resolved, try legacy key + slug-aware keys? For migration, merge both
   try {
-    const raw = localStorage.getItem(MY_ORDERS_KEY)
+    const raw = localStorage.getItem(key)
+    if (!raw && !targetSlug) return []
     if (!raw) return []
     const parsed = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
@@ -26,33 +48,74 @@ export function getMyOrderIds(): number[] {
   }
 }
 
-export function addMyOrderId(id: number): void {
+export function getMyOrderIdsForSlug(slug: string): number[] {
   try {
-    const ids = getMyOrderIds()
+    const raw = localStorage.getItem(myOrdersKey(slug))
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter((v: unknown) => typeof v === 'number' && Number.isFinite(v))
+  } catch {
+    return []
+  }
+}
+
+export function addMyOrderId(id: number, slug?: string): void {
+  const targetSlug = resolveSlugForStorage(slug)
+  const key = targetSlug ? myOrdersKey(targetSlug) : MY_ORDERS_KEY
+  try {
+    const ids = targetSlug ? getMyOrderIdsForSlug(targetSlug) : getMyOrderIds()
     if (!ids.includes(id)) {
       ids.unshift(id)
-      localStorage.setItem(MY_ORDERS_KEY, JSON.stringify(ids.slice(0, 20)))
+      localStorage.setItem(key, JSON.stringify(ids.slice(0, 20)))
       window.dispatchEvent(new CustomEvent('myOrders:updated'))
     }
   } catch {}
 }
 
-export function removeMyOrderId(id: number): void {
+export function addMyOrderIdForSlug(id: number, slug: string): void {
   try {
-    const ids = getMyOrderIds().filter((v) => v !== id)
-    localStorage.setItem(MY_ORDERS_KEY, JSON.stringify(ids))
+    const ids = getMyOrderIdsForSlug(slug)
+    if (!ids.includes(id)) {
+      ids.unshift(id)
+      localStorage.setItem(myOrdersKey(slug), JSON.stringify(ids.slice(0, 20)))
+      window.dispatchEvent(new CustomEvent('myOrders:updated'))
+    }
+  } catch {}
+}
+
+export function removeMyOrderId(id: number, slug?: string): void {
+  const targetSlug = resolveSlugForStorage(slug)
+  const key = targetSlug ? myOrdersKey(targetSlug) : MY_ORDERS_KEY
+  try {
+    const ids = (targetSlug ? getMyOrderIdsForSlug(targetSlug) : getMyOrderIds()).filter((v) => v !== id)
+    localStorage.setItem(key, JSON.stringify(ids))
     window.dispatchEvent(new CustomEvent('myOrders:updated'))
   } catch {}
 }
 
-function useMyOrderIdsReactive() {
-  const ids = ref<number[]>(getMyOrderIds())
+export function removeMyOrderIdForSlug(id: number, slug: string): void {
+  try {
+    const ids = getMyOrderIdsForSlug(slug).filter((v) => v !== id)
+    localStorage.setItem(myOrdersKey(slug), JSON.stringify(ids))
+    window.dispatchEvent(new CustomEvent('myOrders:updated'))
+  } catch {}
+}
+
+function useMyOrderIdsReactive(slug?: string) {
+  const initial = slug ? getMyOrderIdsForSlug(slug) : getMyOrderIds()
+  const ids = ref<number[]>(initial)
   const refresh = () => {
-    ids.value = getMyOrderIds()
+    ids.value = slug ? getMyOrderIdsForSlug(slug) : getMyOrderIds()
   }
   const onCustom = () => refresh()
   const onStorage = (e: StorageEvent) => {
-    if (e.key === MY_ORDERS_KEY) refresh()
+    const targetKey = slug ? myOrdersKey(slug) : null
+    if (!targetKey) {
+      if (e.key === MY_ORDERS_KEY || (e.key && e.key.startsWith(MY_ORDERS_PREFIX))) refresh()
+    } else {
+      if (e.key === targetKey) refresh()
+    }
   }
   onMounted(() => {
     window.addEventListener('myOrders:updated', onCustom as EventListener)
@@ -65,10 +128,20 @@ function useMyOrderIdsReactive() {
   return { ids, refresh }
 }
 
-export function useMyOrders() {
-  const { ids, refresh } = useMyOrderIdsReactive()
+export function useMyOrders(slug?: string | import('vue').Ref<string | undefined>) {
+  const slugVal = computed(() => {
+    const raw = slug ? (typeof slug === 'string' ? slug : (slug as import('vue').Ref<string | undefined>).value) : undefined
+    if (raw) return raw
+    try {
+      const path = window.location?.pathname || ''
+      const m = path.match(/^\/([^\/]+)/)
+      if (m && m[1] && !['panel', 'master', 'login', 'change-password', 'api'].includes(m[1])) return m[1]
+    } catch {}
+    return undefined
+  })
+  const { ids, refresh } = useMyOrderIdsReactive(slugVal.value)
   const query = useQuery({
-    queryKey: computed(() => ['myOrders', ids.value] as const),
+    queryKey: computed(() => ['myOrders', slugVal.value || 'default', ids.value] as const),
     queryFn: async () => {
       const list = ids.value
       if (list.length === 0) return [] as MyOrder[]

@@ -3,9 +3,55 @@ import { useAuthStore } from '@/stores/auth.store'
 
 export const api = axios.create({ baseURL: import.meta.env.VITE_API_BASE || '/api' })
 
+function extractPublicSlug(url?: string): string | null {
+  if (!url) return null
+  // match /public/<slug>/...  or /public/<slug>
+  const m = url.match(/\/public\/([^\/\?#]+)/)
+  if (m && m[1]) return decodeURIComponent(m[1])
+  return null
+}
+
+function getCustomerAccessForSlug(slug: string): string | null {
+  try {
+    const raw = localStorage.getItem(`customer:${slug}`)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (parsed?.tokens) return parsed.tokens.access || parsed.access || null
+    return parsed?.access || null
+  } catch {
+    return null
+  }
+}
+
 api.interceptors.request.use((cfg) => {
   const auth = useAuthStore()
-  if (auth.access) cfg.headers.Authorization = `Bearer ${auth.access}`
+  const publicSlug = extractPublicSlug(cfg.url || '')
+  const isPublic = !!publicSlug
+  if (!isPublic && auth.access) {
+    cfg.headers.Authorization = `Bearer ${auth.access}`
+  } else if (isPublic) {
+    // For public endpoints, attach Customer JWT if available for this slug
+    const customerAccess = publicSlug ? getCustomerAccessForSlug(publicSlug) : null
+    if (customerAccess) {
+      // Only for orders and customers/me we need Customer header; catalog is AllowAny without auth but sending it is harmless
+      // For orders/me, Customer header is required to link/auth; for other public GETs we can still send but not required
+      if (cfg.url?.includes('/orders') || cfg.url?.includes('/customers/')) {
+        cfg.headers.Authorization = `Customer ${customerAccess}`
+      } else {
+        // For catalog/products/categories/flavors we don't need auth, but if token exists we don't auto-attach to keep AllowAny simple
+        // Do not set Authorization for read-only public catalog
+      }
+    } else {
+      // Guest: ensure no Bearer leaks to public endpoint (AllowAny)
+      if ((cfg.headers.Authorization as string | undefined)?.startsWith('Bearer ')) {
+        delete cfg.headers.Authorization
+      }
+    }
+    // If caller explicitly set Customer header (e.g., fetchMe with manual header), respect it
+    // Our logic above already respects explicit Customer if we didn't overwrite
+  } else if (auth.access) {
+    // Fallback for non-public already handled
+  }
   if (cfg.method && ['post', 'patch', 'put'].includes(cfg.method)) {
     cfg.headers['Idempotency-Key'] = crypto.randomUUID()
   }
