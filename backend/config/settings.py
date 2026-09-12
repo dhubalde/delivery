@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "apps.tenancy",
     "apps.catalog",
     "apps.orders",
+    "apps.customers",
     "apps.payments",
     "apps.delivery",
     "apps.closing",

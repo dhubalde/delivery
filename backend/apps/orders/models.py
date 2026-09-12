@@ -19,6 +19,13 @@ class Order(BaseModel):
     merchant = models.ForeignKey(
         "tenancy.Merchant", on_delete=models.CASCADE, related_name="orders"
     )
+    customer = models.ForeignKey(
+        "customers.Customer",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="orders",
+    )
     code = models.PositiveIntegerField()
     customer_name = models.CharField(max_length=120)
     customer_phone = models.CharField(max_length=40, blank=True)
