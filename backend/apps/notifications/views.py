@@ -11,7 +11,7 @@ from apps.notifications.serializers import NotificationSerializer
 
 logger = logging.getLogger(__name__)
 
-LOGISTICS_REMINDER_MINUTES = 25
+LOGISTICS_REMINDER_MINUTES = 45
 
 
 def _require_merchant_id(request):
@@ -55,7 +55,7 @@ def _maybe_create_cash_reminders(mid: int) -> None:
         ).exists()
         if not has_relevant:
             return
-        # Orders in logistics/billing with pending cash payment older than 25 min
+        # Orders in logistics/billing with pending cash payment older than 45 min
         orders = (
             Order.objects.for_merchant(mid)
             .filter(

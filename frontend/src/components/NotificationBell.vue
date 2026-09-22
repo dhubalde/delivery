@@ -138,10 +138,14 @@ const handleMarkAllRead = async () => {
 }
 
 const handleDelete = async (id: number) => {
-  await remove.mutateAsync(id)
-  window.dispatchEvent(
-    new CustomEvent('app:toast', { detail: { msg: 'Notificación eliminada', type: 'success' } })
-  )
+  try {
+    await remove.mutateAsync(id)
+    window.dispatchEvent(
+      new CustomEvent('app:toast', { detail: { msg: 'Notificación eliminada', type: 'success' } })
+    )
+  } catch {
+    // el toast de error ya lo dispara onError en useNotifications
+  }
 }
 
 function formatDate(iso: string): string {

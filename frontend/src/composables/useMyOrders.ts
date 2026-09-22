@@ -84,6 +84,73 @@ export function addMyOrderIdForSlug(id: number, slug: string): void {
   } catch {}
 }
 
+export type MyOrderSnapshot = {
+  id: number
+  code: number
+  state: string
+  total: string
+  created_at: string
+}
+
+function snapshotsKey(slug: string): string {
+  return `myOrderSnap:${slug}`
+}
+
+export function saveMyOrderSnapshot(slug: string, snap: MyOrderSnapshot): void {
+  try {
+    const raw = localStorage.getItem(snapshotsKey(slug))
+    const map = raw ? (JSON.parse(raw) as Record<string, MyOrderSnapshot>) : {}
+    map[String(snap.id)] = snap
+    localStorage.setItem(snapshotsKey(slug), JSON.stringify(map))
+  } catch {}
+}
+
+export function getMyOrderSnapshots(slug?: string): MyOrderSnapshot[] {
+  const targetSlug = resolveSlugForStorage(slug)
+  const keys = targetSlug ? [snapshotsKey(targetSlug)] : []
+  // fallback: si no hay slug, juntar todos los snapshots (invitado sin contexto)
+  try {
+    if (keys.length === 0) {
+      const out: MyOrderSnapshot[] = []
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i)
+        if (k && k.startsWith('myOrderSnap:')) {
+          const map = JSON.parse(localStorage.getItem(k) || '{}') as Record<string, MyOrderSnapshot>
+          out.push(...Object.values(map))
+        }
+      }
+      return out
+    }
+    const raw = localStorage.getItem(keys[0])
+    if (!raw) return []
+    return Object.values(JSON.parse(raw) as Record<string, MyOrderSnapshot>)
+  } catch {
+    return []
+  }
+}
+
+export function updateMyOrderSnapshotState(id: number, state: string, slug?: string): void {
+  try {
+    const targetSlug = resolveSlugForStorage(slug)
+    const keyList = targetSlug ? [snapshotsKey(targetSlug)] : []
+    if (keyList.length === 0) {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i)
+        if (k && k.startsWith('myOrderSnap:')) keyList.push(k)
+      }
+    }
+    for (const k of keyList) {
+      const raw = localStorage.getItem(k)
+      if (!raw) continue
+      const map = JSON.parse(raw) as Record<string, MyOrderSnapshot>
+      if (map[String(id)]) {
+        map[String(id)] = { ...map[String(id)], state }
+        localStorage.setItem(k, JSON.stringify(map))
+      }
+    }
+  } catch {}
+}
+
 export function removeMyOrderId(id: number, slug?: string): void {
   const targetSlug = resolveSlugForStorage(slug)
   const key = targetSlug ? myOrdersKey(targetSlug) : MY_ORDERS_KEY

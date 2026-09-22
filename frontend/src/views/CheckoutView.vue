@@ -44,7 +44,7 @@ import { api } from '@/api/client'
 import { useCartStore } from '@/stores/cart.store'
 import { useMenu } from '@/composables/useMenu'
 import { useCustomerStore } from '@/stores/customer.store'
-import { addMyOrderIdForSlug } from '@/composables/useMyOrders'
+import { addMyOrderIdForSlug, saveMyOrderSnapshot } from '@/composables/useMyOrders'
 import ClosedBanner from '@/components/ClosedBanner.vue'
 const cart = useCartStore()
 const customerStore = useCustomerStore()
@@ -133,8 +133,11 @@ async function submit(){
     if(hasTarjeta.value){
       body.card = { number: cardNumber.value.replace(/\s/g,''), expiry: cardExpiry.value.trim(), cvv: cardCvv.value.trim() }
     }
-    const { data: created } = await api.post(`/public/${currentSlug}/orders`, body, { headers: { 'Idempotency-Key': crypto.randomUUID() } }) as { data: { id: number } }
-    if (created && typeof created.id === 'number') addMyOrderIdForSlug(created.id, currentSlug)
+    const { data: created } = await api.post(`/public/${currentSlug}/orders`, body, { headers: { 'Idempotency-Key': crypto.randomUUID() } }) as { data: { id: number; code: number; total: string } }
+    if (created && typeof created.id === 'number') {
+      addMyOrderIdForSlug(created.id, currentSlug)
+      saveMyOrderSnapshot(currentSlug, { id: created.id, code: created.code, state: 'RECIBIDO', total: created.total, created_at: new Date().toISOString() })
+    }
     cart.clear(); ok.value=true; setTimeout(()=>router.push(`/${currentSlug}`), 800)
   }catch(e:any){
     const d=e?.response?.data

@@ -115,7 +115,7 @@ def _on_payment_created(sender, instance, created, **kwargs):
         if order and order.merchant_id:
             # Gate: only notify immediately if order is already in LOGISTICA/FACTURACION.
             # This prevents early notification at RECIBIDO and before logistics.
-            # Periodic engine (_maybe_create_cash_reminders) handles the 25min reminder.
+            # Periodic engine (_maybe_create_cash_reminders) handles the 45min reminder.
             if order.state not in (Order.State.LOGISTICA, Order.State.FACTURACION):
                 return
             # Dedup: avoid repeat PAYMENT_PENDING within 60s (e.g., multiple Payment creates)

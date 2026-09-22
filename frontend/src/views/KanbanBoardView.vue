@@ -6,11 +6,11 @@
     </div>
     <v-alert v-if="alreadyClosed" type="info" class="mb-4 ma-0" style="margin:0 0 16px 0;box-sizing:border-box;width:100%">Caja del {{ formatDM(today) }} cerrada — pedidos nuevos irán al {{ formatDM(tomorrow) }}. Pedidos del día archivados.</v-alert>
     <WeatherForecast />
-    <v-row no-gutters class="ma-0 pa-0 mx-0" style="margin:0;padding:0;box-sizing:border-box;display:flex;width:100%;gap:8px;flex-wrap:wrap">
-      <v-col v-for="col in cols" :key="col.state" cols="12" md="2" class="pa-1 ma-0 d-flex" style="padding:4px;margin:0;box-sizing:border-box;flex:1 1 0;min-width:180px;max-width:none;display:flex">
+    <v-row no-gutters class="ma-0 pa-0 mx-0" style="margin:0;padding:0;padding-bottom:4px;box-sizing:border-box;display:flex;width:100%;gap:8px;flex-wrap:nowrap;overflow-x:auto">
+      <v-col v-for="col in cols" :key="col.state" cols="12" md="2" class="pa-1 ma-0 d-flex" style="padding:4px;margin:0;box-sizing:border-box;flex:1 0 160px;min-width:160px;max-width:none;display:flex">
         <KanbanColumn :title="col.title" :color="col.color" :orders="getOrdersFor(col.state)" :is-loading="getLoadingFor(col.state)" :is-error="getErrorFor(col.state)" :compact="col.state === 'ENTREGADO'" @retry="boards[col.state].refetch()" />
       </v-col>
-      <v-col cols="12" md="2" class="pa-1 ma-0 d-flex" style="padding:4px;margin:0;box-sizing:border-box;flex:1 1 0;min-width:180px;max-width:none;display:flex">
+      <v-col cols="12" md="2" class="pa-1 ma-0 d-flex" style="padding:4px;margin:0;box-sizing:border-box;flex:1 0 160px;min-width:160px;max-width:none;display:flex">
         <KanbanTotalsCard :fallback-orders="(boards['ENTREGADO'].data.value ?? []) as any" :business-date="businessDate" />
       </v-col>
     </v-row>

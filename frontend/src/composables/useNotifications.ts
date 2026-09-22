@@ -66,10 +66,53 @@ export function useNotifications(options?: { recipientType?: 'CUSTOMER' | 'EMPLO
 
   const remove = useMutation({
     mutationFn: async (id: number) => {
-      await api.delete(`/v1/notifications/${id}/delete/`)
+      let slug: string | null = null;
+      try {
+        const path = window.location?.pathname || "";
+        const m = path.match(/^\/([^/]+)/);
+        if (m && m[1] && !["panel", "master", "login", "change-password", "api"].includes(m[1])) slug = m[1];
+      } catch {
+        slug = null;
+      }
+      if (!slug) {
+        try {
+          slug = localStorage.getItem("merchantSlug") || "ice-zone";
+        } catch {
+          slug = "ice-zone";
+        }
+      }
+      if (slug === "zona-ice") slug = "ice-zone";
+      await api.delete(`/v1/notifications/${id}/delete/`, {
+        params: { merchant_slug: slug },
+      });
+      return id;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['notifications'] })
+    onMutate: async (id: number) => {
+      await qc.cancelQueries({ queryKey: ["notifications"] });
+      const previous = qc.getQueriesData({ queryKey: ["notifications"] });
+      (qc as unknown as { setQueriesData: (f: unknown, u: (old: unknown) => unknown) => void }).setQueriesData(
+        { queryKey: ["notifications"] },
+        (old: unknown) => {
+          if (Array.isArray(old)) return (old as NotificationRaw[]).filter((n) => n.id !== id);
+          if (old && typeof old === "object" && Array.isArray((old as { results?: unknown }).results))
+            return { ...(old as Record<string, unknown>), results: ((old as { results: NotificationRaw[] }).results).filter((n) => n.id !== id) };
+          return old;
+        },
+      );
+      return { previous };
+    },
+    onError: (err, _id, context) => {
+      const previous = (context as { previous?: [unknown, unknown][] } | undefined)?.previous;
+      if (previous) for (const [key, data] of previous) (qc as unknown as { setQueryData: (k: unknown, d: unknown) => void }).setQueryData(key, data);
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      window.dispatchEvent(
+        new CustomEvent("app:toast", {
+          detail: { msg: status === 404 ? "Ya estaba eliminada" : "No se pudo eliminar", type: "error" },
+        }),
+      );
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["notifications"] });
     },
   })
 

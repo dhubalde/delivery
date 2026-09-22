@@ -1,5 +1,5 @@
 <template>
-  <v-card v-if="ids.length === 0" class="mt-4" elevation="2" rounded="lg">
+  <v-card v-if="!hasPending" class="mt-4" elevation="2" rounded="lg">
     <v-card-text class="d-flex align-center ga-2">
       <v-icon icon="mdi-check-circle" size="20" color="success" />
       <span class="text-body-2 font-weight-medium text-success">Sin pedidos pendientes</span>
@@ -43,7 +43,7 @@
 </template>
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useMyOrders, useCancelMyOrder } from '@/composables/useMyOrders'
+import { useMyOrders, useCancelMyOrder, getMyOrderSnapshots, updateMyOrderSnapshotState } from '@/composables/useMyOrders'
 
 const { data, isLoading, ids } = useMyOrders()
 const cancelMut = useCancelMyOrder()
@@ -63,10 +63,25 @@ onUnmounted(() => {
 
 type OrderRow = { id: number; code: number; state: string; total: string; created_at?: string | null; updated_at?: string | null }
 
+const hasPending = computed(() => ids.value.length > 0 || getMyOrderSnapshots().length > 0)
+
 const latestOrder = computed<OrderRow | null>(() => {
   const list = (data.value ?? []) as OrderRow[]
-  if (list.length === 0) return null
-  const sorted = [...list].sort((a, b) => {
+  if (list.length > 0) {
+    const sorted = [...list].sort((a, b) => {
+      const da = a.created_at ? Date.parse(a.created_at) : 0
+      const db = b.created_at ? Date.parse(b.created_at) : 0
+      if (db !== da) return db - da
+      return b.id - a.id
+    })
+    const top = sorted[0] ?? null
+    if (top) updateMyOrderSnapshotState(top.id, top.state)
+    return top
+  }
+  // Fallback: la consulta falló o aún carga → usar snapshot local guardado al confirmar
+  const snaps = getMyOrderSnapshots() as OrderRow[]
+  if (snaps.length === 0) return null
+  const sorted = [...snaps].sort((a, b) => {
     const da = a.created_at ? Date.parse(a.created_at) : 0
     const db = b.created_at ? Date.parse(b.created_at) : 0
     if (db !== da) return db - da
