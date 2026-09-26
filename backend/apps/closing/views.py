@@ -126,7 +126,7 @@ def _compute_preview(merchant, start_date, end_date):
             order__business_date__lte=end_date,
             method=method,
             status=Payment.Status.CONFIRMED,
-        ).aggregate(total=Sum("amount"))
+        ).exclude(order__state=Order.State.CANCELADO).aggregate(total=Sum("amount"))
         return result["total"] or Decimal("0.00")
     total_efectivo = _sum(Payment.Method.EFECTIVO)
     total_billeteras = _sum(Payment.Method.BILLETERA)
@@ -155,6 +155,50 @@ def _compute_preview(merchant, start_date, end_date):
         "TOTAL_RECHAZADOS": total_rechazados,
     }
     return totals
+
+
+class CashDailyView(APIView):
+    """Per-day sales series for the dashboard chart.
+
+    GET params: business_date (start), business_date_to (end, default start).
+    No params defaults to the last 7 business days. Capped at 62 days.
+    Same criteria as the live preview (CONFIRMED, non-cancelled).
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        from datetime import date as _date
+        from datetime import timedelta as _timedelta
+
+        mid = _resolve_merchant_id(request)
+        if mid is None:
+            return Response({"error": {"code": "MERCHANT_REQUIRED", "message": "merchant context required"}}, status=400)
+        from apps.tenancy.models import Merchant
+        merchant = Merchant.objects.filter(pk=mid).first() or Merchant.all_objects.filter(pk=mid).first()
+        if merchant is None:
+            return Response({"error": {"code": "NOT_FOUND", "message": "Merchant not found"}}, status=404)
+        raw_start = request.query_params.get("business_date")
+        raw_end = request.query_params.get("business_date_to")
+        try:
+            end = _date.fromisoformat(raw_end) if raw_end else get_business_date()
+        except Exception:
+            end = get_business_date()
+        try:
+            start = _date.fromisoformat(raw_start) if raw_start else end - _timedelta(days=6)
+        except Exception:
+            start = end - _timedelta(days=6)
+        if start > end:
+            start, end = end, start
+        if (end - start).days > 61:
+            start = end - _timedelta(days=61)
+        days = []
+        cursor = start
+        while cursor <= end:
+            totals = _compute_preview(merchant, cursor, cursor)
+            days.append({"date": cursor.isoformat(), **totals})
+            cursor += _timedelta(days=1)
+        return Response({"merchant_id": merchant.pk, "start": start.isoformat(), "end": end.isoformat(), "days": days}, status=200)
 
 
 class CashCloseView(APIView):

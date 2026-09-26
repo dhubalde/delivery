@@ -69,26 +69,31 @@
           </v-card-text>
         </v-card>
       </v-col>
+      <v-col v-if="hasBoardData" cols="12" md="9">
+        <v-card class="flex-grow-1 d-flex flex-column" height="100%">
+          <v-card-title class="text-subtitle-2">Detalle por board ({{ rangeLabel }})</v-card-title>
+          <v-card-text class="d-flex ga-4 flex-wrap">
+            <span>ENTREGADO board: {{ boardEntregados.length }}</span>
+            <span>CANCELADO board: {{ boardCancelados.length }}</span>
+          </v-card-text>
+        </v-card>
+      </v-col>
     </v-row>
-    <v-card v-if="hasBoardData" class="mb-4">
-      <v-card-title class="text-subtitle-2">Detalle por board ({{ startDate }})</v-card-title>
-      <v-card-text class="d-flex ga-4 flex-wrap">
-        <span>ENTREGADO board: {{ boardEntregados.length }}</span>
-        <span>CANCELADO board: {{ boardCancelados.length }}</span>
-      </v-card-text>
-    </v-card>
+    <SalesDailyChart :days="dailyDays" />
   </v-container>
 </template>
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useQuery } from '@tanstack/vue-query'
 import { useCashPreview } from '@/composables/useCashClose'
 import { useOrdersBoard } from '@/composables/useOrders'
 import { api } from '@/api/client'
+import { cashApi } from '@/api/panel/cash.api'
+import SalesDailyChart from '@/components/SalesDailyChart.vue'
 import { useAuthStore } from '@/stores/auth.store'
 
 function getBusinessDateStr(d = new Date()): string {
-  const date = new Date(d.toLocaleString('en-US', { timeZone: 'America/Argentina/Buenos_Aires' }))
-  return date.toISOString().slice(0, 10)
+  return d.toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' })
 }
 
 const auth = useAuthStore()
@@ -110,6 +115,16 @@ onMounted(async () => {
 })
 
 const { data: cashData, isLoading: cashLoading, isError: cashError } = useCashPreview(businessDateRef, endDateRef)
+
+const dailyQuery = useQuery({
+  queryKey: computed(() => ['admin', 'cashDaily', businessDateRef.value, endDateRef.value] as const),
+  queryFn: () => cashApi.daily(businessDateRef.value, endDateRef.value),
+  retry: false,
+})
+const dailyDays = computed(() => (dailyQuery.data.value as { days?: never[] } | undefined)?.days ?? [])
+const rangeLabel = computed(() =>
+  businessDateRef.value === endDateRef.value ? businessDateRef.value : `${businessDateRef.value} — ${endDateRef.value}`,
+)
 
 type CashTotals = { EFECTIVO: string; BILLETERAS_VIRTUALES: string; TARJETAS: string; TOTAL_ENTREGADOS: number; TOTAL_RECHAZADOS: number }
 const totals = computed<CashTotals>(() => {
