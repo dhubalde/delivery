@@ -1,6 +1,9 @@
 <template>
   <v-container>
-    <h2 style="font-family:Comfortaa" class="mb-4">Horarios</h2>
+    <div class="mb-1">
+      <h2 class="text-h6" style="font-family:Comfortaa">Horarios</h2>
+      <div class="text-caption text-medium-emphasis">Apertura semanal y fechas especiales</div>
+    </div>
     <v-alert v-if="!isAdmin" type="warning" class="mb-4">Solo ADMIN puede editar horarios</v-alert>
     <v-alert v-if="isError && forbid" type="error" class="mb-4">403 — Permiso denegado</v-alert>
     <v-skeleton-loader v-if="loading" type="list-item@4" />
@@ -12,33 +15,46 @@
               <div v-for="(r,i) in formByDay(d.v)" :key="i" class="d-flex ga-2 align-center mb-2">
                 <v-text-field v-model="r.opens_at" label="Abre" type="time" density="compact" hide-details />
                 <v-text-field v-model="r.closes_at" label="Cierra" type="time" density="compact" hide-details />
-                <v-btn icon="mdi-close" size="x-small" variant="text" @click="removeRange(d.v,i)" />
+                <v-btn icon="mdi-close" size="x-small" density="compact" variant="text" title="Quitar rango" @click="removeRange(d.v,i)" />
               </div>
-              <v-btn size="small" variant="text" @click="addRange(d.v)">+ Rango</v-btn>
+              <v-btn size="small" density="compact" variant="text" prepend-icon="mdi-plus" @click="addRange(d.v)">Rango</v-btn>
               <v-alert v-if="overlapErr(d.v)" type="error" density="compact" class="mt-2">{{ overlapErr(d.v) }}</v-alert>
               <div class="mt-2 d-flex ga-2">
-                <v-btn size="small" color="primary" :disabled="!isAdmin || !!overlapErr(d.v)" :loading="savingDay===d.v" @click="saveDay(d.v)">Guardar</v-btn>
-                <v-btn size="small" variant="text" :disabled="!hasDay(d.v)" @click="delDay(d.v)">Borrar día</v-btn>
+                <v-btn size="small" density="compact" color="primary" :disabled="!isAdmin || !!overlapErr(d.v)" :loading="savingDay===d.v" @click="saveDay(d.v)">Guardar</v-btn>
+                <v-btn size="small" density="compact" variant="text" :disabled="!hasDay(d.v)" @click="delDay(d.v)">Borrar día</v-btn>
               </div>
             </v-card-text>
           </v-card>
         </v-col>
       </v-row>
       <v-divider class="my-6" />
-      <h3 style="font-family:Comfortaa" class="mb-2">Fechas especiales</h3>
+      <div class="mb-1 mt-2">
+        <h3 class="text-subtitle-1" style="font-family:Comfortaa">Fechas especiales</h3>
+        <div class="text-caption text-medium-emphasis">Feriados y cierres puntuales</div>
+      </div>
       <v-alert v-if="sdError && forbidSd" type="error">403 — Permiso denegado</v-alert>
-      <v-list v-if="sdList.length">
-        <v-list-item v-for="s in sdList" :key="s.id" :title="`${s.date} — ${s.is_closed?'Cerrado':'Abierto'}`" :subtitle="s.reason">
-          <template #append><v-btn size="small" variant="text" color="error" :disabled="!isAdmin" @click="delSd(s.id)">Eliminar</v-btn></template>
-        </v-list-item>
-      </v-list>
+      <v-table v-if="sdList.length" density="compact" fixed-header hover>
+        <thead>
+          <tr><th>Fecha</th><th>Estado</th><th>Motivo</th><th class="text-right">Acciones</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="s in sdList" :key="s.id">
+            <td class="font-weight-medium">{{ s.date }}</td>
+            <td class="text-caption">{{ s.is_closed ? 'Cerrado' : 'Abierto' }}</td>
+            <td class="text-caption text-medium-emphasis">{{ s.reason }}</td>
+            <td class="text-right text-no-wrap">
+              <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="delSd(s.id)" />
+            </td>
+          </tr>
+        </tbody>
+      </v-table>
       <v-alert v-else type="info">Sin fechas especiales</v-alert>
       <v-card class="mt-4" title="Nueva fecha especial">
         <v-card-text class="d-flex flex-wrap ga-2 align-center">
           <v-text-field v-model="sdForm.date" label="Fecha" type="date" density="compact" hide-details style="max-width:200px" />
           <v-switch v-model="sdForm.is_closed" label="Cerrado" color="primary" hide-details />
           <v-text-field v-model="sdForm.reason" label="Motivo" density="compact" hide-details style="min-width:200px" :error-messages="sdDetails.reason ?? ''" />
-          <v-btn color="primary" :disabled="!isAdmin || !sdForm.date" :loading="sdSaving" @click="createSd">Agregar</v-btn>
+          <v-btn color="primary" density="compact" :disabled="!isAdmin || !sdForm.date" :loading="sdSaving" @click="createSd">Agregar</v-btn>
         </v-card-text>
         <v-card-text v-if="sdFormError"><v-alert type="error" density="compact">{{ sdFormError }}</v-alert></v-card-text>
       </v-card>

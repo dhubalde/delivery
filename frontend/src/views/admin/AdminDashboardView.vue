@@ -1,12 +1,15 @@
 <template>
   <v-container>
-    <div class="d-flex justify-space-between align-center mb-4 flex-wrap ga-4">
-      <h2 style="font-family: Comfortaa">Dashboard — Reportes</h2>
-      <div class="d-flex align-center ga-2">
+    <div class="mb-1">
+      <h2 class="text-h6" style="font-family: Comfortaa">Dashboard — Reportes</h2>
+      <div class="text-caption text-medium-emphasis">Ventas, pedidos y conversión del período</div>
+    </div>
+    <v-card variant="tonal" class="mb-3">
+      <v-card-text class="d-flex flex-wrap ga-2 align-center py-2">
         <v-text-field v-model="startDate" type="date" density="compact" hide-details label="Desde" style="max-width: 200px" menu />
         <v-text-field v-model="endDate" type="date" density="compact" hide-details label="Hasta" style="max-width: 200px" menu />
-      </div>
-    </div>
+      </v-card-text>
+    </v-card>
     <v-skeleton-loader v-if="cashLoading || ordersLoading" type="card" />
     <v-alert v-else-if="cashError" type="warning" class="mb-4">Sin datos para {{ startDate }} — mostrando cálculo local</v-alert>
     <v-row class="mb-4" align="stretch">

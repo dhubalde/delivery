@@ -19,5 +19,6 @@ export const usersApi = {
   remove: async (id: number) => (await api.delete(`/v1/users/${id}/`)).data,
   changePassword: async (b: { current_password: string; new_password: string }) => (await api.post('/v1/users/change-password/', b)).data,
   resetRequest: async (username: string) => (await api.post('/v1/users/reset-request/', { username })).data as { reset_token: string },
+  forgotPassword: async (username: string) => (await api.post('/v1/users/forgot-password/', { username })).data as { reset_token: string; expires_minutes: number },
   resetConfirm: async (b: { token: string; new_password: string }) => (await api.post('/v1/users/reset-confirm/', b)).data,
 }

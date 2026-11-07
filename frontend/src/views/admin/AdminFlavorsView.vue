@@ -1,34 +1,38 @@
 <template>
   <v-container>
-    <div class="d-flex align-center justify-space-between mb-4">
-      <h2 style="font-family:Comfortaa">Sabores</h2>
-      <v-btn color="primary" :disabled="!isAdmin" @click="openCreate">Nuevo</v-btn>
+    <div class="d-flex align-center justify-space-between mb-1 flex-wrap ga-2">
+      <div>
+        <h2 class="text-h6" style="font-family:Comfortaa">Sabores</h2>
+        <div class="text-caption text-medium-emphasis">Gustos por categoría o globales</div>
+      </div>
+      <v-btn color="primary" density="compact" prepend-icon="mdi-plus" :disabled="!isAdmin" @click="openCreate">Nuevo</v-btn>
     </div>
     <v-alert v-if="!isAdmin" type="warning" class="mb-4">Solo ADMIN puede editar sabores</v-alert>
-    <v-row class="mb-4">
-      <v-col cols="12" md="4"><v-select v-model="fltCat" :items="catItems" label="Filtrar por categoría" clearable density="compact" /></v-col>
-      <v-col cols="12" md="4"><v-text-field v-model="search" label="Buscar (prefix)" clearable density="compact" /></v-col>
-    </v-row>
+    <v-card variant="tonal" class="mb-3">
+      <v-card-text class="d-flex flex-wrap ga-2 align-center py-2">
+        <v-text-field v-model="search" label="Buscar" prepend-inner-icon="mdi-magnify" clearable density="compact" hide-details style="max-width:260px" />
+        <v-select v-model="fltCat" :items="catItems" label="Categoría" clearable density="compact" hide-details style="max-width:220px" />
+      </v-card-text>
+    </v-card>
     <v-alert v-if="isForbidden" type="error" class="mb-2">403 — ADMIN requerido</v-alert>
     <v-skeleton-loader v-if="isLoading" type="list-item@3" />
     <v-alert v-else-if="!list.length" type="info">Sin sabores — creá el primero</v-alert>
     <template v-else>
-      <div class="d-flex align-center flex-nowrap px-2 py-0 text-caption text-medium-emphasis" style="flex-wrap:nowrap; font-size:12px; min-height:36px; height:36px">
-        <span style="flex:1; min-width:0; font-size:12px" class="text-truncate">Nombre · Categoría</span>
-        <span style="width:150px; flex-shrink:0; font-size:12px" class="text-right">Acciones</span>
-      </div>
-      <v-divider />
-      <v-list density="compact" lines="one">
-        <v-list-item v-for="f in list" :key="f.id" density="compact" style="min-height:36px; height:36px" class="py-0 px-2">
-          <template #default>
-            <div class="d-flex align-center flex-nowrap" style="flex:1; min-width:0; overflow:hidden"><span class="font-weight-medium text-truncate" style="font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ f.name }}</span><span class="ml-2 text-caption text-medium-emphasis flex-shrink-0" style="font-size:12px; white-space:nowrap">· {{ catName(f.category_id) }}</span></div>
-          </template>
-          <template #append>
-            <v-btn size="small" variant="text" :disabled="!isAdmin" @click="openEdit(f)">Editar</v-btn>
-            <v-btn size="small" variant="text" color="error" :disabled="!isAdmin" @click="remove(f.id)">Eliminar</v-btn>
-          </template>
-        </v-list-item>
-      </v-list>
+      <v-table density="compact" fixed-header hover>
+        <thead>
+          <tr><th>Nombre</th><th>Categoría</th><th class="text-right">Acciones</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="f in list" :key="f.id">
+            <td class="font-weight-medium">{{ f.name }}</td>
+            <td class="text-caption text-medium-emphasis">{{ catName(f.category_id) }}</td>
+            <td class="text-right text-no-wrap">
+              <v-btn icon="mdi-pencil" size="small" density="compact" variant="text" title="Editar" :disabled="!isAdmin" @click="openEdit(f)" />
+              <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="remove(f.id)" />
+            </td>
+          </tr>
+        </tbody>
+      </v-table>
     </template>
     <v-dialog v-model="dlg" max-width="480">
       <v-card :title="editing ? 'Editar sabor' : 'Nuevo sabor'">
@@ -38,7 +42,7 @@
           <v-switch v-model="form.is_active" label="Activo" color="primary" />
           <v-alert v-if="formError" type="error" density="compact" class="mt-2">{{ formError }}</v-alert>
         </v-card-text>
-        <v-card-actions><v-spacer/><v-btn variant="text" @click="dlg=false">Cancelar</v-btn><v-btn color="primary" :loading="saving" :disabled="!isAdmin" @click="save">Guardar</v-btn></v-card-actions>
+        <v-card-actions><v-spacer/><v-btn variant="text" density="compact" @click="dlg=false">Cancelar</v-btn><v-btn color="primary" density="compact" :loading="saving" :disabled="!isAdmin" @click="save">Guardar</v-btn></v-card-actions>
       </v-card>
     </v-dialog>
     <ConfirmDialog v-model="confirm.show.value" :title="confirm.title.value" :message="confirm.message.value" :confirm-text="confirm.confirmText.value" :cancel-text="confirm.cancelText.value" :confirm-color="confirm.confirmColor.value" @confirm="confirm.onConfirm" @cancel="confirm.onCancel" />

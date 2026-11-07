@@ -7,8 +7,10 @@ export function customerKey(slug: string): string {
 
 type CustomerProfile = {
   id: number
+  email: string | null
   phone: string
   name: string
+  default_address: string
   merchant_slug: string
   merchant_id: number
   merchant?: string
@@ -109,7 +111,7 @@ export const useCustomerStore = defineStore('customer', {
         this.clearMemory()
       }
     },
-    async register(slug: string, payload: { phone: string; name: string; password: string }): Promise<StoredCustomer> {
+    async register(slug: string, payload: { email: string; phone: string; name: string; address: string; password: string }): Promise<StoredCustomer> {
       const { data } = await api.post(`/public/${slug}/customers/register`, payload)
       const access: string = data?.access || data?.tokens?.access || ''
       const refresh: string = data?.refresh || data?.tokens?.refresh || ''
@@ -122,7 +124,7 @@ export const useCustomerStore = defineStore('customer', {
       this.persist()
       return { access, refresh, profile }
     },
-    async login(slug: string, payload: { phone: string; password: string }): Promise<StoredCustomer> {
+    async login(slug: string, payload: { email: string; password: string }): Promise<StoredCustomer> {
       const { data } = await api.post(`/public/${slug}/customers/login`, payload)
       const access: string = data?.access || data?.tokens?.access || ''
       const refresh: string = data?.refresh || data?.tokens?.refresh || ''
@@ -142,11 +144,13 @@ export const useCustomerStore = defineStore('customer', {
         const { data } = await api.get(`/public/${slug}/customers/me`, {
           headers: { Authorization: `Customer ${this.access}` },
         })
-        // API returns {id, phone, name, merchant_slug, ...}
+        // API returns {id, email, phone, name, default_address, merchant_slug, ...}
         const profile: CustomerProfile = {
           id: data.id,
+          email: data.email ?? null,
           phone: data.phone,
           name: data.name,
+          default_address: data.default_address ?? '',
           merchant_slug: data.merchant_slug || data.merchant || slug,
           merchant_id: data.merchant_id,
           merchant: data.merchant || data.merchant_slug,
@@ -157,6 +161,25 @@ export const useCustomerStore = defineStore('customer', {
       } catch {
         return null
       }
+    },
+    async updateProfile(slug: string, payload: { name?: string; phone?: string; default_address?: string }): Promise<CustomerProfile | null> {
+      this.hydrate(slug)
+      if (!this.access) return null
+      const { data } = await api.patch(`/public/${slug}/customers/me`, payload, {
+        headers: { Authorization: `Customer ${this.access}` },
+      })
+      const profile: CustomerProfile = {
+        id: data.id,
+        email: data.email ?? this.profile?.email ?? null,
+        phone: data.phone,
+        name: data.name,
+        default_address: data.default_address ?? '',
+        merchant_slug: data.merchant_slug || slug,
+        merchant_id: data.merchant_id,
+      }
+      this.profile = profile
+      this.persist()
+      return profile
     },
     getAccessForSlug(slug: string): string | null {
       const stored = readStored(slug)

@@ -7,12 +7,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth.store'
 import { useCategories } from '@/composables/useProducts'
 const route = useRoute()
 const router = useRouter()
-const auth = useAuthStore()
-const slug = computed(() => auth.merchantSlug || 'ice-zone')
+const slug = computed(() => (route.params.slug as string) || 'ice-zone')
 const { data: categories } = useCategories(slug) as any
 const cats = computed(() => (categories.value as any[] | undefined) ?? [])
 const cat = computed(() => route.query.category ? Number(route.query.category) : undefined)

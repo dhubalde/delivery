@@ -1,6 +1,9 @@
 <template>
   <v-container>
-    <h2 style="font-family:Comfortaa" class="mb-4">Cierre de caja</h2>
+    <div class="mb-1">
+      <h2 class="text-h6" style="font-family:Comfortaa">Cierre de caja</h2>
+      <div class="text-caption text-medium-emphasis">Totales del día y ticket inmutable</div>
+    </div>
     <v-alert v-if="errStatus===403" type="error" class="mb-4">403 — No autorizado para cerrar caja</v-alert>
     <v-skeleton-loader v-if="loading" type="card" />
     <template v-else>
@@ -19,17 +22,17 @@
           <v-alert v-if="closeErr" type="error" density="compact" class="mt-4">{{ closeErr }}</v-alert>
         </v-card-text>
         <v-card-actions class="ga-2">
-          <v-btn color="primary" :disabled="alreadyClosed" :loading="closing" @click="doClose">Cerrar caja</v-btn>
-          <v-btn v-if="ticket" variant="outlined" prepend-icon="mdi-printer" :text="alreadyClosed ? 'Reimprimir ticket' : 'Imprimir ticket'" @click="showTicket=true" />
-          <v-btn v-if="ticket" variant="text" prepend-icon="mdi-printer-outline" :text="alreadyClosed ? 'Reimprimir directo' : 'Imprimir directo'" @click="doPrint" />
+          <v-btn color="primary" density="compact" :disabled="alreadyClosed" :loading="closing" @click="doClose">Cerrar caja</v-btn>
+          <v-btn v-if="ticket" variant="outlined" density="compact" prepend-icon="mdi-printer" :text="alreadyClosed ? 'Reimprimir ticket' : 'Imprimir ticket'" @click="showTicket=true" />
+          <v-btn v-if="ticket" variant="text" density="compact" prepend-icon="mdi-printer-outline" :text="alreadyClosed ? 'Reimprimir directo' : 'Imprimir directo'" @click="doPrint" />
         </v-card-actions>
       </v-card>
     </template>
     <v-dialog v-model="showTicket" max-width="420">
       <v-card>
-        <v-card-title class="d-flex justify-space-between align-center"><span>Ticket — cierre de caja</span><v-btn icon="mdi-close" variant="text" @click="showTicket=false" /></v-card-title>
+        <v-card-title class="d-flex justify-space-between align-center"><span>Ticket — cierre de caja</span><v-btn icon="mdi-close" density="compact" variant="text" @click="showTicket=false" /></v-card-title>
         <v-card-text><CashTicket v-if="ticket" :ticket="ticket as Record<string,unknown>" /></v-card-text>
-        <v-card-actions><v-spacer /><v-btn variant="text" @click="showTicket=false">Cerrar</v-btn><v-btn color="primary" prepend-icon="mdi-printer" :text="alreadyClosed ? 'Reimprimir' : 'Imprimir'" @click="doPrint" /></v-card-actions>
+        <v-card-actions><v-spacer /><v-btn variant="text" density="compact" @click="showTicket=false">Cerrar</v-btn><v-btn color="primary" density="compact" prepend-icon="mdi-printer" :text="alreadyClosed ? 'Reimprimir' : 'Imprimir'" @click="doPrint" /></v-card-actions>
       </v-card>
     </v-dialog>
     <div id="printable-ticket" aria-hidden="true"><CashTicket v-if="ticket" :ticket="ticket as Record<string,unknown>" /></div>

@@ -8,7 +8,9 @@
         </div>
       </template>
       <v-app-bar-nav-icon v-if="xs" @click="drawer=!drawer" />
-      <v-btn v-if="customer.isAuthenticated" variant="text" size="small" @click="onLogout">{{ customer.displayName || 'Salir' }}</v-btn>
+      <v-btn v-if="customer.isAuthenticated" variant="text" size="small" @click="goAccount">{{ customer.displayName || 'Mi cuenta' }}</v-btn>
+      <v-btn v-else variant="text" size="small" @click="goLogin">Ingresar</v-btn>
+      <v-btn v-if="customer.isAuthenticated" variant="text" size="small" @click="onLogout">Salir</v-btn>
       <NotificationBell recipient-type="CUSTOMER" />
       <v-btn icon="mdi-brightness-6" @click="ui.toggleTheme()" />
     </v-app-bar>
@@ -32,7 +34,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { useDisplay, useTheme } from 'vuetify'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useUiStore } from '@/stores/ui.store'
 import { useOffline } from '@/composables/useOffline'
 import { useCatalog } from '@/composables/useCatalog'
@@ -51,6 +53,7 @@ watch(() => ui.theme, (v) => { theme.global.name.value = v }, { immediate: true 
 useOffline()
 const { xs } = useDisplay()
 const route = useRoute()
+const router = useRouter()
 const isContact = computed(() => route.path.includes('/contact'))
 const drawer = ref(false)
 const slug = computed(() => (route.params.slug as string) || 'ice-zone')
@@ -71,5 +74,11 @@ const merchantName = computed(() => {
 })
 function onLogout() {
   customer.logout(slug.value)
+}
+function goLogin() {
+  router.push(`/${slug.value}/login`)
+}
+function goAccount() {
+  router.push(`/${slug.value}/account`)
 }
 </script>

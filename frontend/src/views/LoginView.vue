@@ -56,6 +56,9 @@
               <v-btn type="submit" color="primary" block size="large" :loading="loading" prepend-icon="mdi-login" class="mb-3">
                 Ingresar
               </v-btn>
+              <div class="text-center">
+                <v-btn variant="text" size="small" to="/forgot-password">¿Olvidaste tu contraseña?</v-btn>
+              </div>
             </v-form>
 
             <p class="text-caption text-center text-medium-emphasis mt-4">El acceso lo crea el ADMIN de tu empresa o el equipo Work Zone.</p>

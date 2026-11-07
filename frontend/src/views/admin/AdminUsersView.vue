@@ -1,24 +1,37 @@
 <template>
   <v-container fluid class="pa-4">
-    <v-row align="center" class="mb-2">
-      <v-col><h2 class="text-h6">Usuarios</h2></v-col>
-      <v-col class="text-right">
-        <v-btn color="primary" prepend-icon="mdi-plus" :disabled="!isAdmin" @click="openCreate">Nuevo</v-btn>
-      </v-col>
-    </v-row>
+    <div class="d-flex align-center justify-space-between mb-1 flex-wrap ga-2">
+      <div>
+        <h2 class="text-h6">Usuarios</h2>
+        <div class="text-caption text-medium-emphasis">Cuentas, roles y accesos</div>
+      </div>
+      <v-btn color="primary" density="compact" prepend-icon="mdi-plus" :disabled="!isAdmin" @click="openCreate">Nuevo</v-btn>
+    </div>
     <v-alert v-if="formError" type="error" density="compact" class="mb-2">{{ formError }}</v-alert>
+    <v-card variant="tonal" class="mb-3">
+      <v-card-text class="d-flex flex-wrap ga-2 align-center py-2">
+        <v-text-field v-model="search" label="Buscar" prepend-inner-icon="mdi-magnify" clearable density="compact" hide-details style="max-width:260px" />
+      </v-card-text>
+    </v-card>
     <v-card>
-      <v-list v-if="list.length" lines="two">
-        <v-list-item v-for="u in list" :key="u.id"
-          :title="u.username"
-          :subtitle="`${u.role} · ${u.kind}${u.sector ? ' · ' + u.sector : ''} · ${u.is_active ? 'Activo' : 'Inactivo'}`">
-          <template #append>
-            <v-btn icon="mdi-pencil" variant="text" size="small" @click="openEdit(u)" />
-            <v-btn icon="mdi-key" variant="text" size="small" title="Generar reseteo" @click="openReset(u)" />
-            <v-btn icon="mdi-delete" variant="text" size="small" @click="askRemove(u)" />
-          </template>
-        </v-list-item>
-      </v-list>
+      <v-table v-if="list.length" density="compact" fixed-header hover>
+        <thead>
+          <tr><th>Usuario</th><th>Rol</th><th>Tipo</th><th>Estado</th><th class="text-right">Acciones</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="u in list" :key="u.id">
+            <td class="font-weight-medium">{{ u.username }}<div class="text-caption text-medium-emphasis font-weight-regular">{{ u.sector ?? '' }}</div></td>
+            <td class="text-caption">{{ u.role }}</td>
+            <td class="text-caption text-medium-emphasis">{{ u.kind }}</td>
+            <td class="text-caption">{{ u.is_active ? 'Activo' : 'Inactivo' }}</td>
+            <td class="text-right text-no-wrap">
+              <v-btn icon="mdi-pencil" variant="text" size="small" density="compact" title="Editar" @click="openEdit(u)" />
+              <v-btn icon="mdi-key" variant="text" size="small" density="compact" title="Generar reseteo" @click="openReset(u)" />
+              <v-btn icon="mdi-delete" variant="text" size="small" density="compact" title="Desactivar" @click="askRemove(u)" />
+            </td>
+          </tr>
+        </tbody>
+      </v-table>
       <v-card-text v-else class="text-medium-emphasis">Sin usuarios. Creá el primero con Nuevo.</v-card-text>
     </v-card>
 
@@ -41,8 +54,8 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="dlg=false">Cancelar</v-btn>
-          <v-btn color="primary" :loading="saving" @click="save">Guardar</v-btn>
+          <v-btn variant="text" density="compact" @click="dlg=false">Cancelar</v-btn>
+          <v-btn color="primary" density="compact" :loading="saving" @click="save">Guardar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -56,8 +69,8 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="resetDlg=false">Cerrar</v-btn>
-          <v-btn color="primary" :loading="resetting" @click="doReset">Generar</v-btn>
+          <v-btn variant="text" density="compact" @click="resetDlg=false">Cerrar</v-btn>
+          <v-btn color="primary" density="compact" :loading="resetting" @click="doReset">Generar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -68,8 +81,8 @@
         <v-card-text>Se desactiva <b>{{ removeTarget?.username }}</b> (libera cupo, conserva historial).</v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="removeDlg=false">Cancelar</v-btn>
-          <v-btn color="error" :loading="removeM.isPending.value" @click="doRemove">Desactivar</v-btn>
+          <v-btn variant="text" density="compact" @click="removeDlg=false">Cancelar</v-btn>
+          <v-btn color="error" density="compact" :loading="removeM.isPending.value" @click="doRemove">Desactivar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -86,7 +99,13 @@ const auth = useAuthStore()
 const isAdmin = computed(() => auth.hasAnyRole(['ADMIN']))
 const { q, createM, updateM, removeM } = useAdminUsers()
 const data = computed(() => q.data.value as AppUser[] | undefined)
-const list = computed(() => data.value ?? [])
+const search = ref('')
+const list = computed(() => {
+  const all = data.value ?? []
+  const needle = search.value.trim().toLowerCase()
+  if (!needle) return all
+  return all.filter((u) => u.username.toLowerCase().includes(needle))
+})
 
 const roleOpts: OperativeRole[] = ['ADMIN', 'CAJERO', 'PREPARADOR', 'REPARTIDOR', 'TOMA_PEDIDOS']
 const dlg = ref(false)

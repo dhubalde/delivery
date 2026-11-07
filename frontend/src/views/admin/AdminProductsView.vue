@@ -1,33 +1,42 @@
 <template>
   <v-container>
-    <div class="d-flex align-center justify-space-between mb-4">
-      <h2 style="font-family:Comfortaa">Productos</h2>
-      <v-btn color="primary" :disabled="!isAdmin" @click="openCreate">Nuevo</v-btn>
+    <div class="d-flex align-center justify-space-between mb-1 flex-wrap ga-2">
+      <div>
+        <h2 class="text-h6" style="font-family:Comfortaa">Productos</h2>
+        <div class="text-caption text-medium-emphasis">Catálogo — precios, gustos y fotos</div>
+      </div>
+      <v-btn color="primary" density="compact" prepend-icon="mdi-plus" :disabled="!isAdmin" @click="openCreate">Nuevo</v-btn>
     </div>
     <v-alert v-if="!isAdmin" type="warning" class="mb-4">Solo ADMIN puede editar productos</v-alert>
-    <v-row class="mb-4">
-      <v-col cols="12" md="4"><v-select v-model="fltCat" :items="catItems" label="Filtrar por categoría" clearable density="compact" /></v-col>
-      <v-col cols="12" md="4"><v-text-field v-model="search" label="Buscar (prefix)" clearable density="compact" /></v-col>
-    </v-row>
+    <v-card variant="tonal" class="mb-3">
+      <v-card-text class="d-flex flex-wrap ga-2 align-center py-2">
+        <v-text-field v-model="search" label="Buscar" prepend-inner-icon="mdi-magnify" clearable density="compact" hide-details style="max-width:260px" />
+        <v-select v-model="fltCat" :items="catItems" label="Categoría" clearable density="compact" hide-details style="max-width:220px" />
+      </v-card-text>
+    </v-card>
     <v-alert v-if="isForbidden" type="error" class="mb-2">403 — ADMIN requerido</v-alert>
     <v-skeleton-loader v-if="isLoading" type="list-item@3" />
 <v-alert v-else-if="!list.length" type="info">Sin productos — ajustá filtros o creá uno</v-alert>
-      <div v-else class="d-flex align-center flex-nowrap px-2 py-0 text-caption text-medium-emphasis" style="flex-wrap:nowrap; font-size:12px; min-height:36px; height:36px">
-        <span style="flex:1; min-width:0; font-size:12px" class="text-truncate">Nombre — Tipo — Precio</span>
-        <span style="width:150px; flex-shrink:0; font-size:12px" class="text-right">Acciones</span>
-      </div>
-      <v-divider />
-      <v-list density="compact" lines="one">
-        <v-list-item v-for="p in list" :key="p.id" density="compact" style="min-height:36px; height:36px" class="py-0 px-2">
-          <template #default>
-            <div class="d-flex align-center flex-nowrap" style="flex:1; min-width:0; overflow:hidden"><span class="font-weight-medium text-truncate" style="font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">{{ p.name }} — {{ p.product_type }}{{ p.pote_size ? ' (' + p.pote_size.replace('KG_1','1kg').replace('KG_HALF','1/2kg').replace('KG_QUARTER','1/4kg') + ')' : '' }} — ${{ p.price }}</span><span v-if="p.min_flavors!=null && p.max_flavors!=null" class="ml-2 text-caption text-medium-emphasis flex-shrink-0" style="font-size:12px; white-space:nowrap">· {{ p.min_flavors===p.max_flavors ? p.min_flavors + ' gustos' : p.min_flavors + ' a ' + p.max_flavors + ' gustos' }}</span><span v-else class="ml-2 text-caption text-medium-emphasis flex-shrink-0" style="font-size:12px; white-space:nowrap">· sin gustos</span></div>
-          </template>
-          <template #append>
-            <v-btn size="small" variant="text" :disabled="!isAdmin" @click="openEdit(p as never)">Editar</v-btn>
-            <v-btn size="small" variant="text" color="error" :disabled="!isAdmin" @click="remove(p.id)">Eliminar</v-btn>
-          </template>
-        </v-list-item>
-      </v-list>
+      <v-table density="compact" fixed-header hover>
+        <thead>
+          <tr><th>Nombre</th><th>Tipo</th><th>Precio</th><th>Gustos</th><th class="text-right">Acciones</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="p in list" :key="p.id">
+            <td>
+              <span class="font-weight-medium">{{ p.name }}</span>
+              <span v-if="p.description" class="ml-2 text-caption text-medium-emphasis"><v-icon size="12" color="primary">mdi-text</v-icon>{{ p.description.length>40 ? p.description.slice(0,40)+'…' : p.description }}</span>
+            </td>
+            <td class="text-medium-emphasis">{{ p.product_type }}{{ p.pote_size ? ' (' + p.pote_size.replace('KG_1','1kg').replace('KG_HALF','1/2kg').replace('KG_QUARTER','1/4kg') + ')' : '' }}</td>
+            <td>${{ p.price }}</td>
+            <td class="text-caption text-medium-emphasis">{{ flavorHint(p) }}</td>
+            <td class="text-right text-no-wrap">
+              <v-btn icon="mdi-pencil" size="small" density="compact" variant="text" title="Editar" :disabled="!isAdmin" @click="openEdit(p as never)" />
+              <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="remove(p.id)" />
+            </td>
+          </tr>
+        </tbody>
+      </v-table>
     <v-dialog v-model="dlg" max-width="520">
       <v-card :title="editing ? 'Editar producto' : 'Nuevo producto'">
         <v-card-text>
@@ -41,13 +50,15 @@
             <v-col><v-text-field v-model.number="form.max_flavors" label="Max gustos" type="number" density="compact" :error-messages="fieldErr('max_flavors')" /></v-col>
           </v-row>
           <v-text-field v-model="form.price" label="Precio *" prefix="$" density="compact" :error-messages="fieldErr('price')" />
+          <v-checkbox v-model="form.has_description" label="Agregar descripción corta" density="compact" hide-details />
+          <v-textarea v-if="form.has_description" v-model="form.description" label="Descripción corta" :counter="160" maxlength="160" rows="2" auto-grow density="compact" hint="Ideal para deco/juguetes - máx 160 caracteres" persistent-hint :error-messages="fieldErr('description')" />
           <v-file-input v-model="form.imageFile" label="Foto (archivo)" accept="image/*" density="compact" clearable prepend-icon="" :error-messages="fieldErr('image')" hint="Subí una foto propia (JPG/PNG). Si no elegís archivo, se usa la URL." persistent-hint @update:model-value="onFileChange" />
           <v-text-field v-model="form.image_url" label="Imagen URL (fallback)" placeholder="https://..." density="compact" clearable :error-messages="fieldErr('image_url')" hint="URL alternativa si no subís archivo" persistent-hint />
           <v-img v-if="previewSrc" :src="previewSrc" height="120" cover class="mt-2 rounded" style="border:1px solid #eee" />
           <v-alert v-if="poteHint" type="info" density="compact" class="mt-2">{{ poteHint }}</v-alert>
           <v-alert v-if="formError" type="error" density="compact" class="mt-2">{{ formError }}</v-alert>
         </v-card-text>
-        <v-card-actions><v-spacer/><v-btn variant="text" @click="dlg=false">Cancelar</v-btn><v-btn color="primary" :loading="saving" :disabled="!isAdmin" @click="save">Guardar</v-btn></v-card-actions>
+        <v-card-actions><v-spacer/><v-btn variant="text" density="compact" @click="dlg=false">Cancelar</v-btn><v-btn color="primary" density="compact" :loading="saving" :disabled="!isAdmin" @click="save">Guardar</v-btn></v-card-actions>
       </v-card>
     </v-dialog>
     <ConfirmDialog v-model="confirm.show.value" :title="confirm.title.value" :message="confirm.message.value" :confirm-text="confirm.confirmText.value" :cancel-text="confirm.cancelText.value" :confirm-color="confirm.confirmColor.value" @confirm="confirm.onConfirm" @cancel="confirm.onCancel" />
@@ -71,11 +82,11 @@ const poteSizeItems = [{ title: '1 kg', value: 'KG_1' }, { title: '1/2 kg', valu
 const fltCat = ref<number|undefined>(undefined); const search = ref('')
 const qkRef = computed(()=> qk.adminProducts({ category: fltCat.value, search: search.value || undefined }))
 const { data, isLoading, error } = useAdminProducts(fltCat as never, search as never)
-const list = computed(()=>(data.value as {id:number;name:string;product_type:string;pote_size:string|null;price:string;min_flavors:number|null;max_flavors:number|null}[])??[])
+const list = computed(()=>(data.value as {id:number;name:string;description?:string|null;product_type:string;pote_size:string|null;price:string;min_flavors:number|null;max_flavors:number|null}[])??[])
 function flavorHint(p: {min_flavors:number|null;max_flavors:number|null}): string { if(p.min_flavors==null||p.max_flavors==null) return 'sin gustos'; return p.min_flavors===p.max_flavors ? `${p.min_flavors} gustos` : `${p.min_flavors} a ${p.max_flavors} gustos` }
 const isForbidden = computed(()=>(error.value as { response?:{status?:number}})?.response?.status===403)
 const dlg=ref(false); const editing=ref<number|null>(null); const saving=ref(false)
-const form=reactive({ name:'', category_id: null as number|null, product_type:'POTE' as 'POTE'|'UNIT', pote_size:'KG_1' as 'KG_1'|'KG_HALF'|'KG_QUARTER'|null, has_flavors:true, min_flavors:1 as number|null, max_flavors:4 as number|null, price:'' , image_url:'' as string, imageFile: null as File | File[] | null })
+const form=reactive({ name:'', category_id: null as number|null, product_type:'POTE' as 'POTE'|'UNIT', pote_size:'KG_1' as 'KG_1'|'KG_HALF'|'KG_QUARTER'|null, has_flavors:true, min_flavors:1 as number|null, max_flavors:4 as number|null, price:'' , image_url:'' as string, imageFile: null as File | File[] | null, has_description:false as boolean, description:'' as string })
 const filePreview = ref<string | null>(null)
 const previewSrc = computed(()=> filePreview.value || form.image_url || null)
 function onFileChange(v: File | File[] | null){ const f = Array.isArray(v) ? v[0] ?? null : v; if(f){ if(filePreview.value) URL.revokeObjectURL(filePreview.value); filePreview.value = URL.createObjectURL(f); form.imageFile = f as unknown as File; form.image_url = '' /* Clear image_url when new file is selected */ } else { if(filePreview.value) URL.revokeObjectURL(filePreview.value); filePreview.value = null; form.imageFile = null; } }
@@ -87,8 +98,9 @@ const createM=useCreateProduct(qkRef.value as never); const updateM=useUpdatePro
 watch(()=>form.has_flavors, (v)=>{ if(v && (form.min_flavors==null || form.max_flavors==null)){ if(form.pote_size==='KG_QUARTER'){ form.min_flavors=1; form.max_flavors=3 } else { form.min_flavors=1; form.max_flavors=4 } } })
 watch(()=>form.pote_size, (v)=>{ if(!form.has_flavors) return; if(v==='KG_QUARTER' && form.min_flavors===3 && form.max_flavors===4){ form.min_flavors=1; form.max_flavors=3 } })
 watch(()=>form.product_type, (v)=>{ if(v==='UNIT'){ form.pote_size=null } else if(v==='POTE' && !form.pote_size){ form.pote_size='KG_1' } })
-function openCreate(){ editing.value=null; if(filePreview.value) URL.revokeObjectURL(filePreview.value); filePreview.value=null; Object.assign(form,{ name:'', category_id:null, product_type:'POTE', pote_size:'KG_1', has_flavors:true, min_flavors:1, max_flavors:4, price:'', image_url:'', imageFile:null }); details.value={}; formError.value=''; dlg.value=true }
-function openEdit(p: {id:number;name:string;category_id:number;product_type:'POTE'|'UNIT';pote_size:'KG_1'|'KG_HALF'|'KG_QUARTER'|null;min_flavors:number|null;max_flavors:number|null;price:string;image_url?:string|null}){ const has = p.min_flavors!=null && p.max_flavors!=null; editing.value=p.id; if(filePreview.value) URL.revokeObjectURL(filePreview.value); filePreview.value=null; Object.assign(form,{ name:p.name, category_id:p.category_id, product_type:p.product_type, pote_size:p.pote_size, has_flavors:has, min_flavors:p.min_flavors ?? 1, max_flavors:p.max_flavors ?? 4, price:p.price, image_url:p.image_url ?? '', imageFile:null }); details.value={}; formError.value=''; dlg.value=true }
+watch(()=>form.has_description, (v)=>{ if(!v) form.description='' })
+function openCreate(){ editing.value=null; if(filePreview.value) URL.revokeObjectURL(filePreview.value); filePreview.value=null; Object.assign(form,{ name:'', category_id:null, product_type:'POTE', pote_size:'KG_1', has_flavors:true, min_flavors:1, max_flavors:4, price:'', image_url:'', imageFile:null, has_description:false, description:'' }); details.value={}; formError.value=''; dlg.value=true }
+function openEdit(p: {id:number;name:string;category_id:number;product_type:'POTE'|'UNIT';pote_size:'KG_1'|'KG_HALF'|'KG_QUARTER'|null;min_flavors:number|null;max_flavors:number|null;price:string;image_url?:string|null;description?:string|null}){ const has = p.min_flavors!=null && p.max_flavors!=null; editing.value=p.id; if(filePreview.value) URL.revokeObjectURL(filePreview.value); filePreview.value=null; Object.assign(form,{ name:p.name, category_id:p.category_id, product_type:p.product_type, pote_size:p.pote_size, has_flavors:has, min_flavors:p.min_flavors ?? 1, max_flavors:p.max_flavors ?? 4, price:p.price, image_url:p.image_url ?? '', imageFile:null, has_description:!!p.description, description:p.description || '' }); details.value={}; formError.value=''; dlg.value=true }
 function validatePote(): string|null{
   if(form.product_type==='UNIT'){ if(form.pote_size) return 'UNIT no permite pote_size'; if(form.has_flavors){ if(form.min_flavors==null || form.max_flavors==null) return 'Min/max requeridos cuando tiene gustos'; if(form.min_flavors<1 || form.max_flavors>4 || form.min_flavors>form.max_flavors) return 'Requiere 1 <= min <= max <= 4' } return null }
   if(!form.pote_size) return 'Tamaño requerido para POTE'
@@ -101,7 +113,9 @@ async function save(){
   const v=validatePote(); if(v){ formError.value=v; return }
   if(!form.category_id){ details.value={...details.value, category_id:'Elegí una categoría'}; return }
   if(!form.name.trim() || !form.price){ details.value={ ...(!form.name.trim()?{name:'Nombre requerido'}:{}), ...(!form.price?{price:'Precio requerido'}:{}) }; return }
+  if(form.has_description && form.description.trim().length>160){ details.value={...details.value, description:'Máx 160 caracteres'}; return }
   saving.value=true; details.value={}; formError.value=''
+  const descriptionVal = form.has_description ? form.description.trim() : ''
   const file = Array.isArray(form.imageFile) ? (form.imageFile[0] ?? null) : (form.imageFile as File | null)
   if(file){
     const fd = new FormData()
@@ -114,6 +128,7 @@ async function save(){
     if(form.has_flavors){ fd.append('min_flavors', String(form.min_flavors)); fd.append('max_flavors', String(form.max_flavors)) }
     else { fd.append('min_flavors', ''); fd.append('max_flavors', '') }
     fd.append('price', String(form.price))
+    fd.append('description', descriptionVal)
     if(form.image_url?.trim()) fd.append('image_url', form.image_url.trim())
     else fd.append('image_url', '')
     fd.append('image', file)
@@ -122,7 +137,7 @@ async function save(){
     finally{ saving.value=false }
     return
   }
-  const imageUrl = form.image_url?.trim() || ''; const payload: Record<string,unknown>={ name:form.name, category_id:form.category_id, product_type:form.product_type, pote_size: form.product_type==='UNIT'?null:form.pote_size, min_flavors: form.has_flavors?form.min_flavors:null, max_flavors: form.has_flavors?form.max_flavors:null, price:form.price, image_url: imageUrl, ...(!file && !imageUrl ? {image: null} : {}) }
+  const imageUrl = form.image_url?.trim() || ''; const payload: Record<string,unknown>={ name:form.name, category_id:form.category_id, product_type:form.product_type, pote_size: form.product_type==='UNIT'?null:form.pote_size, min_flavors: form.has_flavors?form.min_flavors:null, max_flavors: form.has_flavors?form.max_flavors:null, price:form.price, image_url: imageUrl, description: descriptionVal, ...(!file && !imageUrl ? {image: null} : {}) }
   try{ if(editing.value) await updateM.mutateAsync({ id:editing.value, ...payload } as never); else await createM.mutateAsync(payload as never); dlg.value=false }
   catch(e: unknown){ const d=errDetails(e); if(Object.keys(d).length) details.value=d as Record<string,string>; else formError.value=(e as {response?:{data?:{error?:{message?:string}}}})?.response?.data?.error?.message ?? 'Error al guardar' }
   finally{ saving.value=false }

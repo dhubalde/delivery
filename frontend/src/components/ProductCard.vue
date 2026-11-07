@@ -1,13 +1,14 @@
 <template>
-  <v-card style="height:260px; display:flex; flex-direction:column">
+  <v-card style="height:280px; display:flex; flex-direction:column">
     <v-img v-if="p.image_url" :src="p.image_url" height="140" cover loading="lazy" />
     <div v-else style="height:140px; display:flex; align-items:center; justify-content:center; background:#F3F4F6">
       <v-icon size="64" color="secondary">mdi-food-fork-drink</v-icon>
     </div>
     <v-card-title class="text-body-2" style="font-family:Comfortaa">{{ p.name }}</v-card-title>
     <v-card-text class="pb-0" style="min-height:24px; flex-grow:1">
-      <div v-if="needsFlavors" class="text-caption text-center text-medium-emphasis">{{ hint }}</div>
-      <div v-else style="min-height:16px"></div>
+      <div v-if="p.description" class="text-caption text-medium-emphasis" style="display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word; line-height:1.3">{{ p.description.slice(0,160) }}</div>
+      <div v-if="needsFlavors" class="text-caption text-center text-medium-emphasis mt-1">{{ hint }}</div>
+      <div v-else-if="!p.description" style="min-height:16px"></div>
     </v-card-text>
     <v-card-actions class="d-flex align-center justify-space-between">
       <div class="d-flex align-center ga-2">

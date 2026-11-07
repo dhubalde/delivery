@@ -10,6 +10,7 @@
         <div class="font-weight-bold">Total: ${{ cart.total.toFixed(2) }}</div>
         <v-alert v-if="inlineError" type="error" variant="tonal" class="mt-2">{{ inlineError }}</v-alert>
         <v-btn block color="primary" class="mt-2" :disabled="cart.isEmpty || closed" :to="checkoutTo">Ir a pagar</v-btn>
+        <v-btn block variant="tonal" class="mt-2" :to="myOrdersTo">Ver mis pedidos</v-btn>
         <div v-if="closed" class="text-caption text-warning mt-1">Cerrado — no se puede comprar</div>
       </template>
     </v-card-text>
@@ -45,4 +46,5 @@ const closed = computed(() => {
   return d.closed === true || d.is_open === false || d.isOpen === false
 })
 const checkoutTo = computed(() => `/${routeSlug.value}/checkout`)
+const myOrdersTo = computed(() => `/${routeSlug.value}/my-orders`)
 </script>

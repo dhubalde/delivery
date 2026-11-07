@@ -1,6 +1,9 @@
 <template>
   <v-container>
-    <h2 style="font-family:Comfortaa" class="mb-4">Empresa / Merchant</h2>
+    <div class="mb-1">
+      <h2 class="text-h6" style="font-family:Comfortaa">Empresa / Merchant</h2>
+      <div class="text-caption text-medium-emphasis">Identidad y logo multi-tenant</div>
+    </div>
     <v-skeleton-loader v-if="loading" type="card" />
     <v-alert v-else-if="isError" type="error">No se pudo cargar el merchant</v-alert>
     <template v-else>
@@ -21,8 +24,8 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="resetForm">Cancelar</v-btn>
-          <v-btn color="primary" :loading="saving" @click="save">Guardar</v-btn>
+          <v-btn variant="text" density="compact" @click="resetForm">Cancelar</v-btn>
+          <v-btn color="primary" density="compact" :loading="saving" @click="save">Guardar</v-btn>
         </v-card-actions>
         <v-card-text v-if="formError"><v-alert type="error" density="compact">{{ formError }}</v-alert></v-card-text>
         <v-card-text v-if="formSuccess"><v-alert type="success" density="compact">{{ formSuccess }}</v-alert></v-card-text>

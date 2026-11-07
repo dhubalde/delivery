@@ -6,6 +6,7 @@ const router = createRouter({
   routes: [
     { path: '/', redirect: '/ice-zone' },
     { path: '/login', component: () => import('@/views/LoginView.vue') },
+    { path: '/forgot-password', component: () => import('@/views/ForgotPasswordView.vue') },
     { path: '/change-password', component: () => import('@/views/ChangePasswordView.vue'), meta: { requiresAuth: true } },
     { path: '/panel', component: () => import('@/layouts/AdminLayout.vue'), meta: { requiresAuth: true }, children: [{ path: 'board', component: () => import('@/views/KanbanBoardView.vue') }, { path: 'dashboard', component: () => import('@/views/admin/AdminDashboardView.vue') }, { path: 'categories', component: () => import('@/views/admin/AdminCategoriesView.vue') }, { path: 'products', component: () => import('@/views/admin/AdminProductsView.vue') }, { path: 'flavors', component: () => import('@/views/admin/AdminFlavorsView.vue') }, { path: 'schedules', component: () => import('@/views/admin/AdminSchedulesView.vue') }, { path: 'delivery', component: () => import('@/views/admin/AdminDeliveryView.vue') }, { path: 'employees', component: () => import('@/views/admin/AdminEmployeesView.vue') }, { path: 'users', component: () => import('@/views/admin/AdminUsersView.vue') }, { path: 'cash-close', component: () => import('@/views/admin/AdminCashCloseView.vue') }, { path: 'merchant', component: () => import('@/views/admin/AdminMerchantView.vue') }, { path: 'contact', component: () => import('@/views/ContactView.vue') }, { path: 'catalog', redirect: '/panel/categories' }, { path: 'ops', redirect: '/panel/schedules' }] },
     { path: '/master', component: () => import('@/layouts/AdminLayout.vue'), meta: { requiresAuth: true, requiresPlatform: true }, children: [{ path: 'companies', component: () => import('@/views/master/MasterCompaniesView.vue') }, { path: 'users', component: () => import('@/views/master/MasterUsersView.vue') }, { path: 'audit', component: () => import('@/views/master/MasterAuditView.vue') }] },
@@ -16,6 +17,8 @@ const router = createRouter({
         { path: '', name: 'catalog', component: () => import('@/views/CatalogView.vue') },
         { path: 'checkout', name: 'checkout', component: () => import('@/views/CheckoutView.vue') },
         { path: 'my-orders', name: 'my-orders', component: () => import('@/views/MyOrdersView.vue') },
+        { path: 'login', name: 'customer-login', component: () => import('@/views/CustomerAuthView.vue') },
+        { path: 'account', name: 'customer-account', component: () => import('@/views/CustomerAccountView.vue') },
       ],
     },
     { path: '/:pathMatch(.*)*', component: () => import('@/views/NotFoundView.vue') },

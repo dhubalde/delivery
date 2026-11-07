@@ -16,6 +16,11 @@
         </v-card-text>
       </v-card>
       <div v-else class="d-flex flex-column ga-2">
+        <v-alert
+          v-if="displayedOrder.state === 'ENTREGADO'"
+          type="success"
+          variant="tonal"
+        >¡Pedido entregado! Gracias</v-alert>
         <v-card variant="tonal" class="pa-2" :color="cardColor(displayedOrder.state)">
           <div class="d-flex justify-space-between align-center">
             <div>
@@ -50,7 +55,9 @@ const cancelMut = useCancelMyOrder()
 const cancellingId = ref<number | null>(null)
 const errorMsg = ref<string | null>(null)
 
-const ENTREGADO_AUTO_HIDE_MS = 1 * 60 * 1000
+// Delivered orders stay visible so the client sees the success state;
+// only cancelled orders auto-hide after a short window.
+const CANCELADO_AUTO_HIDE_MS = 1 * 60 * 1000
 
 const now = ref(Date.now())
 let tick: number | null = null
@@ -93,10 +100,10 @@ const latestOrder = computed<OrderRow | null>(() => {
 const displayedOrder = computed<OrderRow | null>(() => {
   const o = latestOrder.value
   if (!o) return null
-  if (o.state === 'ENTREGADO' || o.state === 'CANCELADO') {
+  if (o.state === 'CANCELADO') {
     const tsRaw = o.updated_at || o.created_at
     const ts = tsRaw ? Date.parse(tsRaw) : 0
-    if (ts && now.value - ts > ENTREGADO_AUTO_HIDE_MS) return null
+    if (ts && now.value - ts > CANCELADO_AUTO_HIDE_MS) return null
   }
   return o
 })
@@ -115,7 +122,7 @@ function chipColor(state: string): string {
 }
 
 function cardColor(state: string): string {
-  if (state === 'RECIBIDO') return 'success'
+  if (state === 'RECIBIDO') return 'warning'
   if (state === 'ENTREGADO') return 'success'
   return chipColor(state)
 }

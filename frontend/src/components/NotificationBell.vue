@@ -120,8 +120,15 @@ const filteredNotifications = computed(() => {
   if (props.recipientType !== 'CUSTOMER') return all
   if (myIds.value.length === 0) return []
   const set = new Set(myIds.value)
+  // Customer policy (LOGISTICA-only): hide historic RECIBIDO/PREPARACION rows
+  // already in DB; keep only "en camino" (logistics) notifications.
+  const isLogistics = (n: { message?: string; state?: string; order_state?: string }) => {
+    const state = n.state ?? n.order_state ?? ''
+    if (typeof state === 'string' && state.toUpperCase() === 'LOGISTICA') return true
+    return /en camino/i.test(n.message ?? '')
+  }
   // solo notificaciones cuyo order esté en mis pedidos
-  return all.filter((n) => n.order !== null && set.has(n.order))
+  return all.filter((n) => n.order !== null && set.has(n.order) && isLogistics(n))
 })
 
 const unreadCount = computed(() => filteredNotifications.value.filter((n) => !n.is_read).length)

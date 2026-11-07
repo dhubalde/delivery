@@ -1,21 +1,37 @@
 <template>
   <v-container>
-    <div class="d-flex align-center justify-space-between mb-4">
-      <h2 style="font-family:Comfortaa">Empleados</h2>
-      <v-btn color="primary" :disabled="!isAdmin" @click="openCreate">Nuevo</v-btn>
+    <div class="d-flex align-center justify-space-between mb-1 flex-wrap ga-2">
+      <div>
+        <h2 class="text-h6" style="font-family:Comfortaa">Empleados</h2>
+        <div class="text-caption text-medium-emphasis">Legajos, roles y estado</div>
+      </div>
+      <v-btn color="primary" density="compact" prepend-icon="mdi-plus" :disabled="!isAdmin" @click="openCreate">Nuevo</v-btn>
     </div>
     <v-alert v-if="!isAdmin" type="warning" class="mb-4">Solo ADMIN gestiona empleados</v-alert>
     <v-alert v-if="isError && forbid" type="error" class="mb-4">403 — Solo ADMIN (BR-CIE-01)</v-alert>
+    <v-card variant="tonal" class="mb-3">
+      <v-card-text class="d-flex flex-wrap ga-2 align-center py-2">
+        <v-text-field v-model="search" label="Buscar" prepend-inner-icon="mdi-magnify" clearable density="compact" hide-details style="max-width:260px" />
+      </v-card-text>
+    </v-card>
     <v-skeleton-loader v-if="loading" type="list-item@3" />
     <v-alert v-else-if="!list.length" type="info">Sin empleados</v-alert>
-    <v-list v-else>
-      <v-list-item v-for="e in list" :key="e.id" :title="e.fullname ?? 'Sin nombre'" :subtitle="`${(e.roles ?? []).join(', ') || 'sin rol'} · ${e.is_active ? 'Activo' : 'Inactivo'}`">
-        <template #append>
-          <v-btn size="small" variant="text" :disabled="!isAdmin" @click="openEdit(e)">Editar</v-btn>
-          <v-btn size="small" variant="text" color="error" :disabled="!isAdmin" @click="remove(e.id)">Eliminar</v-btn>
-        </template>
-      </v-list-item>
-    </v-list>
+    <v-table v-else density="compact" fixed-header hover>
+      <thead>
+        <tr><th>Nombre</th><th>Roles</th><th>Estado</th><th class="text-right">Acciones</th></tr>
+      </thead>
+      <tbody>
+        <tr v-for="e in list" :key="e.id">
+          <td class="font-weight-medium">{{ e.fullname ?? 'Sin nombre' }}</td>
+          <td class="text-caption text-medium-emphasis">{{ (e.roles ?? []).join(', ') || 'sin rol' }}</td>
+          <td class="text-caption">{{ e.is_active ? 'Activo' : 'Inactivo' }}</td>
+          <td class="text-right text-no-wrap">
+            <v-btn icon="mdi-pencil" size="small" density="compact" variant="text" title="Editar" :disabled="!isAdmin" @click="openEdit(e)" />
+            <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="remove(e.id)" />
+          </td>
+        </tr>
+      </tbody>
+    </v-table>
     <v-dialog v-model="dlg" max-width="480">
       <v-card :title="editing?'Editar empleado':'Nuevo empleado'">
         <v-card-text>
@@ -27,7 +43,7 @@
           <v-switch v-model="form.is_active" label="Activo" color="primary" />
           <v-alert v-if="formError" type="error" density="compact" class="mt-2">{{ formError }}</v-alert>
         </v-card-text>
-        <v-card-actions><v-spacer/><v-btn variant="text" @click="dlg=false">Cancelar</v-btn><v-btn color="primary" :loading="saving" :disabled="!isAdmin" @click="save">Guardar</v-btn></v-card-actions>
+        <v-card-actions><v-spacer/><v-btn variant="text" density="compact" @click="dlg=false">Cancelar</v-btn><v-btn color="primary" density="compact" :loading="saving" :disabled="!isAdmin" @click="save">Guardar</v-btn></v-card-actions>
       </v-card>
     </v-dialog>
     <ConfirmDialog v-model="confirm.show.value" :title="confirm.title.value" :message="confirm.message.value" :confirm-text="confirm.confirmText.value" :cancel-text="confirm.cancelText.value" :confirm-color="confirm.confirmColor.value" @confirm="confirm.onConfirm" @cancel="confirm.onCancel" />
@@ -44,7 +60,13 @@ import { useConfirm, toast } from '@/composables/useConfirm'
 const auth = useAuthStore()
 const isAdmin = computed(()=> hasAnyRole(auth.roles, ['ADMIN']))
 const { data, isLoading: loading, isError, error } = useEmployees()
-const list = computed(()=> (data.value as {id:number;fullname:string;is_active:boolean;roles:Role[]}[]) ?? [])
+const search = ref('')
+const rawList = computed(()=> (data.value as {id:number;fullname:string;is_active:boolean;roles:Role[]}[]) ?? [])
+const list = computed(()=> {
+  const needle = search.value.trim().toLowerCase()
+  if (!needle) return rawList.value
+  return rawList.value.filter((e) => (e.fullname ?? '').toLowerCase().includes(needle))
+})
 const forbid = computed(()=> (error.value as {response?:{status?:number}})?.response?.status===403)
 const roleOpts = [...ROLES]
 const dlg=ref(false); const editing=ref<number|null>(null); const saving=ref(false)

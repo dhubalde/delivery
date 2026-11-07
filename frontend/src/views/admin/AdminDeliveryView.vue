@@ -1,6 +1,9 @@
 <template>
   <v-container>
-    <h2 style="font-family:Comfortaa" class="mb-4">Delivery</h2>
+    <div class="mb-1">
+      <h2 class="text-h6" style="font-family:Comfortaa">Delivery</h2>
+      <div class="text-caption text-medium-emphasis">Modo, cobro y zonas de reparto</div>
+    </div>
     <v-alert v-if="!isAdmin" type="warning" class="mb-4">Solo ADMIN puede editar delivery</v-alert>
     <v-alert v-if="isError && forbid" type="error" class="mb-4">403 — Permiso denegado</v-alert>
     <v-skeleton-loader v-if="loading" type="card" />
@@ -19,20 +22,32 @@
           <v-chip v-else-if="form.modo==='AMBOS' || form.cobro==='AMBOS'" color="warning" class="mt-2">AMBOS: permite ambos flujos — no es passthrough puro</v-chip>
           <v-alert v-if="saveErr" type="error" density="compact" class="mt-3">{{ saveErr }}</v-alert>
         </v-card-text>
-        <v-card-actions><v-btn color="primary" :disabled="!isAdmin" :loading="saving" @click="saveCfg">Guardar config</v-btn></v-card-actions>
+        <v-card-actions><v-btn color="primary" density="compact" :disabled="!isAdmin" :loading="saving" @click="saveCfg">Guardar config</v-btn></v-card-actions>
       </v-card>
-      <h3 style="font-family:Comfortaa" class="mb-2">Zonas</h3>
+      <div class="d-flex align-center justify-space-between mb-1 flex-wrap ga-2">
+        <div>
+          <h3 class="text-subtitle-1" style="font-family:Comfortaa">Zonas</h3>
+          <div class="text-caption text-medium-emphasis">Tarifas por zona</div>
+        </div>
+        <v-btn color="primary" density="compact" prepend-icon="mdi-plus" :disabled="!isAdmin" @click="openCreate">Nueva zona</v-btn>
+      </div>
       <v-skeleton-loader v-if="zLoading" type="list-item@3" />
-      <v-list v-else-if="zones.length">
-        <v-list-item v-for="z in zones" :key="z.id" :title="z.name" :subtitle="`$${z.base_fee}`">
-          <template #append>
-            <v-btn size="small" variant="text" :disabled="!isAdmin" @click="openEdit(z)">Editar</v-btn>
-            <v-btn size="small" variant="text" color="error" :disabled="!isAdmin" @click="delZone(z.id)">Eliminar</v-btn>
-          </template>
-        </v-list-item>
-      </v-list>
+      <v-table v-else-if="zones.length" density="compact" fixed-header hover>
+        <thead>
+          <tr><th>Nombre</th><th>Base fee</th><th class="text-right">Acciones</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="z in zones" :key="z.id">
+            <td class="font-weight-medium">{{ z.name }}</td>
+            <td>${{ z.base_fee }}</td>
+            <td class="text-right text-no-wrap">
+              <v-btn icon="mdi-pencil" size="small" density="compact" variant="text" title="Editar" :disabled="!isAdmin" @click="openEdit(z)" />
+              <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="delZone(z.id)" />
+            </td>
+          </tr>
+        </tbody>
+      </v-table>
       <v-alert v-else type="info">Sin zonas — creá la primera</v-alert>
-      <v-btn class="mt-3" color="primary" :disabled="!isAdmin" @click="openCreate">Nueva zona</v-btn>
       <v-dialog v-model="dlg" max-width="420">
         <v-card :title="editing?'Editar zona':'Nueva zona'">
           <v-card-text>
@@ -40,7 +55,7 @@
             <v-text-field v-model="zForm.base_fee" label="Base fee *" type="number" density="compact" :error-messages="zDetails.base_fee ?? ''" />
             <v-alert v-if="zFormError" type="error" density="compact">{{ zFormError }}</v-alert>
           </v-card-text>
-          <v-card-actions><v-spacer/><v-btn variant="text" @click="dlg=false">Cancelar</v-btn><v-btn color="primary" :loading="zSaving" @click="saveZone">Guardar</v-btn></v-card-actions>
+          <v-card-actions><v-spacer/><v-btn variant="text" density="compact" @click="dlg=false">Cancelar</v-btn><v-btn color="primary" density="compact" :loading="zSaving" @click="saveZone">Guardar</v-btn></v-card-actions>
         </v-card>
       </v-dialog>
     </template>
