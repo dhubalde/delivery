@@ -8,12 +8,17 @@ from apps.customers.auth import get_tokens_for_customer
 pytestmark = pytest.mark.django_db
 
 
-def _register(client, slug, phone="555-2000", name="Alice", password="secret123"):
-    return client.post(f"/api/public/{slug}/customers/register", data={"phone": phone, "name": name, "password": password}, format="json")
+def _register(client, slug, phone="555-2000", name="Alice", password="secret123", email="alice@example.com", address="San Martin 1234"):
+    return client.post(f"/api/public/{slug}/customers/register", data={"email": email, "phone": phone, "name": name, "password": password, "address": address}, format="json")
 
 
-def _login(client, slug, phone="555-2000", password="secret123"):
-    return client.post(f"/api/public/{slug}/customers/login", data={"phone": phone, "password": password}, format="json")
+def _login(client, slug, phone="555-2000", password="secret123", email=None):
+    identifier = {"password": password}
+    if email is not None:
+        identifier["email"] = email
+    else:
+        identifier["phone"] = phone
+    return client.post(f"/api/public/{slug}/customers/login", data=identifier, format="json")
 
 
 class TestCustomerRegister:
@@ -69,6 +74,31 @@ class TestCustomerRegister:
         resp = client.post(f"/api/public/{merchant.slug}/customers/register", data={"phone": ""}, format="json")
         assert resp.status_code == 400
 
+    def test_register_requires_email_and_address(self):
+        merchant = MerchantFactory(slug="acme")
+        client = APIClient()
+        resp = client.post(f"/api/public/{merchant.slug}/customers/register", data={"phone": "555-1", "name": "Bob", "password": "secret123"}, format="json")
+        assert resp.status_code == 400
+        resp = client.post(f"/api/public/{merchant.slug}/customers/register", data={"email": "not-an-email", "phone": "555-1", "name": "Bob", "password": "secret123", "address": "Calle 123"}, format="json")
+        assert resp.status_code == 400
+        resp = client.post(f"/api/public/{merchant.slug}/customers/register", data={"email": "bob@example.com", "phone": "555-1", "name": "Bob", "password": "secret123", "address": "Sin numero"}, format="json")
+        assert resp.status_code == 400
+
+    def test_register_duplicate_email_same_merchant_409(self):
+        merchant = MerchantFactory(slug="acme")
+        client = APIClient()
+        resp1 = _register(client, merchant.slug, email="dup@example.com", phone="555-1001")
+        assert resp1.status_code == 201
+        resp2 = _register(client, merchant.slug, email="dup@example.com", phone="555-1002")
+        assert resp2.status_code == 409
+
+    def test_register_same_email_across_merchants_allowed(self):
+        m1 = MerchantFactory(slug="acme")
+        m2 = MerchantFactory(slug="beta")
+        client = APIClient()
+        assert _register(client, m1.slug, email="same@example.com", phone="555-1").status_code == 201
+        assert _register(client, m2.slug, email="same@example.com", phone="555-1").status_code == 201
+
 
 class TestCustomerLogin:
     def test_login_returns_scoped_jwt(self):
@@ -103,6 +133,21 @@ class TestCustomerLogin:
         _register(client, m1.slug, phone="555-2000", password="secret123")
         resp = _login(client, m2.slug, phone="555-2000", password="secret123")
         assert resp.status_code == 401, "phone scoped to merchant, beta should not find it"
+
+    def test_login_by_email(self):
+        merchant = MerchantFactory(slug="acme")
+        client = APIClient()
+        _register(client, merchant.slug, email="mail@example.com", phone="555-2000", password="s3cret!")
+        resp = _login(client, merchant.slug, email="mail@example.com", password="s3cret!")
+        assert resp.status_code == 200, resp.content
+        assert resp.json()["customer"]["email"] == "mail@example.com"
+
+    def test_login_by_phone_still_works(self):
+        merchant = MerchantFactory(slug="acme")
+        client = APIClient()
+        _register(client, merchant.slug, email="mail@example.com", phone="555-2000", password="s3cret!")
+        resp = _login(client, merchant.slug, phone="555-2000", password="s3cret!")
+        assert resp.status_code == 200, resp.content
 
 
 class TestCustomerMe:
@@ -164,3 +209,20 @@ class TestCustomerMe:
         client = APIClient()
         resp = client.get(f"/api/public/{merchant.slug}/customers/me", HTTP_AUTHORIZATION="Customer invalid.token.here")
         assert resp.status_code == 401
+
+    def test_me_patch_updates_address(self):
+        merchant = MerchantFactory(slug="acme")
+        client = APIClient()
+        reg = _register(client, merchant.slug, email="patch@example.com", address="Vieja 123")
+        access = reg.json()["access"]
+        resp = client.patch(f"/api/public/{merchant.slug}/customers/me", data={"default_address": "Nueva 456"}, format="json", HTTP_AUTHORIZATION=f"Customer {access}")
+        assert resp.status_code == 200, resp.content
+        assert resp.json()["default_address"] == "Nueva 456"
+
+    def test_me_patch_rejects_address_without_number(self):
+        merchant = MerchantFactory(slug="acme")
+        client = APIClient()
+        reg = _register(client, merchant.slug, email="patch2@example.com")
+        access = reg.json()["access"]
+        resp = client.patch(f"/api/public/{merchant.slug}/customers/me", data={"default_address": "Sin numero"}, format="json", HTTP_AUTHORIZATION=f"Customer {access}")
+        assert resp.status_code == 400

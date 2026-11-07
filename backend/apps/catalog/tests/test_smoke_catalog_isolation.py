@@ -68,7 +68,7 @@ class TestSmokeCatalogIsolation:
         assert order_guest.merchant_id == acme.pk
 
         # 3) register on acme → linked order
-        reg = client.post(f"/api/public/{acme.slug}/customers/register", data={"phone": "555-9000", "name": "Alice", "password": "secret123"}, format="json")
+        reg = client.post(f"/api/public/{acme.slug}/customers/register", data={"email": "alice@example.com", "phone": "555-9000", "name": "Alice", "default_address": "Av. Siempre Viva 742", "password": "secret123"}, format="json")
         assert reg.status_code == 201, reg.content
         access = reg.json()["access"]
         payload2 = _order_payload(p_acme)

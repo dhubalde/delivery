@@ -1,11 +1,12 @@
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework import status
 
 from apps.catalog.models import Category, Flavor, Product, CatalogStat
 from apps.catalog.serializers import CategorySerializer, FlavorSerializer, ProductSerializer
-from apps.tenancy.models import Merchant
+from apps.tenancy.models import Merchant, Schedule, SpecialDate
 
 
 def _get_merchant_by_slug(slug):
@@ -118,3 +119,107 @@ class CatalogStatPublicView(generics.GenericAPIView):
         merchant = self._get_merchant()
         obj, created = CatalogStat.objects.get_or_create(merchant_id=merchant.pk)
         return Response({"visit_count": obj.visit_count, "buyer_count": obj.buyer_count})
+
+
+def _compute_menu_status(merchant):
+    """Compute open/closed status from schedules + special dates.
+
+    Defaults to open when the merchant has no schedule data at all,
+    so the storefront never blocks customers of unconfigured stores.
+    """
+    import datetime
+
+    now = timezone.localtime(timezone.now())
+    today = now.date()
+    current_time = now.time()
+
+    special_dates = {
+        sd.date: sd
+        for sd in SpecialDate.objects.filter(merchant_id=merchant.pk)
+    }
+
+    def _aware(d, t):
+        naive = datetime.datetime.combine(d, t)
+        try:
+            return timezone.make_aware(naive)
+        except Exception:
+            return naive
+
+    def _find_next_open(from_date, from_time=None):
+        for offset in range(0, 8):
+            day = from_date + datetime.timedelta(days=offset)
+            special = special_dates.get(day)
+            if special is not None and special.is_closed:
+                continue
+            if special is not None and not special.is_closed:
+                # Explicitly open day: if it is today, open now.
+                if offset == 0:
+                    return None
+                schedule = (
+                    Schedule.objects.filter(merchant_id=merchant.pk, weekday=day.weekday())
+                    .prefetch_related("time_ranges")
+                    .first()
+                )
+                if schedule is not None:
+                    first_range = schedule.time_ranges.order_by("opens_at").first()
+                    if first_range is not None:
+                        return _aware(day, first_range.opens_at).isoformat()
+                # No hours configured for that open day: open at midnight.
+                return _aware(day, datetime.time.min).isoformat()
+            schedule = (
+                Schedule.objects.filter(merchant_id=merchant.pk, weekday=day.weekday())
+                .prefetch_related("time_ranges")
+                .first()
+            )
+            if schedule is None:
+                continue
+            ranges = list(schedule.time_ranges.order_by("opens_at"))
+            if not ranges:
+                continue
+            if offset == 0 and from_time is not None:
+                for r in ranges:
+                    if r.opens_at > from_time:
+                        return _aware(day, r.opens_at).isoformat()
+                continue
+            return _aware(day, ranges[0].opens_at).isoformat()
+        return None
+
+    today_special = special_dates.get(today)
+    if today_special is not None:
+        if today_special.is_closed:
+            return False, _find_next_open(today, current_time)
+        return True, None
+
+    has_any_schedule = Schedule.objects.filter(merchant_id=merchant.pk).exists()
+    if not has_any_schedule:
+        return True, None
+
+    today_schedule = (
+        Schedule.objects.filter(merchant_id=merchant.pk, weekday=today.weekday())
+        .prefetch_related("time_ranges")
+        .first()
+    )
+    if today_schedule is not None:
+        for r in today_schedule.time_ranges.order_by("opens_at"):
+            if r.opens_at <= current_time < r.closes_at:
+                return True, None
+    return False, _find_next_open(today, current_time)
+
+
+class PublicMenuView(generics.GenericAPIView):
+    """Public storefront status: GET /api/public/<slug>/menu."""
+
+    permission_classes = [permissions.AllowAny]
+    authentication_classes: list = []
+
+    def get(self, request, slug):
+        merchant = _get_merchant_by_slug(slug)
+        is_open, next_open_at = _compute_menu_status(merchant)
+        return Response(
+            {
+                "is_open": is_open,
+                "isOpen": is_open,
+                "closed": not is_open,
+                "next_open_at": next_open_at,
+            }
+        )

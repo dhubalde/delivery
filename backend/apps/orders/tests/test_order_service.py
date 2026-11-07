@@ -4,6 +4,8 @@ from apps.orders.models import Order
 from apps.orders.services import OrderService
 from apps.orders.state_machine import GuardViolationError, InvalidTransitionError
 from apps.orders.tests.factories import OrderFactory
+from apps.payments.models import Payment
+from apps.payments.tests.factories import PaymentFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -35,6 +37,7 @@ class TestOrderServiceTransition:
 
     def test_service_guard_enforced_atomic(self):
         order = OrderFactory(state=Order.State.PREPARACION, cash_declared=False)
+        PaymentFactory(order=order, method=Payment.Method.EFECTIVO, status=Payment.Status.PENDING)
         with pytest.raises(GuardViolationError):
             OrderService.transition(order.pk, Order.State.FACTURACION)
         order.refresh_from_db()

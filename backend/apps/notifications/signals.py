@@ -51,26 +51,16 @@ def create_order_notification(order, recipient_type, recipient_name, message, nt
 
 
 def notify_state_transition(order, old_state):
-    """Create minimal notifications: customer on RECIBIDO and LOGISTICA,
-    cashier when a LOGISTICA order gets cancelled."""
+    """Create minimal notifications: customer ONLY on LOGISTICA ("esta en camino"),
+    cashier when a LOGISTICA order gets cancelled.
+    Customer policy (LOGISTICA-only): the customer bell must not notify on
+    RECIBIDO or PREPARACION, only when the order is on its way."""
     if not order.merchant_id:
         return
     state = order.state
 
-    # Customer: order received
-    if state == Order.State.RECIBIDO and old_state != Order.State.RECIBIDO:
-        create_order_notification(
-            order, NotificationRecipientType.CUSTOMER, order.customer_name,
-            f"Tu pedido #{order.code} fue recibido", NotificationType.ORDER_STATE_CHANGE,
-        )
-    # Customer: order in preparation
-    elif state == Order.State.PREPARACION and old_state != Order.State.PREPARACION:
-        create_order_notification(
-            order, NotificationRecipientType.CUSTOMER, order.customer_name,
-            f"Tu pedido #{order.code} está en preparación", NotificationType.ORDER_STATE_CHANGE,
-        )
-    # Customer: order going to logistics
-    elif state == Order.State.LOGISTICA and old_state != Order.State.LOGISTICA:
+    # Customer: order going to logistics (sole customer notification)
+    if state == Order.State.LOGISTICA and old_state != Order.State.LOGISTICA:
         create_order_notification(
             order, NotificationRecipientType.CUSTOMER, order.customer_name,
             f"Tu pedido #{order.code} está en camino", NotificationType.ORDER_STATE_CHANGE,
@@ -86,24 +76,9 @@ def notify_state_transition(order, old_state):
 
 @receiver(django_signals.post_save, sender=Order)
 def _on_order_created(sender, instance, created, **kwargs):
-    if not created or not instance.merchant_id:
-        return
-    if instance.state == Order.State.RECIBIDO:
-        # Deduplicate RECIBIDO: if a recent notification for this order already exists (via
-        # notify_state_transition or previous save), skip to avoid double bell after creation.
-        cutoff = timezone.now() - timedelta(seconds=60)
-        if Notification.all_objects.filter(
-            order=instance,
-            type__in=[NotificationType.NEW_ORDER, NotificationType.ORDER_STATE_CHANGE],
-            created_at__gte=cutoff,
-        ).exists():
-            return
-        # Customer gets notified when their order is first received
-        create_order_notification(
-            instance, NotificationRecipientType.CUSTOMER, instance.customer_name,
-            f"Tu pedido #{instance.code} fue recibido",
-            NotificationType.NEW_ORDER,
-        )
+    # Customer policy (LOGISTICA-only): no CUSTOMER notification on order
+    # creation (RECIBIDO). The customer bell only notifies on LOGISTICA.
+    return
 
 
 @receiver(django_signals.post_save, sender=Payment)

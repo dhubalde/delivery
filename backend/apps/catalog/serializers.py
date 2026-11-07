@@ -27,6 +27,7 @@ class ProductSerializer(serializers.ModelSerializer):
     pote_size = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     image = serializers.ImageField(required=False, allow_null=True, write_only=True)
     is_active = PreserveBooleanField(required=False)
+    description = serializers.CharField(required=False, allow_blank=True, max_length=160)
 
     class Meta:
         model = Product
@@ -46,6 +47,13 @@ class ProductSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id"]
 
+    def validate_description(self, value):
+        # Allow blank; if present, enforce max 160 chars after trim (frontend also trims)
+        if value and len(value.strip()) > 160:
+            raise serializers.ValidationError("Ensure this field has no more than 160 characters.")
+        # Store trimmed value if present, keep blank as ""
+        return value.strip() if value else ""
+
     def to_internal_value(self, data):
         mutable = data.copy() if hasattr(data, "copy") else dict(data)
         for k in ("min_flavors", "max_flavors", "category_id"):
@@ -55,6 +63,9 @@ class ProductSerializer(serializers.ModelSerializer):
             mutable["pote_size"] = None
         if "image_url" in mutable and mutable["image_url"] == "":
             mutable["image_url"] = None
+        # description: treat missing as blank, None as "", keep "" as blank (no migration, TextField blank=True)
+        if "description" in mutable and mutable["description"] is None:
+            mutable["description"] = ""
         return super().to_internal_value(mutable)
 
     def validate(self, attrs):

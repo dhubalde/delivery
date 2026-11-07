@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.catalog.views_public import CatalogStatPublicView, PublicCatalogAggregateView, PublicCategoryListView, PublicFlavorListView, PublicProductListView
+from apps.catalog.views_public import CatalogStatPublicView, PublicCatalogAggregateView, PublicCategoryListView, PublicFlavorListView, PublicMenuView, PublicProductListView
 
 urlpatterns = [
     path("<slug:slug>/catalog", PublicCatalogAggregateView.as_view(), name="public-catalog-aggregate"),
@@ -13,4 +13,6 @@ urlpatterns = [
     path("<slug:slug>/flavors/", PublicFlavorListView.as_view(), name="public-flavor-list-slash"),
     path("<slug:slug>/categories", PublicCategoryListView.as_view(), name="public-category-list"),
     path("<slug:slug>/categories/", PublicCategoryListView.as_view(), name="public-category-list-slash"),
+    path("<slug:slug>/menu", PublicMenuView.as_view(), name="public-menu"),
+    path("<slug:slug>/menu/", PublicMenuView.as_view(), name="public-menu-slash"),
 ]

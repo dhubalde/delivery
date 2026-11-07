@@ -1,6 +1,8 @@
 import datetime
 
 from django.db import transaction
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics, permissions, serializers, status
 from rest_framework.exceptions import APIException, NotFound, ValidationError
 from rest_framework.response import Response
@@ -134,8 +136,10 @@ def _serialize_schedule(schedule):
     return {"id": schedule.pk, "weekday": schedule.weekday, "time_ranges": out}
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class ScheduleListUpsertView(APIView):
     permission_classes = [permissions.AllowAny]
+    authentication_classes: list = []
 
     def get(self, request):
         mid = _require_merchant_id(request)
@@ -166,8 +170,10 @@ class ScheduleListUpsertView(APIView):
         return Response(_serialize_schedule(schedule), status=status.HTTP_200_OK)
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class ScheduleDeleteView(APIView):
     permission_classes = [permissions.AllowAny]
+    authentication_classes: list = []
 
     def delete(self, request, pk):
         mid = _require_merchant_id(request)
@@ -821,8 +827,39 @@ class MasterResetRequestView(APIView):
         return Response({"reset_token": raw, "expires_minutes": 20})
 
 
+@method_decorator(csrf_exempt, name="dispatch")
+class ForgotPasswordRequestView(APIView):
+    permission_classes = [permissions.AllowAny]
+    authentication_classes: list = []  # no auth, no CSRF via SessionAuthentication
+
+    def post(self, request):
+        from django.contrib.auth.models import User
+
+        username = ((request.data or {}).get("username") or "").strip()
+        if not username:
+            return Response({"error": {"code": "VALIDATION_ERROR", "message": "username is required."}}, status=status.HTTP_400_BAD_REQUEST)
+        target = User.objects.filter(username=username, is_active=True).first()
+        if target is None:
+            return Response({"error": {"code": "NOT_FOUND", "message": "User not found."}}, status=status.HTTP_404_NOT_FOUND)
+        raw = _issue_reset_token(target, created_by=None)
+        try:
+            profile = target.platform_profile
+        except Exception:
+            profile = None
+        merchant_id = getattr(profile, "merchant_id", None) if profile else None
+        AuditEntry.objects.create(
+            actor=None,
+            action="PASSWORD_RESET_SELF_REQUESTED",
+            merchant_id=merchant_id,
+            detail={"username": username},
+        )
+        return Response({"reset_token": raw, "expires_minutes": 20})
+
+
+@method_decorator(csrf_exempt, name="dispatch")
 class ResetConfirmView(APIView):
     permission_classes = [permissions.AllowAny]
+    authentication_classes: list = []  # public, no CSRF
 
     def post(self, request):
         import hashlib

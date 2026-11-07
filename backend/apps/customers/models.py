@@ -8,8 +8,10 @@ class Customer(BaseModel):
     merchant = models.ForeignKey(
         "tenancy.Merchant", on_delete=models.CASCADE, related_name="customers"
     )
+    email = models.EmailField(max_length=254, null=True, blank=True)
     phone = models.CharField(max_length=40)
     name = models.CharField(max_length=120)
+    default_address = models.CharField(max_length=255, blank=True, default="")
     password_hash = models.CharField(max_length=128)
 
     class Meta:
@@ -18,9 +20,14 @@ class Customer(BaseModel):
                 fields=["merchant", "phone"],
                 name="uniq_customer_phone_per_merchant",
             ),
+            models.UniqueConstraint(
+                fields=["merchant", "email"],
+                name="uniq_customer_email_per_merchant",
+            ),
         ]
         indexes = [
             models.Index(fields=["merchant", "phone"]),
+            models.Index(fields=["merchant", "email"]),
         ]
         ordering = ["name"]
 

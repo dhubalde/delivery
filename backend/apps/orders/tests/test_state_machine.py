@@ -7,6 +7,8 @@ from apps.orders.state_machine import (
     OrderStateMachine,
 )
 from apps.orders.tests.factories import OrderFactory
+from apps.payments.models import Payment
+from apps.payments.tests.factories import PaymentFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -55,8 +57,13 @@ class TestT15ForwardOnly:
 
     def test_br_ord_03_guard_cash_declared_required(self):
         order = OrderFactory(state=Order.State.PREPARACION, cash_declared=False)
+        PaymentFactory(order=order, method=Payment.Method.EFECTIVO, status=Payment.Status.PENDING)
         with pytest.raises(GuardViolationError):
             OrderStateMachine.validate(order, Order.State.FACTURACION)
+
+    def test_br_ord_03_guard_allows_advance_without_pending_cash(self):
+        order = OrderFactory(state=Order.State.PREPARACION, cash_declared=False)
+        OrderStateMachine.validate(order, Order.State.FACTURACION)
 
     def test_br_ord_03_guard_passes_when_cash_declared(self):
         order = OrderFactory(state=Order.State.PREPARACION, cash_declared=True)
@@ -78,10 +85,9 @@ class TestT16CancellationOnlyFromRecibido:
         with pytest.raises(InvalidTransitionError):
             OrderStateMachine.validate(order, Order.State.CANCELADO)
 
-    def test_br_ord_02_cancel_from_logistica_rejected(self):
+    def test_br_ord_02_return_from_logistica_allowed(self):
         order = OrderFactory(state=Order.State.LOGISTICA)
-        with pytest.raises(InvalidTransitionError):
-            OrderStateMachine.validate(order, Order.State.CANCELADO)
+        OrderStateMachine.validate(order, Order.State.CANCELADO)
 
     def test_br_ord_06_cancelado_only_from_recibido(self):
         order = OrderFactory(state=Order.State.ENTREGADO)

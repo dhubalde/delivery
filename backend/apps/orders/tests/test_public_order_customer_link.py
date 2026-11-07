@@ -33,7 +33,7 @@ def _order_payload(product, customer_name="Guest"):
 
 
 def _register_customer(client, slug, phone="555-2000", password="secret123"):
-    return client.post(f"/api/public/{slug}/customers/register", data={"phone": phone, "name": "Alice", "password": password}, format="json")
+    return client.post(f"/api/public/{slug}/customers/register", data={"email": f"{phone}@example.com", "phone": phone, "name": "Alice", "password": password, "address": "Calle 123"}, format="json")
 
 
 class TestPublicOrderGuestAndAuth:
