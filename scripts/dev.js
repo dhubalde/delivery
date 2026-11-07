@@ -29,8 +29,12 @@ const frontend = spawn(`${npmCmd} run dev`, {
 
 function shutdown(signal) {
   console.log(`\n[dev] ${signal} — apagando backend + frontend...`);
-  try { backend.kill(signal); } catch {}
-  try { frontend.kill(signal); } catch {}
+  try {
+    backend.kill(signal);
+  } catch {}
+  try {
+    frontend.kill(signal);
+  } catch {}
 }
 
 for (const sig of ["SIGINT", "SIGTERM"]) process.on(sig, () => shutdown(sig));
@@ -40,13 +44,19 @@ function onExit(name, code) {
   console.log(`[dev] ${name} terminó con código ${code}`);
   exited += 1;
   if (exited >= 1) {
-    try { backend.kill("SIGTERM"); } catch {}
-    try { frontend.kill("SIGTERM"); } catch {}
+    try {
+      backend.kill("SIGTERM");
+    } catch {}
+    try {
+      frontend.kill("SIGTERM");
+    } catch {}
     process.exit(code ?? 0);
   }
 }
 
-backend.on("exit", (code) => onExit("backend :8000", code));
-frontend.on("exit", (code) => onExit("frontend :5173", code));
+backend.on("exit", (code) => onExit("backend :8001", code));
+frontend.on("exit", (code) => onExit("frontend :5174", code));
 
-console.log("[dev] backend :8000 + frontend :5173 corriendo. Ctrl+C para cortar.");
+console.log(
+  "[dev] backend :8001 + frontend :5174 corriendo. Ctrl+C para cortar.",
+);
