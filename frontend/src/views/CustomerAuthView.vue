@@ -1,22 +1,11 @@
 <template>
   <v-container style="max-width: 480px">
     <h2 class="text-h6 mb-4">Mi cuenta</h2>
-    <v-tabs v-model="tab" class="mb-4">
+    <v-tabs v-model="tab" class="mb-4" grow>
       <v-tab value="login">Ingresar</v-tab>
       <v-tab value="register">Registrarme</v-tab>
+      <v-tab value="guest">Invitado</v-tab>
     </v-tabs>
-    <v-alert v-if="tab === 'login'" type="info" variant="tonal" density="compact" class="mb-4">
-      No tenés cuenta y no querés registrarte ninguna vez? Podés comprar sin registro:
-    </v-alert>
-    <v-btn
-      v-if="tab === 'login'"
-      variant="tonal"
-      block
-      prepend-icon="mdi-cart-arrow-right"
-      color="success"
-      class="mb-4"
-      @click="goGuest"
-    >Seguir sin cuenta — comprar como invitado</v-btn>
     <v-window v-model="tab">
       <v-window-item value="login">
         <v-form @submit.prevent="doLogin">
@@ -36,6 +25,15 @@
           <v-alert v-if="errorMsg" type="error" variant="tonal" density="compact" class="mb-2">{{ errorMsg }}</v-alert>
           <v-btn type="submit" color="primary" block :loading="loading">Crear cuenta</v-btn>
         </v-form>
+      </v-window-item>
+      <v-window-item value="guest">
+        <div class="text-center py-2">
+          <v-icon icon="mdi-account-circle-outline" size="52" color="primary" class="mb-3" />
+          <div class="text-body-2 text-medium-emphasis mb-5" style="white-space: normal; line-height: 1.5">
+            Ingresando como INVITADO no es necesario dejar tus datos, si te REGISTRAS tendras acceso a Beneficios
+          </div>
+          <v-btn color="primary" block size="large" prepend-icon="mdi-cart-arrow-right" @click="goGuest">Pedir sin cuenta</v-btn>
+        </div>
       </v-window-item>
     </v-window>
   </v-container>
