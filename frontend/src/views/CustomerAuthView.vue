@@ -5,6 +5,18 @@
       <v-tab value="login">Ingresar</v-tab>
       <v-tab value="register">Registrarme</v-tab>
     </v-tabs>
+    <v-alert v-if="tab === 'login'" type="info" variant="tonal" density="compact" class="mb-4">
+      No tenés cuenta y no querés registrarte ninguna vez? Podés comprar sin registro:
+    </v-alert>
+    <v-btn
+      v-if="tab === 'login'"
+      variant="tonal"
+      block
+      prepend-icon="mdi-cart-arrow-right"
+      color="success"
+      class="mb-4"
+      @click="goGuest"
+    >Seguir sin cuenta — comprar como invitado</v-btn>
     <v-window v-model="tab">
       <v-window-item value="login">
         <v-form @submit.prevent="doLogin">
@@ -54,6 +66,11 @@ const passErr = ref('')
 
 function fieldErr(k: string): string {
   return details.value[k] ?? ''
+}
+
+function goGuest(): void {
+  // Guest checkout was always allowed: the cart + order work without any account.
+  router.push(`/${slug.value}`)
 }
 
 function validEmail(v: string): boolean {
