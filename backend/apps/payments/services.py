@@ -99,6 +99,35 @@ class PaymentService:
 
     @staticmethod
     @transaction.atomic
+    def confirm_transfer(payment_id, confirmed_by=None):
+        """Operator confirms a manual bank-transfer payment after seeing the deposit."""
+        payment = Payment.objects.select_for_update().get(pk=payment_id)
+        if not getattr(payment, "order", None):
+            raise CashConfirmationError("Payment has no order")
+        if payment.method != Payment.Method.TRANSFER:
+            raise CashConfirmationError("Only TRANSFER payments can be confirmed via this flow")
+        if payment.status != Payment.Status.PENDING:
+            raise CashConfirmationError(f"Payment status is {payment.status}, expected PENDING")
+        payment.status = Payment.Status.CONFIRMED
+        payment.confirmed_at = timezone.now()
+        if confirmed_by is not None:
+            payment.collected_by = str(confirmed_by)
+        payment.save(update_fields=["status", "confirmed_at", "collected_by", "updated_at"])
+        from apps.audit.services import emit
+
+        emit(
+            merchant_id=payment.order.merchant_id,
+            actor=confirmed_by,
+            entity="Payment",
+            entity_id=payment.pk,
+            action="PAYMENT",
+            old_value={"status": Payment.Status.PENDING, "method": Payment.Method.TRANSFER},
+            new_value={"status": Payment.Status.CONFIRMED, "collected_by": payment.collected_by},
+        )
+        return payment
+
+    @staticmethod
+    @transaction.atomic
     def reject_cash(payment_id, cashier_user=None):
         payment = Payment.objects.select_for_update().get(pk=payment_id)
         if payment.method != Payment.Method.EFECTIVO:

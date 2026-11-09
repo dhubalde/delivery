@@ -58,7 +58,7 @@ def _serialize_order(order):
             payments.append({"id": p.pk, "method": p.method, "amount": str(p.amount), "status": p.status, "gateway_ref": p.gateway_ref})
     except Exception:
         pass
-    return {"id": order.pk, "code": order.code, "merchant_id": order.merchant_id, "customer_name": order.customer_name, "customer_phone": order.customer_phone, "fulfillment": order.fulfillment, "state": order.state, "business_date": str(order.business_date), "address": order.address, "items_total": str(order.items_total), "delivery_fee": str(order.delivery_fee), "discount": str(order.discount), "total": str(order.total), "cash_declared": order.cash_declared, "cancel_reason": getattr(order, "cancel_reason", None), "canceled_at": order.canceled_at.isoformat() if getattr(order, "canceled_at", None) else None, "items": items, "payments": payments, "created_at": order.created_at.isoformat() if hasattr(order, "created_at") and order.created_at else None, "updated_at": order.updated_at.isoformat() if hasattr(order, "updated_at") and order.updated_at else None}
+    return {"id": order.pk, "code": order.code, "merchant_id": order.merchant_id, "customer_name": order.customer_name, "customer_phone": order.customer_phone, "fulfillment": order.fulfillment, "source": getattr(order, "source", Order.Source.WEB), "state": order.state, "business_date": str(order.business_date), "address": order.address, "items_total": str(order.items_total), "delivery_fee": str(order.delivery_fee), "discount": str(order.discount), "total": str(order.total), "cash_declared": order.cash_declared, "cancel_reason": getattr(order, "cancel_reason", None), "canceled_at": order.canceled_at.isoformat() if getattr(order, "canceled_at", None) else None, "items": items, "payments": payments, "created_at": order.created_at.isoformat() if hasattr(order, "created_at") and order.created_at else None, "updated_at": order.updated_at.isoformat() if hasattr(order, "updated_at") and order.updated_at else None}
 
 
 def _get_customer_for_order(request, merchant):
@@ -140,6 +140,9 @@ class PublicOrderCreateView(APIView):
             return Response({"error": {"code": "VALIDATION_ERROR", "message": "payments required", "details": {"payments": "At least one payment required"}}}, status=400)
         if fulfillment not in (Order.Fulfillment.DELIVERY, Order.Fulfillment.PICKUP):
             return Response({"error": {"code": "VALIDATION_ERROR", "message": "Invalid fulfillment", "details": {"fulfillment": "Must be DELIVERY or PICKUP"}}}, status=400)
+        source = data.get("source") or Order.Source.WEB
+        if source not in (Order.Source.WEB, Order.Source.MANUAL):
+            source = Order.Source.WEB
         allowed_methods = {c[0] for c in Payment.Method.choices}
         for p in payments:
             if p.get("method") not in allowed_methods:
@@ -211,7 +214,7 @@ class PublicOrderCreateView(APIView):
         with transaction.atomic():
             max_code = Order.objects.filter(merchant=merchant, business_date=today).aggregate(m=Max("code"))["m"] or 0
             code = max_code + 1
-            order = Order.objects.create(merchant=merchant, customer=customer, code=code, customer_name=data.get("customer_name") or "Guest", customer_phone=data.get("customer_phone") or "", fulfillment=fulfillment, state=Order.State.RECIBIDO, business_date=today, address=data.get("address") or "", items_total=items_total, delivery_fee=delivery_fee, discount=Decimal("0.00"), total=total, cash_declared=any(p["method"] == Payment.Method.EFECTIVO for p in payments))
+            order = Order.objects.create(merchant=merchant, customer=customer, code=code, customer_name=data.get("customer_name") or "Guest", customer_phone=data.get("customer_phone") or "", fulfillment=fulfillment, state=Order.State.RECIBIDO, source=source, business_date=today, address=data.get("address") or "", items_total=items_total, delivery_fee=delivery_fee, discount=Decimal("0.00"), total=total, cash_declared=any(p["method"] == Payment.Method.EFECTIVO for p in payments))
             for vi in validated_items:
                 prod = vi["product"]
                 flavors_payload = []
@@ -223,6 +226,8 @@ class PublicOrderCreateView(APIView):
                 method = p["method"]
                 amount = Decimal(str(p["amount"]))
                 if method == Payment.Method.EFECTIVO:
+                    Payment.objects.create(order=order, method=method, amount=amount, status=Payment.Status.PENDING)
+                elif method == Payment.Method.TRANSFER:
                     Payment.objects.create(order=order, method=method, amount=amount, status=Payment.Status.PENDING)
                 else:
                     gw = MercadoPagoMockGateway.process(method, amount, order_id=order.pk)

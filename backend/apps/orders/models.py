@@ -16,6 +16,10 @@ class Order(BaseModel):
         DELIVERY = "DELIVERY", "Delivery"
         PICKUP = "PICKUP", "Pickup"
 
+    class Source(models.TextChoices):
+        WEB = "WEB", "Web"
+        MANUAL = "MANUAL", "Manual"
+
     merchant = models.ForeignKey(
         "tenancy.Merchant", on_delete=models.CASCADE, related_name="orders"
     )
@@ -30,6 +34,9 @@ class Order(BaseModel):
     customer_name = models.CharField(max_length=120)
     customer_phone = models.CharField(max_length=40, blank=True)
     fulfillment = models.CharField(max_length=8, choices=Fulfillment.choices)
+    source = models.CharField(
+        max_length=6, choices=Source.choices, default=Source.WEB, db_index=True
+    )
     state = models.CharField(
         max_length=12, choices=State.choices, default=State.RECIBIDO
     )

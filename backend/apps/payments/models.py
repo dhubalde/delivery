@@ -8,6 +8,7 @@ class Payment(BaseModel):
         EFECTIVO = "EFECTIVO", "Efectivo"
         BILLETERA = "BILLETERA", "Billetera"
         TARJETA = "TARJETA", "Tarjeta"
+        TRANSFER = "TRANSFER", "Transferencia"
 
     class Status(models.TextChoices):
         PENDING = "PENDING", "Pending"
