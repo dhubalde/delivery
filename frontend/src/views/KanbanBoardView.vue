@@ -2,7 +2,10 @@
   <v-container fluid class="ma-0 pa-2" style="margin:0;padding:8px;box-sizing:border-box;max-width:100%;width:100%">
     <div class="d-flex justify-space-between align-center mb-4 w-100 ma-0 pa-0" style="margin:0;padding:0;box-sizing:border-box;width:100%">
       <h2>Kanban — {{ merchantName }}</h2>
-      <v-text-field v-model="businessDate" type="date" density="compact" hide-details style="max-width: 180px" />
+      <div class="d-flex align-center ga-2">
+        <v-btn color="primary" density="compact" prepend-icon="mdi-phone-incoming" title="Cargar un pedido telefónico" @click="NuevoPedido">Nuevo pedido</v-btn>
+        <v-text-field v-model="businessDate" type="date" density="compact" hide-details style="max-width: 180px" />
+      </div>
     </div>
     <v-alert v-if="alreadyClosed" type="info" class="mb-4 ma-0" style="margin:0 0 16px 0;box-sizing:border-box;width:100%">Caja del {{ formatDM(today) }} cerrada — pedidos nuevos irán al {{ formatDM(tomorrow) }}. Pedidos del día archivados.</v-alert>
     <WeatherForecast />
@@ -26,9 +29,16 @@ import KanbanTotalsCard from '@/components/KanbanTotalsCard.vue'
 import WeatherForecast from '@/components/WeatherForecast.vue'
 import { useMerchant } from '@/composables/useMerchant'
 import { useAuthStore } from '@/stores/auth.store'
+import { useRouter } from 'vue-router'
 const { data: merchantData } = useMerchant()
 const merchantName = computed(() => (merchantData.value as { name?: string } | undefined)?.name ?? 'Work Zone')
 const auth = useAuthStore()
+const router = useRouter()
+function NuevoPedido(): void {
+  // Manual entry happens on the storefront itself: the operator browses the real
+  // catalog (products + flavors) and fills the caller's data at checkout.
+  router.push(`/${auth.merchantSlug}?manual=1`)
+}
 const stationSector = computed(() => {
   const u = auth.user as { kind?: string; sector?: string | null; role?: string } | null
   if (!u || u.role === 'ADMIN' || u.role === 'MASTER') return null

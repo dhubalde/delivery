@@ -64,6 +64,7 @@ import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { api } from '@/api/client'
 import { useCartStore } from '@/stores/cart.store'
+import { useOperatorStore, coordinatorMethods, isManualBodySource } from '@/stores/operator.store'
 import { useMenu } from '@/composables/useMenu'
 import { useCustomerStore } from '@/stores/customer.store'
 import { addMyOrderIdForSlug, saveMyOrderSnapshot } from '@/composables/useMyOrders'
@@ -74,7 +75,11 @@ const customerStore = useCustomerStore()
 const router = useRouter()
 const route = useRoute()
 const slug = computed(() => (route.params.slug as string) || 'ice-zone')
-const methods = ['EFECTIVO','BILLETERA','TARJETA']
+const operator = useOperatorStore()
+operator.hydrate()
+const isManual = computed(() => operator.active || route.query.manual === '1')
+watch(isManual, (m) => { if (m) operator.enter() }, { immediate: true })
+const methods = computed(() => (isManual.value ? coordinatorMethods() : ['EFECTIVO','BILLETERA','TARJETA']))
 const payments = ref<{ method:string; amount:number }[]>([{ method:'EFECTIVO', amount: cart.total }])
 const customerName = ref('')
 const customerPhone = ref('')
@@ -154,7 +159,10 @@ watch(
   (empty) => {
     // Empty cart with no just-completed order means nothing to check out:
     // send the client back to the catalog instead of rendering an empty checkout.
-    if (empty && !ok.value && !loading.value) router.replace(`/${slug.value}`)
+    if (empty && !ok.value && !loading.value) {
+      if (isManual.value) { operator.exit(); router.replace('/panel/board') }
+      else router.replace(`/${slug.value}`)
+    }
   },
   { immediate: true },
 )
@@ -210,6 +218,7 @@ async function submit(){
     const _parsed = parsePhoneNumberFromString(customerPhone.value, 'AR')
     const _e164 = _parsed && _parsed.isValid() ? _parsed.format('E.164') : customerPhone.value.trim()
     const body:any = { items: cart.items.map(i=>({ product_id:i.product.id, quantity:i.qty, flavor_ids:i.flavorIds })), payments: payments.value.map(p=>({ method:p.method, amount:String(p.amount) })), fulfillment: fulfillment.value, customer_name: customerName.value.trim(), customer_phone: _e164, address: address.value.trim() }
+    if (isManual.value) body.source = isManualBodySource(true)
     // Extra geo fields are ignored gracefully by the public order endpoint
     // (it only reads known keys), and persist for future backend support.
     if (addressGeo.value) {
@@ -220,11 +229,17 @@ async function submit(){
       body.card = { number: cardNumber.value.replace(/\s/g,''), expiry: cardExpiry.value.trim(), cvv: cardCvv.value.trim() }
     }
     const { data: created } = await api.post(`/public/${currentSlug}/orders`, body, { headers: { 'Idempotency-Key': crypto.randomUUID() } }) as { data: { id: number; code: number; total: string } }
-    if (created && typeof created.id === 'number') {
+    if (created && typeof created.id === 'number' && !isManual.value) {
       addMyOrderIdForSlug(created.id, currentSlug)
       saveMyOrderSnapshot(currentSlug, { id: created.id, code: created.code, state: 'RECIBIDO', total: created.total, created_at: new Date().toISOString() })
     }
-    cart.clear(); ok.value=true; setTimeout(()=>router.push(`/${currentSlug}/my-orders`), 800)
+    cart.clear(); ok.value=true
+    if (isManual.value) {
+      // Operator registered a phone order: back to the kanban, not to "my orders".
+      setTimeout(() => { operator.exit(); router.push('/panel/board') }, 800)
+    } else {
+      setTimeout(()=>router.push(`/${currentSlug}/my-orders`), 800)
+    }
   }catch(e:any){
     const d=e?.response?.data
     const code=d?.error?.code

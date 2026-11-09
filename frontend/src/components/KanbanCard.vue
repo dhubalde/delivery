@@ -26,8 +26,11 @@
     <v-card-text class="pb-1 ma-0 w-100" style="margin:0;box-sizing:border-box;width:100%" :class="{ 'text-error': isRejected }">
       <div class="d-flex justify-space-between align-center">
         <strong :class="{ 'text-error': isRejected }">#{{ order.code }}</strong>
-        <v-chip v-if="isRejected" size="x-small" color="error">No entregado</v-chip>
-        <v-chip v-else-if="hasPending" size="x-small" color="warning" class="blinking">PENDING</v-chip>
+        <div class="d-flex align-center" style="min-width:0">
+          <v-chip v-if="orderSourceManual" size="x-small" color="info" prepend-icon="mdi-phone-incoming" class="mr-1">Teléfono</v-chip>
+          <v-chip v-if="isRejected" size="x-small" color="error">No entregado</v-chip>
+          <v-chip v-else-if="hasPending" size="x-small" color="warning" class="blinking">PENDING</v-chip>
+        </div>
       </div>
       <div class="text-caption" :class="isRejected ? 'text-error' : ''">{{ order.customer_name ?? order.customer ?? '—' }} · {{ order.fulfillment }}</div>
       <div class="text-caption font-weight-bold" :class="{ 'text-error': isRejected }">${{ order.total }}</div>
@@ -89,6 +92,7 @@ const isRejected = computed(() => props.order.state === 'CANCELADO' || !!(props.
 const effectiveCompact = computed(() => !!props.compact || (isRejected.value && (props.order.state === 'LOGISTICA' || props.order.state === 'CANCELADO')))
 const isTerminal = computed(() => ['ENTREGADO', 'CANCELADO'].includes(props.order.state))
 const isLogistica = computed(() => props.order.state === 'LOGISTICA')
+const orderSourceManual = computed(() => (props.order as unknown as { source?: string }).source === 'MANUAL')
 const hasPending = computed(() => props.order.payments?.some((p) => p.status === 'PENDING'))
 const guard = computed(() => canAdvance(props.order.state, auth.roles, props.order, (auth.user as { sector?: string | null } | null)?.sector ?? null))
 const canAdvanceOk = computed(() => guard.value.ok)
