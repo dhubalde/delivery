@@ -10,13 +10,20 @@ def is_open(merchant, dt=None):
         dt = timezone.now()
     if timezone.is_naive(dt):
         dt = timezone.make_aware(dt)
-    local_date = dt.date()
-    local_time = dt.time()
+    # Schedules are entered in business local time: convert, never use UTC date/time.
+    local = timezone.localtime(dt)
+    local_date = local.date()
+    local_time = local.time()
 
     special = SpecialDate.objects.filter(merchant=merchant, date=local_date).first()
     if special is not None:
         if special.is_closed:
             return False
+        return True
+
+    # No schedule data at all: default open (matches _compute_menu_status),
+    # so unconfigured stores never block customers.
+    if not Schedule.objects.filter(merchant=merchant).exists():
         return True
 
     weekday = local_date.weekday()
@@ -38,8 +45,9 @@ def next_open_at(merchant, dt=None):
         dt = timezone.make_aware(dt)
 
     for offset in range(14):
-        check_date = (dt + timedelta(days=offset)).date()
-        check_time = dt.time() if offset == 0 else None
+        base = timezone.localtime(dt)
+        check_date = (base + timedelta(days=offset)).date()
+        check_time = base.time() if offset == 0 else None
 
         special = SpecialDate.objects.filter(merchant=merchant, date=check_date).first()
         if special is not None and special.is_closed:

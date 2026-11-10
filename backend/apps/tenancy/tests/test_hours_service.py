@@ -46,9 +46,16 @@ class TestBrHrs02OrderingBlockedOutsideRanges:
         dt = timezone.make_aware(datetime.datetime(2026, 8, 24, 18, 0))
         assert is_open(merchant, dt) is False
 
-    def test_br_hrs_02_no_schedule_means_closed(self):
+    def test_br_hrs_02_no_schedule_defaults_open(self):
+        # Unconfigured stores must not block customers (matches menu default-open).
         merchant = MerchantFactory()
         dt = timezone.make_aware(datetime.datetime(2026, 8, 24, 12, 0))
+        assert is_open(merchant, dt) is True
+
+    def test_br_hrs_02_schedule_other_weekday_means_closed_today(self):
+        merchant = MerchantFactory()
+        _make_schedule(merchant, 0, [(datetime.time(9, 0), datetime.time(18, 0))])
+        dt = timezone.make_aware(datetime.datetime(2026, 8, 25, 12, 0))
         assert is_open(merchant, dt) is False
 
     def test_br_hrs_04_special_date_closed_overrides_schedule(self):

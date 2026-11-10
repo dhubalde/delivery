@@ -77,6 +77,9 @@ DATABASES = {
 }
 
 USE_TZ = True
+# Business timezone: schedules, business dates and open/closed checks are all
+# computed in local time (hours are entered per weekday in AR local time).
+TIME_ZONE = "America/Argentina/Buenos_Aires"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
