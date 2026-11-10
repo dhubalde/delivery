@@ -1,7 +1,18 @@
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth.store'
+import { useUiStore } from '@/stores/ui.store'
 
 export const api = axios.create({ baseURL: import.meta.env.VITE_API_BASE || '/api' })
+
+// Offline state tracks real API reachability (does a request succeed?), not
+// navigator.onLine: a PC without general internet still reaches the local API.
+function markReachability(reachable: boolean) {
+  try {
+    useUiStore().setOffline(!reachable)
+  } catch {
+    // store not ready (e.g. tests without pinia) — banner state stays as-is
+  }
+}
 
 function extractPublicSlug(url?: string): string | null {
   if (!url) return null
@@ -68,9 +79,13 @@ api.interceptors.request.use((cfg) => {
 let refreshPromise: Promise<string> | null = null
 
 api.interceptors.response.use(
-  (r) => r,
+  (r) => {
+    markReachability(true)
+    return r
+  },
   async (err) => {
     const { response, config } = err
+    if (!response && err.code === 'ERR_NETWORK') markReachability(false)
     const status = response?.status
     if (status === 401 && !config._retry) {
       config._retry = true

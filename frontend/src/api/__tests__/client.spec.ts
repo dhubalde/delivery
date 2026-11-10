@@ -1,4 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
+import axios from 'axios'
+import { api } from '@/api/client'
+import { useUiStore } from '@/stores/ui.store'
 import { customerKey } from '@/stores/customer.store'
 
 // We test the header attachment helper behavior indirectly via localStorage keys
@@ -48,5 +52,27 @@ describe('api client Customer header', () => {
     expect(slug).toBe('acme')
     expect(getCustomerAccessForSlug(slug!)).toBe('tok-acme')
     expect(getCustomerAccessForSlug(slug!)).not.toBe('tok-beta')
+  })
+})
+
+describe('api client offline tracking', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  it('marks online after a successful response (API reachable)', async () => {
+    const ui = useUiStore()
+    ui.setOffline(true)
+    api.defaults.adapter = (config) =>
+      Promise.resolve({ data: {}, status: 200, statusText: 'OK', headers: {}, config, request: {} })
+    await api.get('/v1/ping')
+    expect(ui.offline).toBe(false)
+  })
+
+  it('marks offline on network error (API unreachable)', async () => {
+    const ui = useUiStore()
+    ui.setOffline(false)
+    api.defaults.adapter = (config) =>
+      Promise.reject(new axios.AxiosError('Network Error', 'ERR_NETWORK', config))
+    await expect(api.get('/v1/ping')).rejects.toMatchObject({ code: 'ERR_NETWORK' })
+    expect(ui.offline).toBe(true)
   })
 })
