@@ -24,6 +24,10 @@
             <span class="total-label">Tarjetas</span>
             <strong class="total-amount" :class="{ 'small-amount': hasAnyLarge }">${{ fmt(display.tarjetas) }}</strong>
           </div>
+          <div class="total-item">
+            <span class="total-label">Transferencias</span>
+            <strong class="total-amount" :class="{ 'small-amount': hasAnyLarge }">${{ fmt(display.transferencias) }}</strong>
+          </div>
           <v-divider class="my-2" />
           <div class="total-item total-item--total">
             <span class="total-label font-weight-bold">Total</span>
@@ -66,13 +70,15 @@ const previewDisplay = computed(() => {
   const e = parseFloat(t.EFECTIVO ?? '0')
   const b = parseFloat(t.BILLETERAS_VIRTUALES ?? '0')
   const ta = parseFloat(t.TARJETAS ?? '0')
-  return { efectivo: e, billeteras: b, tarjetas: ta, total: e + b + ta }
+  const tr = parseFloat(t.TRANSFERENCIAS ?? '0')
+  return { efectivo: e, billeteras: b, tarjetas: ta, transferencias: tr, total: e + b + ta + tr }
 })
 
 const fallbackDisplay = computed(() => {
   let efectivo = 0
   let billeteras = 0
   let tarjetas = 0
+  let transferencias = 0
   for (const o of props.fallbackOrders ?? []) {
     const pays = o.payments ?? []
     if (!pays.length) {
@@ -83,20 +89,23 @@ const fallbackDisplay = computed(() => {
     let orderHasValid = false
     for (const p of pays) {
       if (p.status === 'REJECTED') continue
-      if (p.status === 'PENDING' && p.method === 'EFECTIVO') continue
+      // Pending cash was not received yet; pending transfers wait for the
+      // operator to confirm seeing the deposit — neither counts.
+      if (p.status === 'PENDING' && (p.method === 'EFECTIVO' || p.method === 'TRANSFER')) continue
       const amt = p.amount != null ? parseFloat(p.amount) : 0
       if (Number.isNaN(amt) || amt === 0) continue
       orderHasValid = true
       if (p.method === 'EFECTIVO') efectivo += amt
       else if (p.method === 'BILLETERA' || p.method === 'BILLETERAS_VIRTUALES' || p.method === 'BILLETERAS') billeteras += amt
       else if (p.method === 'TARJETA' || p.method === 'TARJETAS') tarjetas += amt
+      else if (p.method === 'TRANSFER') transferencias += amt
     }
     if (!orderHasValid) {
       const tot = parseFloat(o.total ?? '0')
       if (!Number.isNaN(tot) && tot !== 0) efectivo += tot
     }
   }
-  return { efectivo, billeteras, tarjetas, total: efectivo + billeteras + tarjetas }
+  return { efectivo, billeteras, tarjetas, transferencias, total: efectivo + billeteras + tarjetas + transferencias }
 })
 
 const display = computed(() => previewDisplay.value ?? fallbackDisplay.value)
@@ -105,7 +114,7 @@ const isLarge = computed(() => (display.value?.total ?? 0) >= 1_000_000)
 const hasAnyLarge = computed(() => {
   const d = display.value
   if (!d) return false
-  return d.efectivo >= 1_000_000 || d.billeteras >= 1_000_000 || d.tarjetas >= 1_000_000 || d.total >= 1_000_000
+  return d.efectivo >= 1_000_000 || d.billeteras >= 1_000_000 || d.tarjetas >= 1_000_000 || d.transferencias >= 1_000_000 || d.total >= 1_000_000
 })
 
 function fmt(n: number) {
