@@ -94,6 +94,23 @@ def _get_customer_for_order(request, merchant):
         return None
 
 
+def _link_customer_by_phone(merchant, phone):
+    """Manual orders: link a registered customer by normalized phone (best-effort).
+
+    Both the register flow and checkout send E.164 (+54...), but accept
+    space-stripped variants as fallback for operator-typed numbers.
+    """
+    from apps.customers.models import Customer
+
+    raw = (phone or "").strip()
+    candidates = [value for value in (raw, raw.replace(" ", "")) if value]
+    for value in candidates:
+        match = Customer.objects.filter(merchant=merchant, phone=value).first()
+        if match is not None:
+            return match
+    return None
+
+
 def _get_merchant_by_slug_or_404(slug):
     from django.http import Http404
 
@@ -112,10 +129,16 @@ class PublicOrderCreateView(APIView):
         if not key:
             return Response({"error": {"code": "IDEMPOTENCY_KEY_REQUIRED", "message": "Idempotency-Key header required"}}, status=400)
         merchant = _get_merchant_by_slug_or_404(slug)
-        try:
-            open_val = is_open(merchant)
-        except Exception:
+        data = request.data or {}
+        requested_source = data.get("source") or Order.Source.WEB
+        if requested_source == Order.Source.MANUAL:
+            # Phone orders are loaded by the operator even outside opening hours.
             open_val = True
+        else:
+            try:
+                open_val = is_open(merchant)
+            except Exception:
+                open_val = True
         if not open_val:
             return Response({"error": {"code": "SCHEDULE_CLOSED", "message": "Local cerrado (BR-HRS-02)"}}, status=409)
         endpoint = request.path
@@ -211,6 +234,10 @@ class PublicOrderCreateView(APIView):
         except Exception:
             pass
         customer = _get_customer_for_order(request, merchant)
+        if customer is None and source == Order.Source.MANUAL:
+            # Phone order: the operator types the caller's number; if it belongs
+            # to a registered customer of this merchant, link the account.
+            customer = _link_customer_by_phone(merchant, data.get("customer_phone") or "")
         with transaction.atomic():
             max_code = Order.objects.filter(merchant=merchant, business_date=today).aggregate(m=Max("code"))["m"] or 0
             code = max_code + 1
