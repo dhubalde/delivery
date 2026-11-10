@@ -38,7 +38,9 @@
           </div>
         </template>
         <v-alert v-if="inlineError" type="error" variant="tonal" class="mt-2">{{ inlineError }}</v-alert>
-        <v-btn color="primary" block class="mt-3" :loading="loading" :disabled="closed" @click="submit">Confirmar pedido</v-btn>
+        <v-btn color="primary" block class="mt-3" :loading="loading" :disabled="closed && !isManual" @click="submit">
+          {{ closed && isManual ? 'Confirmar pedido (fuera de horario)' : 'Confirmar pedido' }}
+        </v-btn>
       </v-form>
     </template>
     <v-snackbar v-model="ok" color="success">Pedido creado ¡Gracias!</v-snackbar>
