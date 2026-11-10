@@ -230,3 +230,48 @@ class TestBrCie07TotalRechazadosOnlyCancelledToday:
         OrderFactory(merchant=merchant, business_date=day, state=Order.State.ENTREGADO)
         closure = CashClosureService.close(merchant, day, admin)
         assert closure.total_rechazados == 0
+
+
+class TestBrCie08Transferencias:
+    """Transfer payments count as their own bucket in daily totals and closures."""
+
+    def test_close_counts_confirmed_transfers(self):
+        merchant = MerchantFactory()
+        admin = _admin_for(merchant)
+        day = _today()
+        o = OrderFactory(merchant=merchant, business_date=day, state=Order.State.ENTREGADO)
+        PaymentFactory(order=o, method=Payment.Method.TRANSFER, amount=Decimal("150.00"), status=Payment.Status.CONFIRMED)
+        PaymentFactory(order=o, method=Payment.Method.TRANSFER, amount=Decimal("50.00"), status=Payment.Status.PENDING)
+        PaymentFactory(order=o, method=Payment.Method.EFECTIVO, amount=Decimal("100.00"), status=Payment.Status.CONFIRMED)
+        closure = CashClosureService.close(merchant, day, admin)
+        assert closure.total_transferencias == Decimal("150.00")
+        totals = closure.ticket_payload["totals"]
+        assert totals["TRANSFERENCIAS"] == "150.00"
+        assert totals["EFECTIVO"] == "100.00"
+        assert totals["TOTAL"] == "250.00"
+
+    def test_close_without_transfers_reports_zero(self):
+        merchant = MerchantFactory()
+        admin = _admin_for(merchant)
+        day = _today()
+        closure = CashClosureService.close(merchant, day, admin)
+        assert closure.total_transferencias == Decimal("0.00")
+        assert closure.ticket_payload["totals"]["TRANSFERENCIAS"] == "0.00"
+
+    def test_preview_totals_include_transferencias(self):
+        from rest_framework.test import APIClient
+
+        from apps.closing.views import _compute_preview
+
+        merchant = MerchantFactory()
+        day = _today()
+        o = OrderFactory(merchant=merchant, business_date=day, state=Order.State.ENTREGADO)
+        PaymentFactory(order=o, method=Payment.Method.TRANSFER, amount=Decimal("80.00"), status=Payment.Status.CONFIRMED)
+        totals = _compute_preview(merchant, day, day)
+        assert totals["TRANSFERENCIAS"] == "80.00"
+        assert totals["TOTAL"] == "80.00"
+        # the API surface exposes it too (dashboard + cierre de caja preview)
+        client = APIClient()
+        resp = client.get("/api/v1/cash/close/", {"merchant_slug": merchant.slug, "business_date": day.isoformat()})
+        assert resp.status_code == 200, resp.content
+        assert resp.json()["totals"]["TRANSFERENCIAS"] == "80.00"

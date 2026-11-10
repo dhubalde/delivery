@@ -65,6 +65,7 @@ class CashClosureService:
         total_efectivo = _sum(Payment.Method.EFECTIVO)
         total_billeteras = _sum(Payment.Method.BILLETERA)
         total_tarjetas = _sum(Payment.Method.TARJETA)
+        total_transferencias = _sum(Payment.Method.TRANSFER)
 
         total_entregados = Order.objects.filter(
             merchant=merchant, business_date=business_date, state=Order.State.ENTREGADO
@@ -77,7 +78,7 @@ class CashClosureService:
         def _fmt(d):
             return format(d.quantize(Decimal("0.00")), "f")
 
-        total = total_efectivo + total_billeteras + total_tarjetas
+        total = total_efectivo + total_billeteras + total_tarjetas + total_transferencias
         ticket_payload = {
             "merchant_id": merchant.pk,
             "merchant_slug": getattr(merchant, "slug", ""),
@@ -89,6 +90,7 @@ class CashClosureService:
                 "EFECTIVO": _fmt(total_efectivo),
                 "BILLETERAS_VIRTUALES": _fmt(total_billeteras),
                 "TARJETAS": _fmt(total_tarjetas),
+                "TRANSFERENCIAS": _fmt(total_transferencias),
                 "TOTAL": _fmt(total),
                 "TOTAL_ENTREGADOS": total_entregados,
                 "TOTAL_RECHAZADOS": total_rechazados,
@@ -105,6 +107,7 @@ class CashClosureService:
             total_efectivo=total_efectivo,
             total_billeteras=total_billeteras,
             total_tarjetas=total_tarjetas,
+            total_transferencias=total_transferencias,
             total_entregados=total_entregados,
             total_rechazados=total_rechazados,
             ticket_payload=ticket_payload,

@@ -131,6 +131,7 @@ def _compute_preview(merchant, start_date, end_date):
     total_efectivo = _sum(Payment.Method.EFECTIVO)
     total_billeteras = _sum(Payment.Method.BILLETERA)
     total_tarjetas = _sum(Payment.Method.TARJETA)
+    total_transferencias = _sum(Payment.Method.TRANSFER)
     total_entregados = Order.objects.filter(
         merchant=merchant,
         business_date__gte=start_date,
@@ -145,11 +146,12 @@ def _compute_preview(merchant, start_date, end_date):
     ).count()
     def _fmt(d):
         return format(d.quantize(Decimal("0.00")), "f")
-    total = total_efectivo + total_billeteras + total_tarjetas
+    total = total_efectivo + total_billeteras + total_tarjetas + total_transferencias
     totals = {
         "EFECTIVO": _fmt(total_efectivo),
         "BILLETERAS_VIRTUALES": _fmt(total_billeteras),
         "TARJETAS": _fmt(total_tarjetas),
+        "TRANSFERENCIAS": _fmt(total_transferencias),
         "TOTAL": _fmt(total),
         "TOTAL_ENTREGADOS": total_entregados,
         "TOTAL_RECHAZADOS": total_rechazados,
@@ -221,13 +223,15 @@ class CashCloseView(APIView):
                     "EFECTIVO": format(closure.total_efectivo, ".2f"),
                     "BILLETERAS_VIRTUALES": format(closure.total_billeteras, ".2f"),
                     "TARJETAS": format(closure.total_tarjetas, ".2f"),
-                    "TOTAL": format(closure.total_efectivo + closure.total_billeteras + closure.total_tarjetas, ".2f"),
+                    # Closures created before transfers existed carry no transfer data.
+                    "TRANSFERENCIAS": format(closure.total_transferencias, ".2f"),
+                    "TOTAL": format(closure.total_efectivo + closure.total_billeteras + closure.total_tarjetas + closure.total_transferencias, ".2f"),
                     "TOTAL_ENTREGADOS": closure.total_entregados,
                     "TOTAL_RECHAZADOS": closure.total_rechazados,
                 }
             elif "TOTAL" not in totals:
                 try:
-                    _t = Decimal(totals.get("EFECTIVO", "0")) + Decimal(totals.get("BILLETERAS_VIRTUALES", "0")) + Decimal(totals.get("TARJETAS", "0"))
+                    _t = Decimal(totals.get("EFECTIVO", "0")) + Decimal(totals.get("BILLETERAS_VIRTUALES", "0")) + Decimal(totals.get("TARJETAS", "0")) + Decimal(totals.get("TRANSFERENCIAS", "0"))
                     totals = {**totals, "TOTAL": format(_t.quantize(Decimal("0.00")), "f")}
                 except Exception:
                     pass

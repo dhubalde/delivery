@@ -21,6 +21,7 @@ class CashClosure(BaseModel):
     total_efectivo = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_billeteras = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_tarjetas = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_transferencias = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_entregados = models.PositiveIntegerField(default=0)
     total_rechazados = models.PositiveIntegerField(default=0)
     ticket_payload = models.JSONField(default=dict, blank=True)
