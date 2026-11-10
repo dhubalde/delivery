@@ -10,21 +10,26 @@
         <div class="font-weight-bold">Total: ${{ cart.total.toFixed(2) }}</div>
         <v-alert v-if="inlineError" type="error" variant="tonal" class="mt-2">{{ inlineError }}</v-alert>
         <v-btn block color="primary" class="mt-2" :disabled="cart.isEmpty || closed" :to="checkoutTo">Ir a pagar</v-btn>
-        <v-btn block variant="tonal" class="mt-2" :to="myOrdersTo">Ver mis pedidos</v-btn>
+        <v-btn v-if="!operatorMode" block variant="tonal" class="mt-2" :to="myOrdersTo">Ver mis pedidos</v-btn>
         <div v-if="closed" class="text-caption text-warning mt-1">Cerrado — no se puede comprar</div>
       </template>
     </v-card-text>
   </v-card>
-  <MyOrders />
+  <MyOrders v-if="!operatorMode" />
 </template>
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { useCartStore } from '@/stores/cart.store'
 import { useMenu } from '@/composables/useMenu'
+import { useOperatorStore } from '@/stores/operator.store'
 import CartItem from '@/components/CartItem.vue'
 import MyOrders from '@/components/MyOrders.vue'
 const props = defineProps<{ loading?: boolean; inlineError?: string | null; slug?: string }>()
 const cart = useCartStore()
+const operator = useOperatorStore()
+// Operator manual orders are not customer orders of this browser: hide the
+// customer "Mi pedido" tracking while registering a phone order.
+const operatorMode = computed(() => operator.active)
 const routeSlug = computed(() => {
   if (props.slug) return props.slug
   try {
