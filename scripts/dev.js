@@ -1,8 +1,20 @@
-const { spawn } = require("node:child_process");
+const { spawn, execSync } = require("node:child_process");
 const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
 const isWin = process.platform === "win32";
+
+// Apply pending migrations before starting the backend, so a fresh pull or a
+// new schema change never breaks the dev server with "no such column".
+const migrateCmd = isWin
+  ? `".venv\\Scripts\\python.exe" backend/manage.py migrate --noinput`
+  : `.venv/bin/python backend/manage.py migrate --noinput`;
+
+try {
+  execSync(migrateCmd, { cwd: root, stdio: "inherit", env: process.env });
+} catch (e) {
+  console.error("[dev] migrate falló — revisá la salida de arriba");
+}
 
 const backendPython = isWin
   ? path.join(root, ".venv", "Scripts", "python.exe")
@@ -54,9 +66,9 @@ function onExit(name, code) {
   }
 }
 
-backend.on("exit", (code) => onExit("backend :8001", code));
-frontend.on("exit", (code) => onExit("frontend :5174", code));
+backend.on("exit", (code) => onExit("backend :8000", code));
+frontend.on("exit", (code) => onExit("frontend", code));
 
 console.log(
-  "[dev] backend :8001 + frontend :5174 corriendo. Ctrl+C para cortar.",
+  "[dev] backend :8000 + frontend corriendo. Ctrl+C para cortar.",
 );
