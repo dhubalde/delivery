@@ -11,6 +11,7 @@
       <div class="row"><span>EFECTIVO</span><strong>${{ fmt(totals.EFECTIVO) }}</strong></div>
       <div class="row"><span>BILLETERAS VIRTUALES</span><strong>${{ fmt(totals.BILLETERAS_VIRTUALES) }}</strong></div>
       <div class="row"><span>TARJETAS</span><strong>${{ fmt(totals.TARJETAS) }}</strong></div>
+      <div class="row"><span>TRANSFERENCIAS</span><strong>${{ fmt(totals.TRANSFERENCIAS) }}</strong></div>
       <div class="row total"><span>TOTAL</span><strong>${{ totalImporte }}</strong></div>
       <v-divider class="my-2" />
       <div class="row"><span>ENTREGADOS</span><strong>{{ totals.TOTAL_ENTREGADOS }}</strong></div>
@@ -24,7 +25,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 const props = defineProps<{ ticket: Record<string,unknown> }>()
-const totals = computed(()=> (props.ticket?.totals as Record<string,unknown> ?? {}) as { EFECTIVO:string; BILLETERAS_VIRTUALES:string; TARJETAS:string; TOTAL?:string | null; TOTAL_ENTREGADOS:number; TOTAL_RECHAZADOS:number })
+const totals = computed(()=> (props.ticket?.totals as Record<string,unknown> ?? {}) as { EFECTIVO:string; BILLETERAS_VIRTUALES:string; TARJETAS:string; TRANSFERENCIAS?:string; TOTAL?:string | null; TOTAL_ENTREGADOS:number; TOTAL_RECHAZADOS:number })
 const fmt = (v: unknown) => {
   const n = Number.parseFloat(String(v ?? 0))
   return Number.isNaN(n) ? '0,00' : n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -36,7 +37,8 @@ const totalImporte = computed(()=>{
   const e = Number.parseFloat(String(totals.value.EFECTIVO ?? 0))
   const b = Number.parseFloat(String(totals.value.BILLETERAS_VIRTUALES ?? 0))
   const c = Number.parseFloat(String(totals.value.TARJETAS ?? 0))
-  const sum = (Number.isNaN(e) ? 0 : e) + (Number.isNaN(b) ? 0 : b) + (Number.isNaN(c) ? 0 : c)
+  const tr = Number.parseFloat(String(totals.value.TRANSFERENCIAS ?? 0))
+  const sum = (Number.isNaN(e) ? 0 : e) + (Number.isNaN(b) ? 0 : b) + (Number.isNaN(c) ? 0 : c) + (Number.isNaN(tr) ? 0 : tr)
   return sum.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 })
 const now = new Date().toLocaleString('es-AR')

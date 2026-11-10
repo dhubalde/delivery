@@ -15,6 +15,7 @@
             <v-col cols="6" md="2"><strong>EFECTIVO</strong><div>${{ totals.EFECTIVO }}</div></v-col>
             <v-col cols="6" md="2"><strong>BILLETERAS</strong><div>${{ totals.BILLETERAS_VIRTUALES }}</div></v-col>
             <v-col cols="6" md="2"><strong>TARJETAS</strong><div>${{ totals.TARJETAS }}</div></v-col>
+            <v-col cols="6" md="2"><strong>TRANSFERENCIAS</strong><div>${{ totals.TRANSFERENCIAS ?? '0.00' }}</div></v-col>
             <v-col cols="6" md="2"><strong>TOTAL</strong><div>${{ totals.TOTAL ?? totalImporte }}</div></v-col>
             <v-col cols="6" md="2"><strong>ENTREGADOS</strong><div>{{ totals.TOTAL_ENTREGADOS }}</div></v-col>
             <v-col cols="6" md="2"><strong>RECHAZADOS</strong><div>{{ totals.TOTAL_RECHAZADOS }}</div></v-col>
@@ -47,13 +48,13 @@ import CashTicket from '@/components/CashTicket.vue'
 import { useConfirm } from '@/composables/useConfirm'
 const { data, isLoading: loading, error } = useCashPreview()
 const errStatus = computed(()=> error.value ? cashErrStatus(error.value) : undefined)
-const preview = computed(()=> data.value as { totals: { EFECTIVO: string; BILLETERAS_VIRTUALES: string; TARJETAS: string; TOTAL?: string; TOTAL_ENTREGADOS: number; TOTAL_RECHAZADOS: number }; ticket_payload: Record<string,unknown>; already_closed?: boolean } | undefined)
-const totals = computed(()=> preview.value?.totals ?? { EFECTIVO:'0.00', BILLETERAS_VIRTUALES:'0.00', TARJETAS:'0.00', TOTAL:'0.00', TOTAL_ENTREGADOS:0, TOTAL_RECHAZADOS:0 })
+const preview = computed(()=> data.value as { totals: { EFECTIVO: string; BILLETERAS_VIRTUALES: string; TARJETAS: string; TRANSFERENCIAS?: string; TOTAL?: string; TOTAL_ENTREGADOS: number; TOTAL_RECHAZADOS: number }; ticket_payload: Record<string,unknown>; already_closed?: boolean } | undefined)
+const totals = computed(()=> preview.value?.totals ?? { EFECTIVO:'0.00', BILLETERAS_VIRTUALES:'0.00', TARJETAS:'0.00', TRANSFERENCIAS:'0.00', TOTAL:'0.00', TOTAL_ENTREGADOS:0, TOTAL_RECHAZADOS:0 })
 const fmtCash = (v: unknown) => {
   const n = Number.parseFloat(String(v ?? 0))
   return Number.isNaN(n) ? '0,00' : n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
-const totalImporte = computed(()=> (Number.parseFloat(String(totals.value.EFECTIVO ?? 0)) + Number.parseFloat(String(totals.value.BILLETERAS_VIRTUALES ?? 0)) + Number.parseFloat(String(totals.value.TARJETAS ?? 0))).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
+const totalImporte = computed(()=> (Number.parseFloat(String(totals.value.EFECTIVO ?? 0)) + Number.parseFloat(String(totals.value.BILLETERAS_VIRTUALES ?? 0)) + Number.parseFloat(String(totals.value.TARJETAS ?? 0)) + Number.parseFloat(String(totals.value.TRANSFERENCIAS ?? 0))).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
 const ticket = computed(()=> preview.value?.ticket_payload ?? null)
 const alreadyClosed = computed(()=> !!preview.value?.already_closed)
 const closing=ref(false); const closeErr=ref('')

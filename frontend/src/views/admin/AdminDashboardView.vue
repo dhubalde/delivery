@@ -29,8 +29,10 @@
             <div class="text-h5 font-weight-bold" style="color: #06B6D4">${{ fmt(totalVentas) }}</div>
             <div class="text-caption">
                 <div>EF ${{ fmt(efectivo) }}</div>
+
                 <div>BV ${{ fmt(billeteras) }}</div>
                 <div>TJ ${{ fmt(tarjetas) }}</div>
+                <div>TR ${{ fmt(transferencias) }}</div>
               </div>
           </v-card-text>
         </v-card>
@@ -129,16 +131,17 @@ const rangeLabel = computed(() =>
   businessDateRef.value === endDateRef.value ? businessDateRef.value : `${businessDateRef.value} — ${endDateRef.value}`,
 )
 
-type CashTotals = { EFECTIVO: string; BILLETERAS_VIRTUALES: string; TARJETAS: string; TOTAL_ENTREGADOS: number; TOTAL_RECHAZADOS: number }
+type CashTotals = { EFECTIVO: string; BILLETERAS_VIRTUALES: string; TARJETAS: string; TRANSFERENCIAS?: string; TOTAL_ENTREGADOS: number; TOTAL_RECHAZADOS: number }
 const totals = computed<CashTotals>(() => {
   const t = (cashData.value as { totals?: CashTotals } | undefined)?.totals
-  return t ?? { EFECTIVO: '0.00', BILLETERAS_VIRTUALES: '0.00', TARJETAS: '0.00', TOTAL_ENTREGADOS: 0, TOTAL_RECHAZADOS: 0 }
+  return t ?? { EFECTIVO: '0.00', BILLETERAS_VIRTUALES: '0.00', TARJETAS: '0.00', TRANSFERENCIAS: '0.00', TOTAL_ENTREGADOS: 0, TOTAL_RECHAZADOS: 0 }
 })
 
 const efectivo = computed(() => Number.parseFloat(String(totals.value.EFECTIVO ?? 0)) || 0)
 const billeteras = computed(() => Number.parseFloat(String(totals.value.BILLETERAS_VIRTUALES ?? 0)) || 0)
 const tarjetas = computed(() => Number.parseFloat(String(totals.value.TARJETAS ?? 0)) || 0)
-const totalVentas = computed(() => efectivo.value + billeteras.value + tarjetas.value)
+const transferencias = computed(() => Number.parseFloat(String(totals.value.TRANSFERENCIAS ?? 0)) || 0)
+const totalVentas = computed(() => efectivo.value + billeteras.value + tarjetas.value + transferencias.value)
 const entregados = computed(() => Number(totals.value.TOTAL_ENTREGADOS ?? 0))
 const rechazados = computed(() => Number(totals.value.TOTAL_RECHAZADOS ?? 0))
 const totalPedidos = computed(() => entregados.value + rechazados.value)

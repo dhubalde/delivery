@@ -11,6 +11,13 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     include: ['src/**/*.{test,spec}.{ts,js}'],
+    server: {
+      deps: {
+        // Component tests mount SFCs whose vuetify auto-imports pull CSS files;
+        // inlining lets vitest transform those imports instead of node failing on .css.
+        inline: ['vuetify'],
+      },
+    },
   },
   build: {
     chunkSizeWarningLimit: 600,
