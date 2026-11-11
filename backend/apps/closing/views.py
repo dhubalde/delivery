@@ -149,7 +149,17 @@ def _compute_preview(merchant, start_date, end_date):
         business_date__gte=start_date,
         business_date__lte=end_date,
         source=Order.Source.MANUAL,
-    ).exclude(state__in=[Order.State.ENTREGADO, Order.State.CANCELADO]).count()
+    ).count()
+    total_pedidos = Order.objects.filter(
+        merchant=merchant,
+        business_date__gte=start_date,
+        business_date__lte=end_date,
+    ).count()
+    total_web = Order.objects.filter(
+        merchant=merchant,
+        business_date__gte=start_date,
+        business_date__lte=end_date,
+    ).exclude(source=Order.Source.MANUAL).count()
     def _fmt(d):
         return format(d.quantize(Decimal("0.00")), "f")
     total = total_efectivo + total_billeteras + total_tarjetas + total_transferencias
@@ -162,6 +172,8 @@ def _compute_preview(merchant, start_date, end_date):
         "TOTAL_ENTREGADOS": total_entregados,
         "TOTAL_RECHAZADOS": total_rechazados,
         "TOTAL_MANUALES": total_manuales,
+        "TOTAL_WEB": total_web,
+        "TOTAL_PEDIDOS": total_pedidos,
     }
     return totals
 
@@ -236,6 +248,8 @@ class CashCloseView(APIView):
                     "TOTAL_ENTREGADOS": closure.total_entregados,
                     "TOTAL_RECHAZADOS": closure.total_rechazados,
                     "TOTAL_MANUALES": closure.total_manuales,
+                    "TOTAL_WEB": closure.total_web,
+                    "TOTAL_PEDIDOS": closure.total_pedidos,
                 }
             elif "TOTAL" not in totals:
                 try:

@@ -233,17 +233,8 @@ class TestBrCie07TotalRechazadosOnlyCancelledToday:
 
 
 class TestBrCie09Manuales:
-    """Phone (MANUAL) orders count as their own bucket in daily totals."""
-
-    def test_preview_counts_manual_orders_in_progress(self):
-        from apps.closing.views import _compute_preview
-
-        merchant = MerchantFactory()
-        day = _today()
-        OrderFactory(merchant=merchant, business_date=day, state=Order.State.RECIBIDO, source=Order.Source.MANUAL)
-        OrderFactory(merchant=merchant, business_date=day, state=Order.State.RECIBIDO, source=Order.Source.MANUAL)
-        totals = _compute_preview(merchant, day, day)
-        assert totals["TOTAL_MANUALES"] == 2
+    """Phone (MANUAL) orders get their own bucket, across all states, plus a
+    TOTAL_PEDIDOS that counts every order once."""
 
     def test_manual_delivered_not_double_counted(self):
         from apps.closing.views import _compute_preview
@@ -257,7 +248,36 @@ class TestBrCie09Manuales:
         totals = _compute_preview(merchant, day, day)
         assert totals["TOTAL_ENTREGADOS"] == 1
         assert totals["TOTAL_RECHAZADOS"] == 1
-        assert totals["TOTAL_MANUALES"] == 1  # only the in-progress phone order
+        # Manuales is a cross-cut: every phone order of the day, any state.
+        assert totals["TOTAL_MANUALES"] == 3
+        # Catalogo (web) is the same cross-cut for non-manual orders.
+        assert totals["TOTAL_WEB"] == 1
+        # Total pedidos counts each order exactly once.
+        assert totals["TOTAL_PEDIDOS"] == 4
+
+    def test_close_stores_total_manuales(self):
+        merchant = MerchantFactory()
+        admin = _admin_for(merchant)
+        day = _today()
+        OrderFactory(merchant=merchant, business_date=day, state=Order.State.RECIBIDO, source=Order.Source.MANUAL)
+        closure = CashClosureService.close(merchant, day, admin)
+        assert closure.total_manuales == 1
+        assert closure.total_pedidos == 1
+        assert closure.ticket_payload["totals"]["TOTAL_MANUALES"] == 1
+        assert closure.ticket_payload["totals"]["TOTAL_PEDIDOS"] == 1
+
+    def test_total_pedidos_counts_all_states(self):
+        from apps.closing.views import _compute_preview
+
+        merchant = MerchantFactory()
+        day = _today()
+        OrderFactory(merchant=merchant, business_date=day, state=Order.State.ENTREGADO)
+        OrderFactory(merchant=merchant, business_date=day, state=Order.State.CANCELADO)
+        OrderFactory(merchant=merchant, business_date=day, state=Order.State.RECIBIDO)
+        OrderFactory(merchant=merchant, business_date=day, state=Order.State.PREPARACION)
+        totals = _compute_preview(merchant, day, day)
+        assert totals["TOTAL_PEDIDOS"] == 4
+        assert totals["TOTAL_WEB"] == 4
 
     def test_close_stores_total_manuales(self):
         merchant = MerchantFactory()

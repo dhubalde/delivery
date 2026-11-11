@@ -75,13 +75,25 @@ class CashClosureService:
             merchant=merchant, business_date=business_date, state=Order.State.CANCELADO
         ).count()
 
-        # Phone orders still in the pipeline: they are not delivered or
-        # rejected yet, so they only appear in this bucket (no double count).
+        # Phone orders are a cross-cut: every MANUAL order of the day counts
+        # here regardless of state (delivered phone orders also appear in
+        # TOTAL_ENTREGADOS — that overlap is intentional).
         total_manuales = Order.objects.filter(
             merchant=merchant,
             business_date=business_date,
             source=Order.Source.MANUAL,
-        ).exclude(state__in=[Order.State.ENTREGADO, Order.State.CANCELADO]).count()
+        ).count()
+
+        # Total pedidos counts each order exactly once.
+        total_pedidos = Order.objects.filter(
+            merchant=merchant, business_date=business_date
+        ).count()
+
+        # Catalog (web) orders: the same cross-cut for non-manual sources.
+        total_web = Order.objects.filter(
+            merchant=merchant,
+            business_date=business_date,
+        ).exclude(source=Order.Source.MANUAL).count()
 
         def _fmt(d):
             return format(d.quantize(Decimal("0.00")), "f")
@@ -103,6 +115,8 @@ class CashClosureService:
                 "TOTAL_ENTREGADOS": total_entregados,
                 "TOTAL_RECHAZADOS": total_rechazados,
                 "TOTAL_MANUALES": total_manuales,
+                "TOTAL_WEB": total_web,
+                "TOTAL_PEDIDOS": total_pedidos,
             },
             "closed_at": timezone.now().isoformat(),
         }
@@ -120,6 +134,8 @@ class CashClosureService:
             total_entregados=total_entregados,
             total_rechazados=total_rechazados,
             total_manuales=total_manuales,
+            total_web=total_web,
+            total_pedidos=total_pedidos,
             ticket_payload=ticket_payload,
         )
         from apps.audit.services import emit
