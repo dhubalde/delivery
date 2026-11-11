@@ -1,6 +1,6 @@
 <template>
-  <v-card class="mb-4" elevation="1" data-testid="weather-forecast">
-    <v-card-title class="d-flex align-center justify-space-between text-subtitle-2">
+  <v-card class="mb-2" elevation="1" data-testid="weather-forecast">
+    <v-card-title class="d-flex align-center justify-space-between text-subtitle-2" style="padding-top:6px;padding-bottom:6px">
       <span><v-icon size="small" class="mr-1">mdi-weather-cloudy</v-icon>Pronóstico</span>
       <v-chip v-if="isDemo" size="x-small" color="secondary" variant="tonal">demo</v-chip>
       <v-chip v-else size="x-small" color="primary" variant="tonal">live</v-chip>
@@ -8,11 +8,9 @@
     <v-divider />
     <v-card-text class="pa-2">
       <div class="d-flex ga-2 w-100 mx-0 px-0 ma-0 pa-0" style="display:flex;gap:8px;width:100%;margin:0;padding:0;box-sizing:border-box">
-        <v-card v-for="d in days" :key="d.date" variant="tonal" class="pa-2 text-center flex-grow-1 ma-0" style="flex:1 1 0;min-width:0;width:100%;margin:0;box-sizing:border-box">
-          <div class="text-caption font-weight-bold">{{ formatWeekday(d.date) }}</div>
-          <div class="text-caption">{{ formatDate(d.date) }}</div>
-          <v-icon :icon="d.icon" size="28" color="primary" class="my-1" />
-          <div class="text-caption">{{ d.condition }}</div>
+        <v-card v-for="d in days" :key="d.date" variant="tonal" class="pa-1 text-center flex-grow-1 ma-0" style="flex:1 1 0;min-width:0;width:100%;margin:0;box-sizing:border-box">
+          <div class="text-caption font-weight-bold">{{ formatWeekday(d.date) }} {{ formatDate(d.date) }}</div>
+          <v-icon :icon="d.icon" size="20" color="primary" class="my-0" />
           <div class="text-caption"><span class="font-weight-bold">{{ d.tempMax }}°</span> / {{ d.tempMin }}°</div>
           <v-chip v-if="tagFor(d)" :color="tagFor(d)!.color" size="x-small" variant="tonal" class="mt-1">{{ tagFor(d)!.label }}</v-chip>
         </v-card>
@@ -43,7 +41,7 @@ function formatWeekday(raw: string): string {
 function formatDate(raw: string): string {
   if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
     const dt = new Date(raw + 'T12:00:00')
-    if (!isNaN(dt.getTime())) return dt.toLocaleDateString('es-AR')
+    if (!isNaN(dt.getTime())) return dt.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })
   }
   const dt = new Date(raw)
   if (!isNaN(dt.getTime()) && raw.includes('/')) return raw
