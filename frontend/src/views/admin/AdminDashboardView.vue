@@ -18,7 +18,11 @@
           <v-card-text class="flex-grow-1">
             <div class="text-caption text-medium-emphasis">Total pedidos</div>
             <div class="text-h5 font-weight-bold" style="color: #06B6D4">{{ totalPedidos }}</div>
-            <div class="text-caption">Entregados {{ entregados }} + Rechazados {{ rechazados }} + Manuales {{ manuales }}</div>
+            <div class="text-caption">
+              <div>Entregados {{ entregados }}</div>
+              <div>Rechazados {{ rechazados }}</div>
+              <div>Manuales {{ manuales }}</div>
+            </div>
           </v-card-text>
         </v-card>
       </v-col>
