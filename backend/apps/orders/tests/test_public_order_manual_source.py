@@ -3,7 +3,7 @@
 Rules under test:
 - PublicOrderCreateView accepts `source` in {"WEB","MANUAL"}; anything else/missing → WEB.
 - MANUAL source is persisted and visible on the board serializer.
-- Payment method TRANSFER is recorded as PENDING without going through the gateway.
+- Payment method TRANSFER counts as paid at creation (CONFIRMED, no gateway), like BILLETERA.
 - EFECTIVO keeps its current behavior (PENDING + cash_declared=True).
 """
 import pytest
@@ -83,7 +83,9 @@ class TestManualOrderSource:
         assert sources[resp_missing.json()["code"]] == "WEB"
         assert sources[resp_invalid.json()["code"]] == "WEB"
 
-    def test_transfer_payment_recorded_pending_without_gateway(self):
+    def test_transfer_payment_counted_as_paid_at_creation(self):
+        """Operator-loaded transfers count as paid immediately (like BILLETERA),
+        so they enter daily totals and cash closures without a manual confirm step."""
         merchant = _open_merchant("manualtrans")
         product = _make_product(merchant)
         client = APIClient()
@@ -93,7 +95,7 @@ class TestManualOrderSource:
         pays = list(order.payments.all())
         assert len(pays) == 1
         assert pays[0].method == "TRANSFER"
-        assert pays[0].status == Payment.Status.PENDING
+        assert pays[0].status == Payment.Status.CONFIRMED
         assert pays[0].gateway_ref in (None, "")
 
     def test_transfer_method_rejected_amount_mismatch_still_validates(self):

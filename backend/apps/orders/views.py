@@ -255,7 +255,10 @@ class PublicOrderCreateView(APIView):
                 if method == Payment.Method.EFECTIVO:
                     Payment.objects.create(order=order, method=method, amount=amount, status=Payment.Status.PENDING)
                 elif method == Payment.Method.TRANSFER:
-                    Payment.objects.create(order=order, method=method, amount=amount, status=Payment.Status.PENDING)
+                    # Operator-loaded transfers count as paid immediately (like
+                    # BILLETERA/TARJETA): they must enter daily totals and cash
+                    # closures without a separate confirmation step.
+                    Payment.objects.create(order=order, method=method, amount=amount, status=Payment.Status.CONFIRMED)
                 else:
                     gw = MercadoPagoMockGateway.process(method, amount, order_id=order.pk)
                     st = Payment.Status.CONFIRMED if gw["status"] == "CONFIRMED" else Payment.Status.REJECTED
