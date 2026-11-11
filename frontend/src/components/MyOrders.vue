@@ -59,6 +59,17 @@ const errorMsg = ref<string | null>(null)
 // only cancelled orders auto-hide after a short window.
 const CANCELADO_AUTO_HIDE_MS = 1 * 60 * 1000
 
+// Tracking is day-scoped: an order is only "mine" on the day it was placed.
+// Stale ids/snapshots from previous days (e.g. an operator's shared browser)
+// must never resurrect old cards like "#7 — entregado" weeks later.
+function isToday(createdAt?: string | null): boolean {
+  if (!createdAt) return false
+  const d = new Date(createdAt)
+  if (isNaN(d.getTime())) return false
+  const t = new Date(now.value)
+  return d.getFullYear() === t.getFullYear() && d.getMonth() === t.getMonth() && d.getDate() === t.getDate()
+}
+
 const now = ref(Date.now())
 let tick: number | null = null
 onMounted(() => {
@@ -70,10 +81,16 @@ onUnmounted(() => {
 
 type OrderRow = { id: number; code: number; state: string; total: string; created_at?: string | null; updated_at?: string | null }
 
-const hasPending = computed(() => ids.value.length > 0 || getMyOrderSnapshots().length > 0)
+const hasPending = computed(() => {
+  // While loading, trust the tracked ids/snapshots; once loaded, only today's
+  // orders keep the card alive.
+  if (isLoading.value) return ids.value.length > 0 || getMyOrderSnapshots().length > 0
+  const list = (data.value ?? []) as OrderRow[]
+  return list.some((o) => isToday(o.created_at)) || getMyOrderSnapshots().some((s) => isToday(s.created_at))
+})
 
 const latestOrder = computed<OrderRow | null>(() => {
-  const list = (data.value ?? []) as OrderRow[]
+  const list = ((data.value ?? []) as OrderRow[]).filter((o) => isToday(o.created_at))
   if (list.length > 0) {
     const sorted = [...list].sort((a, b) => {
       const da = a.created_at ? Date.parse(a.created_at) : 0
@@ -86,7 +103,7 @@ const latestOrder = computed<OrderRow | null>(() => {
     return top
   }
   // Fallback: la consulta falló o aún carga → usar snapshot local guardado al confirmar
-  const snaps = getMyOrderSnapshots() as OrderRow[]
+  const snaps = (getMyOrderSnapshots() as OrderRow[]).filter((s) => isToday(s.created_at))
   if (snaps.length === 0) return null
   const sorted = [...snaps].sort((a, b) => {
     const da = a.created_at ? Date.parse(a.created_at) : 0
