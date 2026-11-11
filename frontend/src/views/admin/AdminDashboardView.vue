@@ -18,7 +18,7 @@
           <v-card-text class="flex-grow-1">
             <div class="text-caption text-medium-emphasis">Total pedidos</div>
             <div class="text-h5 font-weight-bold" style="color: #06B6D4">{{ totalPedidos }}</div>
-            <div class="text-caption">Entregados {{ entregados }} + Rechazados {{ rechazados }}</div>
+            <div class="text-caption">Entregados {{ entregados }} + Rechazados {{ rechazados }} + Manuales {{ manuales }}</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -42,7 +42,7 @@
           <v-card-text class="flex-grow-1">
             <div class="text-caption text-medium-emphasis">Ticket promedio</div>
             <div class="text-h5 font-weight-bold" style="color: #06B6D4">{{ fmt(ticketPromedio) }}</div>
-            <div class="text-caption">sobre {{ entregados }} entregados</div>
+            <div class="text-caption">sobre {{ totalPedidos }} pedidos</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -80,6 +80,7 @@
           <v-card-text class="d-flex ga-4 flex-wrap">
             <span>ENTREGADO board: {{ boardEntregados.length }}</span>
             <span>CANCELADO board: {{ boardCancelados.length }}</span>
+            <span>MANUAL (teléfonicos): {{ manuales }}</span>
           </v-card-text>
         </v-card>
       </v-col>
@@ -131,10 +132,10 @@ const rangeLabel = computed(() =>
   businessDateRef.value === endDateRef.value ? businessDateRef.value : `${businessDateRef.value} — ${endDateRef.value}`,
 )
 
-type CashTotals = { EFECTIVO: string; BILLETERAS_VIRTUALES: string; TARJETAS: string; TRANSFERENCIAS?: string; TOTAL_ENTREGADOS: number; TOTAL_RECHAZADOS: number }
+type CashTotals = { EFECTIVO: string; BILLETERAS_VIRTUALES: string; TARJETAS: string; TRANSFERENCIAS?: string; TOTAL_ENTREGADOS: number; TOTAL_RECHAZADOS: number; TOTAL_MANUALES?: number }
 const totals = computed<CashTotals>(() => {
   const t = (cashData.value as { totals?: CashTotals } | undefined)?.totals
-  return t ?? { EFECTIVO: '0.00', BILLETERAS_VIRTUALES: '0.00', TARJETAS: '0.00', TRANSFERENCIAS: '0.00', TOTAL_ENTREGADOS: 0, TOTAL_RECHAZADOS: 0 }
+  return t ?? { EFECTIVO: '0.00', BILLETERAS_VIRTUALES: '0.00', TARJETAS: '0.00', TRANSFERENCIAS: '0.00', TOTAL_ENTREGADOS: 0, TOTAL_RECHAZADOS: 0, TOTAL_MANUALES: 0 }
 })
 
 const efectivo = computed(() => Number.parseFloat(String(totals.value.EFECTIVO ?? 0)) || 0)
@@ -144,8 +145,9 @@ const transferencias = computed(() => Number.parseFloat(String(totals.value.TRAN
 const totalVentas = computed(() => efectivo.value + billeteras.value + tarjetas.value + transferencias.value)
 const entregados = computed(() => Number(totals.value.TOTAL_ENTREGADOS ?? 0))
 const rechazados = computed(() => Number(totals.value.TOTAL_RECHAZADOS ?? 0))
-const totalPedidos = computed(() => entregados.value + rechazados.value)
-const ticketPromedio = computed(() => (entregados.value > 0 ? totalVentas.value / entregados.value : 0))
+const manuales = computed(() => Number(totals.value.TOTAL_MANUALES ?? 0))
+const totalPedidos = computed(() => entregados.value + rechazados.value + manuales.value)
+const ticketPromedio = computed(() => (totalPedidos.value > 0 ? totalVentas.value / totalPedidos.value : 0))
 const rechazadosPct = computed(() => (totalPedidos.value > 0 ? ((rechazados.value / totalPedidos.value) * 100).toFixed(1) : '0.0'))
 
 const entregadoBoard = useOrdersBoard('ENTREGADO', businessDateRef, endDateRef)
