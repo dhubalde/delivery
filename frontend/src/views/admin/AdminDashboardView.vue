@@ -22,6 +22,7 @@
               <div>Entregados {{ entregados }}</div>
               <div>Rechazados {{ rechazados }}</div>
               <div>Manuales {{ manuales }}</div>
+              <div>Catálogo {{ web }}</div>
             </div>
           </v-card-text>
         </v-card>
@@ -85,6 +86,7 @@
             <span>ENTREGADO board: {{ boardEntregados.length }}</span>
             <span>CANCELADO board: {{ boardCancelados.length }}</span>
             <span>MANUAL (teléfonicos): {{ manuales }}</span>
+            <span>CATÁLOGO (web): {{ web }}</span>
           </v-card-text>
         </v-card>
       </v-col>
@@ -136,10 +138,10 @@ const rangeLabel = computed(() =>
   businessDateRef.value === endDateRef.value ? businessDateRef.value : `${businessDateRef.value} — ${endDateRef.value}`,
 )
 
-type CashTotals = { EFECTIVO: string; BILLETERAS_VIRTUALES: string; TARJETAS: string; TRANSFERENCIAS?: string; TOTAL_ENTREGADOS: number; TOTAL_RECHAZADOS: number; TOTAL_MANUALES?: number }
+type CashTotals = { EFECTIVO: string; BILLETERAS_VIRTUALES: string; TARJETAS: string; TRANSFERENCIAS?: string; TOTAL_ENTREGADOS: number; TOTAL_RECHAZADOS: number; TOTAL_MANUALES?: number; TOTAL_WEB?: number; TOTAL_PEDIDOS?: number }
 const totals = computed<CashTotals>(() => {
   const t = (cashData.value as { totals?: CashTotals } | undefined)?.totals
-  return t ?? { EFECTIVO: '0.00', BILLETERAS_VIRTUALES: '0.00', TARJETAS: '0.00', TRANSFERENCIAS: '0.00', TOTAL_ENTREGADOS: 0, TOTAL_RECHAZADOS: 0, TOTAL_MANUALES: 0 }
+  return t ?? { EFECTIVO: '0.00', BILLETERAS_VIRTUALES: '0.00', TARJETAS: '0.00', TRANSFERENCIAS: '0.00', TOTAL_ENTREGADOS: 0, TOTAL_RECHAZADOS: 0, TOTAL_MANUALES: 0, TOTAL_WEB: 0, TOTAL_PEDIDOS: 0 }
 })
 
 const efectivo = computed(() => Number.parseFloat(String(totals.value.EFECTIVO ?? 0)) || 0)
@@ -150,7 +152,9 @@ const totalVentas = computed(() => efectivo.value + billeteras.value + tarjetas.
 const entregados = computed(() => Number(totals.value.TOTAL_ENTREGADOS ?? 0))
 const rechazados = computed(() => Number(totals.value.TOTAL_RECHAZADOS ?? 0))
 const manuales = computed(() => Number(totals.value.TOTAL_MANUALES ?? 0))
-const totalPedidos = computed(() => entregados.value + rechazados.value + manuales.value)
+const web = computed(() => Number(totals.value.TOTAL_WEB ?? 0))
+// Every order placed in the range, counted once (backend TOTAL_PEDIDOS).
+const totalPedidos = computed(() => Number(totals.value.TOTAL_PEDIDOS ?? entregados.value + rechazados.value))
 const ticketPromedio = computed(() => (totalPedidos.value > 0 ? totalVentas.value / totalPedidos.value : 0))
 const rechazadosPct = computed(() => (totalPedidos.value > 0 ? ((rechazados.value / totalPedidos.value) * 100).toFixed(1) : '0.0'))
 
