@@ -232,6 +232,53 @@ class TestBrCie07TotalRechazadosOnlyCancelledToday:
         assert closure.total_rechazados == 0
 
 
+class TestBrCie09Manuales:
+    """Phone (MANUAL) orders count as their own bucket in daily totals."""
+
+    def test_preview_counts_manual_orders_in_progress(self):
+        from apps.closing.views import _compute_preview
+
+        merchant = MerchantFactory()
+        day = _today()
+        OrderFactory(merchant=merchant, business_date=day, state=Order.State.RECIBIDO, source=Order.Source.MANUAL)
+        OrderFactory(merchant=merchant, business_date=day, state=Order.State.RECIBIDO, source=Order.Source.MANUAL)
+        totals = _compute_preview(merchant, day, day)
+        assert totals["TOTAL_MANUALES"] == 2
+
+    def test_manual_delivered_not_double_counted(self):
+        from apps.closing.views import _compute_preview
+
+        merchant = MerchantFactory()
+        day = _today()
+        OrderFactory(merchant=merchant, business_date=day, state=Order.State.ENTREGADO, source=Order.Source.MANUAL)
+        OrderFactory(merchant=merchant, business_date=day, state=Order.State.CANCELADO, source=Order.Source.MANUAL)
+        OrderFactory(merchant=merchant, business_date=day, state=Order.State.RECIBIDO, source=Order.Source.MANUAL)
+        OrderFactory(merchant=merchant, business_date=day, state=Order.State.RECIBIDO, source=Order.Source.WEB)
+        totals = _compute_preview(merchant, day, day)
+        assert totals["TOTAL_ENTREGADOS"] == 1
+        assert totals["TOTAL_RECHAZADOS"] == 1
+        assert totals["TOTAL_MANUALES"] == 1  # only the in-progress phone order
+
+    def test_close_stores_total_manuales(self):
+        merchant = MerchantFactory()
+        admin = _admin_for(merchant)
+        day = _today()
+        OrderFactory(merchant=merchant, business_date=day, state=Order.State.RECIBIDO, source=Order.Source.MANUAL)
+        closure = CashClosureService.close(merchant, day, admin)
+        assert closure.total_manuales == 1
+        assert closure.ticket_payload["totals"]["TOTAL_MANUALES"] == 1
+
+    def test_manuales_exclude_other_days(self):
+        from apps.closing.views import _compute_preview
+        import datetime as _dt
+
+        merchant = MerchantFactory()
+        day = _today()
+        OrderFactory(merchant=merchant, business_date=day - _dt.timedelta(days=1), state=Order.State.RECIBIDO, source=Order.Source.MANUAL)
+        totals = _compute_preview(merchant, day, day)
+        assert totals["TOTAL_MANUALES"] == 0
+
+
 class TestBrCie08Transferencias:
     """Transfer payments count as their own bucket in daily totals and closures."""
 

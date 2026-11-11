@@ -24,6 +24,7 @@ class CashClosure(BaseModel):
     total_transferencias = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_entregados = models.PositiveIntegerField(default=0)
     total_rechazados = models.PositiveIntegerField(default=0)
+    total_manuales = models.PositiveIntegerField(default=0)
     ticket_payload = models.JSONField(default=dict, blank=True)
 
     class Meta:

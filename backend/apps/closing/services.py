@@ -75,6 +75,14 @@ class CashClosureService:
             merchant=merchant, business_date=business_date, state=Order.State.CANCELADO
         ).count()
 
+        # Phone orders still in the pipeline: they are not delivered or
+        # rejected yet, so they only appear in this bucket (no double count).
+        total_manuales = Order.objects.filter(
+            merchant=merchant,
+            business_date=business_date,
+            source=Order.Source.MANUAL,
+        ).exclude(state__in=[Order.State.ENTREGADO, Order.State.CANCELADO]).count()
+
         def _fmt(d):
             return format(d.quantize(Decimal("0.00")), "f")
 
@@ -94,6 +102,7 @@ class CashClosureService:
                 "TOTAL": _fmt(total),
                 "TOTAL_ENTREGADOS": total_entregados,
                 "TOTAL_RECHAZADOS": total_rechazados,
+                "TOTAL_MANUALES": total_manuales,
             },
             "closed_at": timezone.now().isoformat(),
         }
@@ -110,6 +119,7 @@ class CashClosureService:
             total_transferencias=total_transferencias,
             total_entregados=total_entregados,
             total_rechazados=total_rechazados,
+            total_manuales=total_manuales,
             ticket_payload=ticket_payload,
         )
         from apps.audit.services import emit
