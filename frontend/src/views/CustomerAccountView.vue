@@ -15,13 +15,15 @@
     </v-card>
     <v-dialog v-model="confirmDlg" max-width="440">
       <v-card>
-        <v-card-title>Confirmar cambios</v-card-title>
+        <v-card-title>Actualizar teléfono y dirección de entrega</v-card-title>
         <v-card-text>
-          <div class="text-body-2 mb-2">Se van a registrar en tu cuenta:</div>
+          <div class="text-body-2 mb-2">
+            Desde acá podés actualizar tu teléfono y la dirección de entrega de tus pedidos.
+          </div>
           <div class="text-body-2">Teléfono: <strong>{{ phone }}</strong></div>
           <div class="text-body-2">Dirección: <strong>{{ address }}</strong></div>
           <div class="text-caption text-medium-emphasis mt-2">
-            Quedan guardados y se usarán por defecto en tus próximos pedidos.
+            Los cambios quedan registrados en tu cuenta y se usarán por defecto en tus próximos pedidos.
           </div>
           <v-alert v-if="errorMsg" type="error" variant="tonal" density="compact" class="mt-2">{{ errorMsg }}</v-alert>
         </v-card-text>
