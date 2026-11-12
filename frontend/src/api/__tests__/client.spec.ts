@@ -55,6 +55,41 @@ describe('api client Customer header', () => {
   })
 })
 
+describe('api client master token guard', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    setActivePinia(createPinia())
+  })
+
+  it('never sends a MASTER Bearer token to tenant /v1/ routes', async () => {
+    const { useAuthStore } = await import('@/stores/auth.store')
+    const auth = useAuthStore()
+    auth.setUser({ username: 'dhubalde', role: 'MASTER', merchant_id: null, kind: 'PERSONAL', must_change_password: false })
+    auth.setTokens('tok-master', 'tok-refresh')
+    let captured: string | undefined
+    api.defaults.adapter = (config) => {
+      captured = (config.headers?.Authorization as string | undefined)?.toString()
+      return Promise.resolve({ data: {}, status: 200, statusText: 'OK', headers: {}, config, request: {} })
+    }
+    await api.get('/v1/orders/1')
+    expect(captured).toBeUndefined()
+  })
+
+  it('still sends the staff Bearer token to /v1/ for tenant users', async () => {
+    const { useAuthStore } = await import('@/stores/auth.store')
+    const auth = useAuthStore()
+    auth.setUser({ username: 'admin_icezone', role: 'ADMIN', merchant_id: 1, kind: 'COMPANY', must_change_password: false })
+    auth.setTokens('tok-staff', 'tok-refresh')
+    let captured: string | undefined
+    api.defaults.adapter = (config) => {
+      captured = (config.headers?.Authorization as string | undefined)?.toString()
+      return Promise.resolve({ data: {}, status: 200, statusText: 'OK', headers: {}, config, request: {} })
+    }
+    await api.get('/v1/orders/1')
+    expect(captured).toBe('Bearer tok-staff')
+  })
+})
+
 describe('api client offline tracking', () => {
   beforeEach(() => setActivePinia(createPinia()))
 

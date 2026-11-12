@@ -38,7 +38,11 @@ api.interceptors.request.use((cfg) => {
   const auth = useAuthStore()
   const publicSlug = extractPublicSlug(cfg.url || '')
   const isPublic = !!publicSlug
-  if (!isPublic && auth.access) {
+  // Master tokens are only valid on /master/* API routes: sending one to a
+  // tenant /v1/ endpoint gets MASTER_TENANT_FORBIDDEN from the backend and
+  // breaks guest storefront features (e.g. "Mi pedido") for logged masters.
+  const isMasterOnTenantRoute = auth.merchantId === null && (cfg.url || '').includes('/v1/')
+  if (!isPublic && auth.access && !isMasterOnTenantRoute) {
     cfg.headers.Authorization = `Bearer ${auth.access}`
   } else if (isPublic) {
     // For public endpoints, attach Customer JWT if available for this slug
