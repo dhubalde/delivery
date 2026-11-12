@@ -27,7 +27,7 @@
                 <span class="text-caption text-medium-emphasis"> compraron</span>
               </span>
             </div>
-            <div class="text-caption text-medium-emphasis">acumulado histórico — como un cuenta km</div>
+            <div class="text-caption text-medium-emphasis">acumulado histórico</div>
           </v-card-text>
         </v-card>
       </v-col>
