@@ -55,9 +55,10 @@ const cancelMut = useCancelMyOrder()
 const cancellingId = ref<number | null>(null)
 const errorMsg = ref<string | null>(null)
 
-// Delivered orders stay visible so the client sees the success state;
-// only cancelled orders auto-hide after a short window.
+// Delivered orders show their success state for a short window so the client
+// sees it, then auto-hide (same idea as cancelled orders).
 const CANCELADO_AUTO_HIDE_MS = 1 * 60 * 1000
+const ENTREGADO_AUTO_HIDE_MS = 5 * 60 * 1000
 
 // Tracking is day-scoped: an order is only "mine" on the day it was placed.
 // Stale ids/snapshots from previous days (e.g. an operator's shared browser)
@@ -117,10 +118,11 @@ const latestOrder = computed<OrderRow | null>(() => {
 const displayedOrder = computed<OrderRow | null>(() => {
   const o = latestOrder.value
   if (!o) return null
-  if (o.state === 'CANCELADO') {
+  if (o.state === 'CANCELADO' || o.state === 'ENTREGADO') {
     const tsRaw = o.updated_at || o.created_at
     const ts = tsRaw ? Date.parse(tsRaw) : 0
-    if (ts && now.value - ts > CANCELADO_AUTO_HIDE_MS) return null
+    const hideAfterMs = o.state === 'CANCELADO' ? CANCELADO_AUTO_HIDE_MS : ENTREGADO_AUTO_HIDE_MS
+    if (ts && now.value - ts > hideAfterMs) return null
   }
   return o
 })

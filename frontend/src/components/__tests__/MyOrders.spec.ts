@@ -50,6 +50,19 @@ describe('MyOrders day filter', () => {
     expect(wrapper.text()).toContain('¡Pedido entregado!')
   })
 
+  it('hides a delivered order 5 minutes after delivery', async () => {
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+    useMyOrdersMock.mockReturnValue({
+      data: ref([{ id: 15, code: 15, state: 'ENTREGADO', total: '500.00', created_at: tenMinutesAgo, updated_at: tenMinutesAgo }]),
+      isLoading: ref(false),
+      ids: ref([15]),
+    })
+    const wrapper = mountCard()
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('#15')
+    expect(wrapper.text()).toContain('Sin pedidos pendientes')
+  })
+
   it('falls back to the empty state instead of stale orders', async () => {
     useMyOrdersMock.mockReturnValue({
       data: ref([{ id: 7, code: 7, state: 'ENTREGADO', total: '500.00', created_at: oldDate }]),
