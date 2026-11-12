@@ -122,6 +122,11 @@ async function onLogin() {
       router.push('/change-password')
       return
     }
+    // Master tokens are only valid on /master/* API routes, land them there.
+    if (user.merchant_id == null) {
+      router.push('/master/companies')
+      return
+    }
     router.push('/panel/board')
   } catch (e: unknown) {
     const err = e as { response?: { status?: number; data?: { detail?: string; password?: string } } }

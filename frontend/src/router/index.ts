@@ -28,6 +28,8 @@ const router = createRouter({
 router.beforeEach((to) => {
   const auth = useAuthStore()
   if (to.meta.requiresAuth && !auth.isAuth) return '/login'
+  // Master tokens carry no merchant: tenant panel calls would 403, keep them on /master.
+  if (to.path.startsWith('/panel') && auth.merchantId === null && auth.hasAnyRole(['MASTER'])) return '/master/companies'
   if (to.meta.requiresPlatform && auth.merchantId !== null && !auth.hasAnyRole(['MASTER'])) return '/panel/board'
   if (auth.isAuth && auth.mustChange && to.path !== '/change-password' && to.path !== '/login') return '/change-password'
 })
