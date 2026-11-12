@@ -27,6 +27,15 @@ class TestJwtLogin:
         assert response.data["access"]
         assert response.data["user"]["role"] == "CAJERO"
         assert response.data["user"]["merchant_id"] == profile.merchant_id
+        assert response.data["user"]["merchant_slug"] == profile.merchant.slug
+
+    def test_master_login_has_null_merchant_slug(self):
+        from django.contrib.auth.models import User
+
+        User.objects.create_superuser("root_slugs", "root_slugs@example.com", "Pass123!")
+        _, response = _login("root_slugs", "Pass123!")
+        assert response.status_code == 200
+        assert response.data["user"]["merchant_slug"] is None
 
     def test_invalid_credentials_401(self):
         UserFactory(username="nobody")

@@ -48,10 +48,14 @@ class WorkZoneTokenSerializer(TokenObtainPairSerializer):
             )
         _register_session(self.user, data["access"])
         claims = _claims_for_user(self.user)
+        merchant_slug = None
+        if profile is not None:
+            merchant_slug = getattr(profile.merchant, "slug", None)
         data["user"] = {
             "username": self.user.username,
             "role": claims["role"],
             "merchant_id": claims["merchant_id"],
+            "merchant_slug": merchant_slug,
             "kind": claims.get("kind"),
             "sector": getattr(profile, "sector", None),
             "must_change_password": getattr(profile, "must_change_password", False),
