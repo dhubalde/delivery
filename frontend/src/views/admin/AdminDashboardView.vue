@@ -4,12 +4,34 @@
       <h2 class="text-h6" style="font-family: Comfortaa">Dashboard — Reportes</h2>
       <div class="text-caption text-medium-emphasis">Ventas, pedidos y conversión del período</div>
     </div>
-    <v-card variant="tonal" class="mb-3">
-      <v-card-text class="d-flex flex-wrap ga-2 align-center py-2">
-        <v-text-field v-model="startDate" type="date" density="compact" hide-details label="Desde" style="max-width: 200px" menu />
-        <v-text-field v-model="endDate" type="date" density="compact" hide-details label="Hasta" style="max-width: 200px" menu />
-      </v-card-text>
-    </v-card>
+    <v-row class="mb-3" align="stretch">
+      <v-col cols="12" sm="6" md="6">
+        <v-card variant="tonal" class="flex-grow-1" height="100%">
+          <v-card-text class="d-flex flex-wrap ga-2 align-center py-2">
+            <v-text-field v-model="startDate" type="date" density="compact" hide-details label="Desde" style="max-width: 200px" menu />
+            <v-text-field v-model="endDate" type="date" density="compact" hide-details label="Hasta" style="max-width: 200px" menu />
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="12" sm="6" md="6">
+        <v-card class="flex-grow-1 d-flex flex-column" height="100%">
+          <v-card-text class="flex-grow-1">
+            <div class="text-caption text-medium-emphasis">Visitantes / Compradores</div>
+            <div class="d-flex align-center ga-4">
+              <span>
+                <span class="text-h5 font-weight-bold">{{ visitCount }}</span>
+                <span class="text-caption text-medium-emphasis"> entraron</span>
+              </span>
+              <span>
+                <span class="text-h5 font-weight-bold text-primary">{{ buyerCount }}</span>
+                <span class="text-caption text-medium-emphasis"> compraron</span>
+              </span>
+            </div>
+            <div class="text-caption text-medium-emphasis">acumulado histórico — como un cuenta km</div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
     <v-skeleton-loader v-if="cashLoading || ordersLoading" type="card" />
     <v-alert v-else-if="cashError" type="warning" class="mb-4">Sin datos para {{ startDate }} — mostrando cálculo local</v-alert>
     <v-row class="mb-4" align="stretch">
@@ -62,24 +84,7 @@
       </v-col>
     </v-row>
     <v-row class="mb-4" align="stretch">
-      <v-col cols="12" md="3">
-        <v-card class="flex-grow-1 d-flex flex-column" height="100%">
-          <v-card-text class="flex-grow-1">
-            <div class="text-caption text-medium-emphasis">Visitantes / Compradores</div>
-            <div class="d-flex align-center ga-4">
-              <span>
-                <span class="text-h5 font-weight-bold">{{ visitCount }}</span>
-                <span class="text-caption text-medium-emphasis"> entraron</span>
-              </span>
-              <span>
-                <span class="text-h5 font-weight-bold text-primary">{{ buyerCount }}</span>
-                <span class="text-caption text-medium-emphasis"> compraron</span>
-              </span>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col v-if="hasBoardData" cols="12" md="9">
+      <v-col v-if="hasBoardData" cols="12">
         <v-card class="flex-grow-1 d-flex flex-column" height="100%">
           <v-card-title class="text-subtitle-2">Detalle por board ({{ rangeLabel }})</v-card-title>
           <v-card-text class="d-flex ga-4 flex-wrap">
