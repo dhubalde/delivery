@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 import { api } from '@/api/client'
+import { useAuthStore } from '@/stores/auth.store'
 
 type NotificationRaw = {
   id: number
@@ -75,11 +76,7 @@ export function useNotifications(options?: { recipientType?: 'CUSTOMER' | 'EMPLO
         slug = null;
       }
       if (!slug) {
-        try {
-          slug = localStorage.getItem("merchantSlug") || "ice-zone";
-        } catch {
-          slug = "ice-zone";
-        }
+        slug = useAuthStore().merchantSlug;
       }
       if (slug === "zona-ice") slug = "ice-zone";
       await api.delete(`/v1/notifications/${id}/delete/`, {

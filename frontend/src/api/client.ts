@@ -71,7 +71,7 @@ api.interceptors.request.use((cfg) => {
     cfg.headers['Idempotency-Key'] = crypto.randomUUID()
   }
   if (cfg.url?.includes('/v1/')) {
-    let slug = auth.merchantSlug || localStorage.getItem('merchantSlug') || 'ice-zone'
+    let slug = auth.merchantSlug
     if (slug === 'zona-ice') slug = 'ice-zone'
     const p = cfg.params as Record<string, unknown> | undefined
     if (!p?.merchant_slug) cfg.params = { ...p, merchant_slug: slug }

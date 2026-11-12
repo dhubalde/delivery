@@ -5,13 +5,15 @@ export const useAuthStore = defineStore('auth', {
     access: localStorage.getItem('access') || '',
     refresh: localStorage.getItem('refresh') || '',
     user: JSON.parse(localStorage.getItem('user') || 'null'),
-    merchantSlug: localStorage.getItem('merchantSlug') || 'ice-zone',
   }),
   getters: {
     isAuth: (s) => !!s.access,
     roles: (s): string[] => s.user?.roles ?? (s.user?.role ? [s.user.role] : []),
     isAdmin: (s): boolean => ((s.user?.roles ?? (s.user?.role ? [s.user.role] : [])) as string[]).includes('ADMIN'),
     merchantId: (s): number | null => s.user?.merchant_id ?? null,
+    // The real company of the session comes from the login payload; a stale
+    // or absent slug must never point the UI at a different company.
+    merchantSlug: (s): string => (s.user as { merchant_slug?: string } | null)?.merchant_slug || 'ice-zone',
     mustChange: (s): boolean => !!s.user?.must_change_password,
     hasAnyRole: (s) => (roles: string[]) => {
       const mine: string[] = s.user?.roles ?? (s.user?.role ? [s.user.role] : [])
