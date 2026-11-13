@@ -2,7 +2,7 @@ import { api } from '../client'
 
 export type Company = {
   id: number; name: string; slug: string
-  seat_limit: number; has_branches: boolean; is_active: boolean
+  seat_limit: number; has_branches: boolean; print_tickets?: boolean; is_active: boolean
 }
 export type InternalUser = {
   id: number; username: string; role: string

@@ -5,8 +5,8 @@ from apps.tenancy.models import Merchant, PlatformUser
 
 @admin.register(Merchant)
 class MerchantAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "is_active", "seat_limit", "has_branches")
-    list_filter = ("is_active", "has_branches")
+    list_display = ("name", "slug", "is_active", "seat_limit", "has_branches", "print_tickets")
+    list_filter = ("is_active", "has_branches", "print_tickets")
     search_fields = ("name", "slug")
     prepopulated_fields = {"slug": ("name",)}
 

@@ -46,6 +46,7 @@
           <v-text-field v-model="eform.logo_url" label="Logo URL" density="compact" />
           <v-select v-model="eform.seat_limit" :items="[10,20,30]" label="Cupo de usuarios *" density="compact" />
           <v-switch v-model="eform.has_branches" label="Tiene sucursales" color="primary" />
+          <v-switch v-model="eform.print_tickets" label="Imprime tickets en comandera" color="primary" hint="Al pasar un pedido a Preparación se encola el ticket" persistent-hint />
           <v-switch v-model="eform.is_active" label="Activa" color="primary" />
           <v-alert v-if="err" type="error" density="compact">{{ err }}</v-alert>
         </v-card-text>
@@ -85,10 +86,10 @@ async function save() {
 import type { Company } from '@/api/panel/master.api'
 const edlg = ref(false)
 const editing = ref<number | null>(null)
-const eform = reactive({ name: '', logo_url: '', seat_limit: 10, has_branches: false, is_active: true })
+const eform = reactive({ name: '', logo_url: '', seat_limit: 10, has_branches: false, print_tickets: false, is_active: true })
 function openEdit(c: Company) {
   editing.value = c.id
-  Object.assign(eform, { name: c.name, logo_url: '', seat_limit: c.seat_limit, has_branches: c.has_branches, is_active: c.is_active })
+  Object.assign(eform, { name: c.name, logo_url: '', seat_limit: c.seat_limit, has_branches: c.has_branches, print_tickets: !!c.print_tickets, is_active: c.is_active })
   err.value = ''; edlg.value = true
 }
 async function saveEdit() {

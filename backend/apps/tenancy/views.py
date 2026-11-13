@@ -240,7 +240,7 @@ class MerchantSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Merchant
-        fields = ["id", "name", "slug", "vertical", "is_active", "logo", "logo_url"]
+        fields = ["id", "name", "slug", "vertical", "is_active", "logo", "logo_url", "print_tickets"]
         read_only_fields = ["id", "slug"]
 
 
@@ -523,6 +523,8 @@ class MasterCompanyDetailView(APIView):
             merchant.seat_limit = seats
         if "has_branches" in data:
             merchant.has_branches = bool(data["has_branches"])
+        if "print_tickets" in data:
+            merchant.print_tickets = bool(data["print_tickets"])
         if "is_active" in data:
             merchant.is_active = bool(data["is_active"])
         merchant.save()
@@ -530,7 +532,7 @@ class MasterCompanyDetailView(APIView):
             actor=request.user,
             action="COMPANY_UPDATED",
             merchant=merchant,
-            detail={"seat_limit": merchant.seat_limit, "has_branches": merchant.has_branches},
+            detail={"seat_limit": merchant.seat_limit, "has_branches": merchant.has_branches, "print_tickets": merchant.print_tickets},
         )
         return Response(_serialize_company(merchant))
 
@@ -560,6 +562,7 @@ def _serialize_company(merchant):
         "slug": merchant.slug,
         "seat_limit": merchant.seat_limit,
         "has_branches": merchant.has_branches,
+        "print_tickets": merchant.print_tickets,
         "is_active": merchant.is_active,
         "logo_url": merchant.logo_url,
         "active_users": PlatformUser.objects.filter(
