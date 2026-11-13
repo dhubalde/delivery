@@ -44,6 +44,28 @@ class TestJwtLogin:
         assert "access" not in response.data
 
 
+class TestExpiredTokenGuard:
+    def test_invalid_bearer_gets_401_not_silent_header_fallback(self):
+        """A Bearer that fails verification must never downgrade to header-based
+        tenant resolution: the client would silently see another company's data."""
+        from apps.catalog.tests.factories import MerchantFactory
+
+        m = MerchantFactory()
+        client = APIClient()
+        client.credentials(HTTP_AUTHORIZATION="Bearer not.a.valid.jwt", HTTP_X_MERCHANT_SLUG=m.slug)
+        response = client.get("/api/v1/merchant/")
+        assert response.status_code == 401
+
+    def test_header_flow_without_token_still_works(self):
+        from apps.catalog.tests.factories import MerchantFactory
+
+        m = MerchantFactory()
+        client = APIClient()
+        client.credentials(HTTP_X_MERCHANT_SLUG=m.slug)
+        response = client.get("/api/v1/merchant/")
+        assert response.status_code == 200
+
+
 class TestTokenBoundTenant:
     def test_spoofed_slug_is_ignored(self):
         profile_a = PlatformUserFactory(role="ADMIN")

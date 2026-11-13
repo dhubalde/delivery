@@ -127,6 +127,18 @@ class TenantContextMiddleware(MiddlewareMixin):
                 {"error": {"code": "AUTH_REQUIRED", "message": "Valid JWT required."}},
                 status=401,
             )
+        # A Bearer token that failed verification must never silently downgrade
+        # to header-based tenant resolution: after token expiry the client would
+        # see another company's data instead of a refreshable 401.
+        if (
+            request.META.get("HTTP_AUTHORIZATION", "").startswith("Bearer ")
+            and _is_tenant_api_path(path)
+            and not _is_public_path(path)
+        ):
+            return JsonResponse(
+                {"error": {"code": "AUTH_REQUIRED", "message": "Valid JWT required."}},
+                status=401,
+            )
         mid = None
         header_mid = request.META.get("HTTP_X_MERCHANT_ID")
         if header_mid:
