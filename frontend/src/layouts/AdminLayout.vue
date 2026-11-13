@@ -10,6 +10,7 @@
         <v-list-item to="/panel/flavors" title="Sabores" prepend-icon="mdi-star" />
         <v-list-item to="/panel/schedules" title="Horarios" prepend-icon="mdi-clock-outline" />
         <v-list-item to="/panel/delivery" title="Delivery" prepend-icon="mdi-moped" />
+        <v-list-item to="/panel/consultas" title="Consultas" prepend-icon="mdi-text-search" />
         <v-list-item to="/panel/employees" title="Empleados" prepend-icon="mdi-account-group" />
         <v-list-item v-if="isAdmin" to="/panel/users" title="Usuarios" prepend-icon="mdi-account-key" />
         <v-list-item to="/panel/cash-close" title="Cierre de caja" prepend-icon="mdi-cash-register" />
