@@ -96,7 +96,7 @@ api.interceptors.response.use(
       const auth = useAuthStore()
       if (!refreshPromise) {
         refreshPromise = axios
-          .post(`${api.defaults.baseURL}/auth/token/refresh`, { refresh: auth.refresh })
+          .post(`${api.defaults.baseURL}/auth/token/refresh/`, { refresh: auth.refresh })
           .then((res) => {
             auth.setTokens(res.data.access, res.data.refresh ?? auth.refresh)
             return res.data.access as string
