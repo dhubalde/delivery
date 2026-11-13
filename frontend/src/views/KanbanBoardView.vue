@@ -3,12 +3,43 @@
     <div class="d-flex justify-space-between align-center mb-4 w-100 ma-0 pa-0" style="margin:0;padding:0;box-sizing:border-box;width:100%">
       <h2>Kanban — {{ merchantName }}</h2>
       <div class="d-flex align-center ga-2">
+        <v-btn
+          v-if="printTicketsOn && pendingJobs.length"
+          color="deep-orange"
+          density="compact"
+          prepend-icon="mdi-printer"
+          @click="queueDlg = true"
+        >{{ pendingJobs.length }} tickets</v-btn>
         <v-btn color="primary" density="compact" prepend-icon="mdi-phone-incoming" title="Cargar un pedido telefónico" @click="NuevoPedido">Nuevo pedido</v-btn>
         <v-text-field v-model="businessDate" type="date" density="compact" hide-details style="max-width: 180px" />
       </div>
     </div>
     <v-alert v-if="alreadyClosed" type="info" class="mb-4 ma-0" style="margin:0 0 16px 0;box-sizing:border-box;width:100%">Caja del {{ formatDM(today) }} cerrada — pedidos nuevos irán al {{ formatDM(tomorrow) }}. Pedidos del día archivados.</v-alert>
     <WeatherForecast />
+    <v-dialog v-model="queueDlg" max-width="520">
+      <v-card>
+        <v-card-title>Comandera — tickets pendientes</v-card-title>
+        <v-card-text>
+          <div v-if="!pendingJobs.length" class="text-medium-emphasis">Sin tickets pendientes.</div>
+          <v-list v-else lines="two">
+            <v-list-item v-for="j in pendingJobs" :key="j.id">
+              <template #title>#{{ j.order.code }} — {{ j.order.customer_name }}</template>
+              <template #subtitle>${{ j.order.total }} · {{ j.order.state }}</template>
+              <template #append>
+                <div class="d-flex ga-1">
+                  <v-btn size="small" color="primary" variant="tonal" prepend-icon="mdi-printer" @click="printJob(j)">Imprimir</v-btn>
+                  <v-btn size="small" variant="text" :loading="markingId === j.id" @click="markPrinted(j.id)">Marcar impreso</v-btn>
+                </div>
+              </template>
+            </v-list-item>
+          </v-list>
+          <div class="text-caption text-medium-emphasis mt-2">
+            Si se traba el papel, podés reimprimir desde Consultas en cuanto esté marcado como impreso.
+          </div>
+        </v-card-text>
+        <v-card-actions><v-spacer /><v-btn variant="text" @click="queueDlg = false">Cerrar</v-btn></v-card-actions>
+      </v-card>
+    </v-dialog>
     <v-row no-gutters class="ma-0 pa-0 mx-0" style="margin:0;padding:0;padding-bottom:4px;box-sizing:border-box;display:flex;width:100%;gap:8px;flex-wrap:nowrap;overflow-x:auto">
       <v-col v-for="col in cols" :key="col.state" cols="12" md="2" class="pa-1 ma-0 d-flex" style="padding:4px;margin:0;box-sizing:border-box;flex:1 0 160px;min-width:160px;max-width:none;display:flex">
         <KanbanColumn :title="col.title" :color="col.color" :orders="getOrdersFor(col.state)" :is-loading="getLoadingFor(col.state)" :is-error="getErrorFor(col.state)" :compact="col.state === 'ENTREGADO'" @retry="boards[col.state].refetch()" />
@@ -28,10 +59,30 @@ import KanbanColumn from '@/components/KanbanColumn.vue'
 import KanbanTotalsCard from '@/components/KanbanTotalsCard.vue'
 import WeatherForecast from '@/components/WeatherForecast.vue'
 import { useMerchant } from '@/composables/useMerchant'
+import { usePendingPrintJobs, useMarkPrinted } from '@/composables/usePrinting'
+import { printTicket } from '@/utils/ticket'
+import type { PrintJob } from '@/api/panel/printing.api'
 import { useAuthStore } from '@/stores/auth.store'
 import { useRouter } from 'vue-router'
 const { data: merchantData } = useMerchant()
 const merchantName = computed(() => (merchantData.value as { name?: string } | undefined)?.name ?? 'Work Zone')
+const printTicketsOn = computed(() => !!(merchantData.value as { print_tickets?: boolean } | undefined)?.print_tickets)
+const pendingJobsQ = usePendingPrintJobs(printTicketsOn)
+const pendingJobs = computed<PrintJob[]>(() => (pendingJobsQ.data.value as PrintJob[] | undefined) ?? [])
+const queueDlg = ref(false)
+const markMut = useMarkPrinted()
+const markingId = ref<number | null>(null)
+function printJob(job: PrintJob) {
+  printTicket(job.order, merchantName.value)
+}
+async function markPrinted(id: number) {
+  markingId.value = id
+  try {
+    await markMut.mutateAsync(id)
+  } finally {
+    markingId.value = null
+  }
+}
 const auth = useAuthStore()
 const router = useRouter()
 function NuevoPedido(): void {

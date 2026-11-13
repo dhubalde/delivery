@@ -16,4 +16,7 @@ export const qk = {
   adminCashPreview: (businessDate?: string, businessDateTo?: string) => ['admin', 'cashPreview', businessDate ?? 'current', businessDateTo ?? ''] as const,
   merchant: () => ['merchant', 'detail'] as const,
   publicMerchant: (slug?: string) => ['merchant', 'public', slug ?? 'default'] as const,
+  printJobsPending: () => ['printJobs', 'pending'] as const,
+  consultasOrders: (p?: { businessDate: string; businessDateTo: string; search?: string }) =>
+    ['consultas', 'orders', p ?? {}] as const,
 }
