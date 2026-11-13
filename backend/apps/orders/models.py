@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 from apps.common.models import BaseModel
@@ -64,6 +65,29 @@ class Order(BaseModel):
 
     def __str__(self):
         return f"Order {self.code} {self.state}"
+
+
+class PrintJob(BaseModel):
+    """One queued kitchen-ticket print per order. Created when the order
+    enters PREPARACION and the merchant has ticket printing enabled; the
+    comandera station claims and prints it, reprints count paper jams."""
+
+    merchant = models.ForeignKey(
+        "tenancy.Merchant", on_delete=models.CASCADE, related_name="print_jobs"
+    )
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="print_job")
+    printed_at = models.DateTimeField(null=True, blank=True)
+    printed_count = models.PositiveIntegerField(default=0)
+    printed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="printed_jobs",
+    )
+
+    def __str__(self):
+        return f"PrintJob order={self.order_id} printed={self.printed_at is not None}"
 
 
 class OrderItem(models.Model):

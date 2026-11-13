@@ -13,6 +13,10 @@ class Merchant(BaseModel):
     logo_url = models.URLField(max_length=500, blank=True, null=True)
     seat_limit = models.PositiveIntegerField(default=10)
     has_branches = models.BooleanField(default=False)
+    print_tickets = models.BooleanField(
+        default=False,
+        help_text="Queue a kitchen ticket (comandera) when an order enters PREPARACION.",
+    )
 
     @property
     def resolved_logo_url(self):

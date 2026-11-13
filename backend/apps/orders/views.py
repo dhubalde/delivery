@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 from apps.catalog.models import Flavor, Product
 from apps.catalog.services.flavor_policy import FlavorPolicyError, PoteFlavorPolicy
 from apps.common.models import IdempotencyKey
-from apps.orders.models import Order, OrderItem
+from apps.orders.models import Order, OrderItem, PrintJob
 from apps.orders.services import OrderService
 from apps.orders.state_machine import GuardViolationError, InvalidTransitionError
 from apps.payments.gateways.mercadopago_mock import MercadoPagoMockGateway
@@ -285,6 +285,16 @@ class OrderBoardView(APIView):
         state = request.query_params.get("state")
         if state:
             qs = qs.filter(state=state)
+        code = request.query_params.get("code")
+        if code:
+            qs = qs.filter(code=code)
+        customer = request.query_params.get("customer")
+        if customer:
+            from django.db.models import Q
+
+            qs = qs.filter(
+                Q(customer_name__icontains=customer) | Q(customer_phone__icontains=customer)
+            )
         business_date = request.query_params.get("business_date")
         business_date_to = request.query_params.get("business_date_to")
         if business_date and business_date_to:
@@ -305,6 +315,47 @@ class OrderDetailView(APIView):
             qs = qs.filter(merchant_id=mid)
         order = get_object_or_404(qs, pk=pk)
         return Response(_serialize_order(order))
+
+
+def _serialize_print_job(job: PrintJob):
+    return {
+        "id": job.pk,
+        "created_at": job.created_at.isoformat() if job.created_at else None,
+        "printed_at": job.printed_at.isoformat() if job.printed_at else None,
+        "printed_count": job.printed_count,
+        "order": _serialize_order(job.order),
+    }
+
+
+class PrintJobListView(APIView):
+    """Pending comandera tickets for this merchant, oldest first."""
+
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        mid = _resolve_merchant_id(request)
+        qs = PrintJob.objects.select_related("order").order_by("created_at", "pk")
+        if mid is not None:
+            qs = qs.filter(merchant_id=mid)
+        qs = qs.filter(printed_at__isnull=True)
+        return Response([_serialize_print_job(j) for j in qs[:50]])
+
+
+class PrintJobPrintedView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, pk):
+        mid = _resolve_merchant_id(request)
+        qs = PrintJob.objects.all()
+        if mid is not None:
+            qs = qs.filter(merchant_id=mid)
+        job = get_object_or_404(qs, pk=pk)
+        job.printed_at = timezone.now()
+        job.printed_count += 1
+        if getattr(request, "user", None) is not None and request.user.is_authenticated:
+            job.printed_by = request.user
+        job.save(update_fields=["printed_at", "printed_count", "printed_by", "updated_at"])
+        return Response(_serialize_print_job(job))
 
 
 class OrderTransitionView(APIView):
@@ -348,6 +399,14 @@ class OrderTransitionView(APIView):
             return Response({"error": {"code": "NOT_FOUND", "message": "Order not found"}}, status=404)
         except IntegrityError as e:
             return Response({"error": {"code": "CONFLICT", "message": f"Conflicto de datos: {str(e)}"}}, status=409)
+        if to_state == Order.State.PREPARACION and updated.merchant.print_tickets:
+            # Queue the comandera ticket once per order; idempotent on replays.
+            try:
+                PrintJob.objects.get_or_create(
+                    order=updated, defaults={"merchant": updated.merchant}
+                )
+            except Exception:
+                pass
         if to_state == Order.State.ENTREGADO:
             try:
                 pending_cash = Payment.objects.filter(order_id=updated.pk, method=Payment.Method.EFECTIVO, status=Payment.Status.PENDING)
