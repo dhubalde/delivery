@@ -71,7 +71,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { api } from '@/api/client'
 import { useMerchant } from '@/composables/useMerchant'
@@ -97,7 +97,11 @@ const applied = ref<{ start: string; end: string; search: string }>({
   search: '',
 })
 
-function doSearch() {
+function applyNow() {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+    debounceTimer = null
+  }
   applied.value = {
     start: startDate.value || isoDaysAgo(1),
     end: endDate.value || isoDaysAgo(1),
@@ -105,13 +109,24 @@ function doSearch() {
   }
 }
 
+function doSearch() {
+  applyNow()
+}
+
+// Live search: re-query shortly after the last edit of any filter, so there is
+// no dead end — clearing the field or changing dates goes back on its own.
+// Enter and the Buscar button still apply immediately.
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+watch([startDate, endDate, search], () => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(applyNow, 400)
+})
+
 const params = computed(() => {
   const p: Record<string, string> = { business_date: applied.value.start, business_date_to: applied.value.end }
+  // Unified q: matches order code, customer name or phone on the backend.
   const s = applied.value.search
-  if (s) {
-    if (/^\d+$/.test(s)) p.code = s
-    else p.customer = s
-  }
+  if (s) p.q = s
   return p
 })
 

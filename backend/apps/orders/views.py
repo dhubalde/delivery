@@ -295,6 +295,16 @@ class OrderBoardView(APIView):
             qs = qs.filter(
                 Q(customer_name__icontains=customer) | Q(customer_phone__icontains=customer)
             )
+        q = request.query_params.get("q")
+        if q:
+            from django.db.models import Q
+
+            # Unified search: matches order code, customer name or phone (for CONSULTAS live search).
+            qs = qs.filter(
+                Q(code__icontains=q)
+                | Q(customer_name__icontains=q)
+                | Q(customer_phone__icontains=q)
+            )
         business_date = request.query_params.get("business_date")
         business_date_to = request.query_params.get("business_date_to")
         if business_date and business_date_to:

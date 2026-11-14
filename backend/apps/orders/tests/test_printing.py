@@ -55,6 +55,19 @@ class TestOrderSearchFilters:
         by_phone = client.get("/api/v1/orders/", {"customer": "6000222"}).json()
         assert [o["code"] for o in by_phone] == [2]
 
+    def test_q_filter_matches_code_name_and_phone(self):
+        merchant = MerchantFactory()
+        OrderFactory(merchant=merchant, code=123, customer_name="María López", customer_phone="+543446000111")
+        OrderFactory(merchant=merchant, code=999, customer_name="Juan Pérez", customer_phone="+543446000222")
+        client = APIClient()
+        client.credentials(HTTP_X_MERCHANT_SLUG=merchant.slug)
+        by_code = client.get("/api/v1/orders/", {"q": "23"}).json()
+        assert [o["code"] for o in by_code] == [123]
+        by_phone = client.get("/api/v1/orders/", {"q": "6000222"}).json()
+        assert [o["code"] for o in by_phone] == [999]
+        by_name = client.get("/api/v1/orders/", {"q": "pérez"}).json()
+        assert [o["code"] for o in by_name] == [999]
+
     def test_search_never_leaks_other_merchants(self):
         a = MerchantFactory()
         b = MerchantFactory()
