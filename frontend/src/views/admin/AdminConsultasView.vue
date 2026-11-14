@@ -87,13 +87,13 @@ function isoDaysAgo(days: number): string {
   return d.toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' })
 }
 
-// Default window: yesterday — claims usually arrive the next day.
-const startDate = ref(isoDaysAgo(1))
-const endDate = ref(isoDaysAgo(1))
+// Default window: today — claims can also arrive the same day.
+const startDate = ref(isoDaysAgo(0))
+const endDate = ref(isoDaysAgo(0))
 const search = ref('')
 const applied = ref<{ start: string; end: string; search: string }>({
-  start: isoDaysAgo(1),
-  end: isoDaysAgo(1),
+  start: isoDaysAgo(0),
+  end: isoDaysAgo(0),
   search: '',
 })
 
@@ -103,8 +103,8 @@ function applyNow() {
     debounceTimer = null
   }
   applied.value = {
-    start: startDate.value || isoDaysAgo(1),
-    end: endDate.value || isoDaysAgo(1),
+    start: startDate.value || isoDaysAgo(0),
+    end: endDate.value || isoDaysAgo(0),
     search: (search.value || '').trim(),
   }
 }

@@ -34,6 +34,17 @@ afterEach(() => {
 })
 
 describe('AdminConsultasView', () => {
+  it('opens with today by default (claims can arrive the same day)', async () => {
+    mountView()
+    await flushPromises()
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' })
+    const first = vi.mocked(api.get).mock.calls[0]
+    expect(first?.[1]?.params as Record<string, string>).toMatchObject({
+      business_date: today,
+      business_date_to: today,
+    })
+  })
+
   it('searches in real time with debounce, sending q (code, name or phone)', async () => {
     const wrapper = mountView()
     await flushPromises()
