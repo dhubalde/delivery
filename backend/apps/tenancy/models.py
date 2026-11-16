@@ -17,6 +17,18 @@ class Merchant(BaseModel):
         default=False,
         help_text="Queue a kitchen ticket (comandera) when an order enters PREPARACION.",
     )
+    mp_access_token = models.CharField(
+        max_length=200,
+        null=True,
+        blank=True,
+        help_text="Mercado Pago user access token (production or sandbox) for online payments.",
+    )
+    mp_webhook_secret = models.CharField(
+        max_length=200,
+        null=True,
+        blank=True,
+        help_text="Mercado Pago webhook secret used to validate notification signatures.",
+    )
 
     @property
     def resolved_logo_url(self):

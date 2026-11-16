@@ -525,6 +525,10 @@ class MasterCompanyDetailView(APIView):
             merchant.has_branches = bool(data["has_branches"])
         if "print_tickets" in data:
             merchant.print_tickets = bool(data["print_tickets"])
+        if "mp_access_token" in data:
+            merchant.mp_access_token = data["mp_access_token"] or None
+        if "mp_webhook_secret" in data:
+            merchant.mp_webhook_secret = data["mp_webhook_secret"] or None
         if "is_active" in data:
             merchant.is_active = bool(data["is_active"])
         merchant.save()
@@ -532,6 +536,7 @@ class MasterCompanyDetailView(APIView):
             actor=request.user,
             action="COMPANY_UPDATED",
             merchant=merchant,
+            # Never log payment credentials.
             detail={"seat_limit": merchant.seat_limit, "has_branches": merchant.has_branches, "print_tickets": merchant.print_tickets},
         )
         return Response(_serialize_company(merchant))
