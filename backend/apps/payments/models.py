@@ -9,6 +9,7 @@ class Payment(BaseModel):
         BILLETERA = "BILLETERA", "Billetera"
         TARJETA = "TARJETA", "Tarjeta"
         TRANSFER = "TRANSFER", "Transferencia"
+        ONLINE = "ONLINE", "Online (Mercado Pago)"
 
     class Status(models.TextChoices):
         PENDING = "PENDING", "Pending"
@@ -24,6 +25,12 @@ class Payment(BaseModel):
         max_length=10, choices=Status.choices, default=Status.PENDING
     )
     gateway_ref = models.CharField(max_length=120, null=True, blank=True)
+    checkout_url = models.URLField(
+        max_length=500,
+        null=True,
+        blank=True,
+        help_text="Mercado Pago Checkout Pro URL (init_point) while this payment is pending.",
+    )
     collected_by = models.CharField(max_length=120, null=True, blank=True)
     collected_by_employee = models.ForeignKey(
         "tenancy.Employee",

@@ -11,6 +11,10 @@ class OrderService:
     def transition(order_id, to_state, actor=None, reason=None):
         order = Order.objects.select_for_update().get(pk=order_id)
         old_state = order.state
+        if to_state in (Order.State.PREPARACION, Order.State.LOGISTICA):
+            from apps.payments.services import PaymentService
+
+            PaymentService.validate_online_paid(order)
         OrderStateMachine.validate(order, to_state)
         if old_state == Order.State.FACTURACION and to_state == Order.State.LOGISTICA:
             from apps.payments.services import PaymentService

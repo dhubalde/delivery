@@ -14,6 +14,7 @@ from rest_framework.views import APIView
 
 from apps.catalog.models import Flavor, Product
 from apps.catalog.services.flavor_policy import FlavorPolicyError, PoteFlavorPolicy
+from apps.payments.models import Payment
 from apps.common.models import IdempotencyKey
 from apps.orders.models import Order, OrderItem, PrintJob
 from apps.orders.services import OrderService
@@ -254,6 +255,10 @@ class PublicOrderCreateView(APIView):
                 amount = Decimal(str(p["amount"]))
                 if method == Payment.Method.EFECTIVO:
                     Payment.objects.create(order=order, method=method, amount=amount, status=Payment.Status.PENDING)
+                elif method == Payment.Method.ONLINE:
+                    # Pay-online orders start with a pending placeholder; the
+                    # Mercado Pago webhook maps it to the real method/status.
+                    Payment.objects.create(order=order, method=method, amount=amount, status=Payment.Status.PENDING)
                 elif method == Payment.Method.TRANSFER:
                     # Operator-loaded transfers count as paid immediately (like
                     # BILLETERA/TARJETA): they must enter daily totals and cash
@@ -285,6 +290,19 @@ class OrderBoardView(APIView):
         state = request.query_params.get("state")
         if state:
             qs = qs.filter(state=state)
+        from django.db.models import Exists, OuterRef
+
+        # Online-paid orders enter the board only once Mercado Pago confirms
+        # the charge (S3 of odd/tasks/online-payments.md).
+        qs = qs.exclude(
+            Exists(
+                Payment.objects.filter(
+                    order=OuterRef("pk"),
+                    method=Payment.Method.ONLINE,
+                    status=Payment.Status.PENDING,
+                )
+            )
+        )
         code = request.query_params.get("code")
         if code:
             qs = qs.filter(code=code)

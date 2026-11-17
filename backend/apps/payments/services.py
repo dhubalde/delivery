@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.db import transaction
 from django.utils import timezone
 
+from apps.payments.gateways.mercado_pago import MercadoPagoError, MercadoPagoGateway
 from apps.payments.gateways.mercadopago_mock import MercadoPagoMockGateway
 from apps.payments.models import Payment
 
@@ -12,6 +13,10 @@ class PaymentValidationError(Exception):
 
 
 class CashConfirmationError(Exception):
+    pass
+
+
+class MPNotConfiguredError(Exception):
     pass
 
 
@@ -174,6 +179,108 @@ class PaymentService:
                     raise PaymentValidationError(
                         "PICKUP cash must be CONFIRMED before LOGISTICA (BR-PAY-06)"
                     )
+
+    @staticmethod
+    def create_checkout(order, *, success_url: str, notification_url: str) -> Payment:
+        """Create (or reuse) the Mercado Pago Checkout Pro preference for an
+        order's pending ONLINE payment. Reusing an existing preference keeps
+        this endpoint idempotent without any extra key."""
+        payment = order.payments.filter(
+            method=Payment.Method.ONLINE, status=Payment.Status.PENDING
+        ).first()
+        try:
+            gateway = MercadoPagoGateway.for_merchant(order.merchant)
+        except MercadoPagoError as e:
+            raise MPNotConfiguredError(str(e))
+        if payment is None:
+            raise PaymentValidationError("Order is not waiting for an online payment")
+        if payment.checkout_url and payment.gateway_ref:
+            return payment
+        try:
+            gateway = MercadoPagoGateway.for_merchant(order.merchant)
+        except MercadoPagoError as e:
+            raise MPNotConfiguredError(str(e))
+        preference = gateway.create_preference(
+            items=[
+                {
+                    "title": f"Pedido #{order.code}",
+                    "quantity": 1,
+                    "unit_price": float(order.total),
+                    "currency_id": "ARS",
+                }
+            ],
+            external_reference=str(order.pk),
+            back_urls={
+                "success": success_url,
+                "failure": success_url,
+                "pending": success_url,
+            },
+            notification_url=notification_url,
+        )
+        payment.checkout_url = preference["init_point"]
+        payment.gateway_ref = preference["id"]
+        payment.save(update_fields=["checkout_url", "gateway_ref", "updated_at"])
+        return payment
+
+    @staticmethod
+    def fetch_gateway_payment(merchant, data_id) -> dict:
+        """Fetch a payment resource from Mercado Pago via the merchant's own
+        gateway (kept on the service so tests can stub it in one place)."""
+        gateway = MercadoPagoGateway.for_merchant(merchant)
+        return gateway.get_payment(data_id)
+
+    @staticmethod
+    def apply_gateway_result(order, mp_payment: dict) -> Payment:
+        """Update the order's ONLINE payment from a Mercado Pago payment
+        resource (webhook or manual fetch). Idempotent: terminal payments are
+        never overwritten."""
+        from django.db import transaction
+
+        from apps.audit.services import emit
+
+        with transaction.atomic():
+            payment = (
+                order.payments.select_for_update()
+                .filter(method=Payment.Method.ONLINE)
+                .first()
+            )
+            if payment is None:
+                raise PaymentValidationError("Order has no online payment")
+            if payment.status in (Payment.Status.CONFIRMED, Payment.Status.REJECTED):
+                return payment
+            payment.status = mp_payment["status"]
+            payment.method = mp_payment["method"]
+            if mp_payment.get("mp_id"):
+                payment.gateway_ref = mp_payment["mp_id"]
+            if payment.status == Payment.Status.CONFIRMED:
+                payment.confirmed_at = timezone.now()
+            payment.save(
+                update_fields=["status", "method", "gateway_ref", "confirmed_at", "updated_at"]
+            )
+            emit(
+                merchant_id=order.merchant_id,
+                actor=None,
+                entity="Payment",
+                entity_id=payment.pk,
+                action="PAYMENT",
+                old_value={"status": Payment.Status.PENDING},
+                new_value={"status": payment.status, "method": payment.method, "gateway_ref": payment.gateway_ref},
+            )
+            return payment
+
+    @staticmethod
+    def validate_online_paid(order) -> None:
+        """An order with an unpaid ONLINE payment cannot leave the intake
+        state: it becomes workable only once Mercado Pago confirms the charge."""
+        from apps.orders.state_machine import GuardViolationError
+
+        pending_online = order.payments.filter(
+            method=Payment.Method.ONLINE, status=Payment.Status.PENDING
+        ).exists()
+        if pending_online:
+            raise GuardViolationError(
+                "Order has a pending online payment; it enters the board once Mercado Pago confirms it"
+            )
 
     @staticmethod
     def efectivo_confirmed_total(order):

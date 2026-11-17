@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenRefreshView
 
+from apps.payments.views import MercadoPagoWebhookView
 from apps.tenancy.auth import WorkZoneTokenView
 from apps.tenancy.views import (
     AuditListView,
@@ -38,6 +39,8 @@ urlpatterns = [
     path("api/v1/notifications/", include("apps.notifications.urls")),
     path("api/public/", include("apps.catalog.urls_public")),
     path("api/public/<slug:slug>/", include("apps.orders.urls_public")),
+    path("api/payments/webhook/<slug:merchant_slug>", MercadoPagoWebhookView.as_view(), name="mp-webhook"),
+    path("api/payments/webhook/<slug:merchant_slug>/", MercadoPagoWebhookView.as_view()),
 ]
 
 # Customer auth is gated — unset gate to disable per-company client registration without dropping tables
