@@ -1,5 +1,8 @@
 import hashlib
 import hmac
+import io
+import json
+from urllib.error import HTTPError, URLError
 
 import pytest
 
@@ -91,3 +94,67 @@ def test_validate_signature_omits_missing_pairs():
 def test_for_merchant_requires_token():
     with pytest.raises(MercadoPagoError):
         MercadoPagoGateway.for_merchant(type("M", (), {"mp_access_token": None})())
+
+
+class FakeHTTPResponse:
+    def __init__(self, payload, status=200):
+        self.status = status
+        self._payload = json.dumps(payload).encode()
+
+    def read(self):
+        return self._payload
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+
+def test_default_session_uses_stdlib_and_posts_json(monkeypatch):
+    """No third-party HTTP client: the default session works on a bare install."""
+    captured = {}
+
+    def fake_urlopen(req, timeout=None):
+        captured["url"] = req.full_url
+        captured["method"] = req.get_method()
+        captured["body"] = json.loads(req.data.decode())
+        captured["auth"] = req.get_header("Authorization")
+        captured["timeout"] = timeout
+        return FakeHTTPResponse({"id": "pref-9", "init_point": "https://mp/pref-9"})
+
+    monkeypatch.setattr("apps.payments.gateways.mercado_pago.urlopen", fake_urlopen)
+    gw = MercadoPagoGateway("TEST-TOKEN")
+    pref = gw.create_preference(
+        items=[{"title": "Pedido #7", "quantity": 1, "unit_price": 900.0, "currency_id": "ARS"}],
+        external_reference="7",
+        back_urls={"success": "https://x/ok"},
+        notification_url="https://x/api/payments/webhook/demo-mercado/",
+    )
+
+    assert pref == {"id": "pref-9", "init_point": "https://mp/pref-9"}
+    assert captured["url"] == "https://api.mercadopago.com/checkout/preferences"
+    assert captured["method"] == "POST"
+    assert captured["auth"] == "Bearer TEST-TOKEN"
+    assert captured["body"]["external_reference"] == "7"
+    assert captured["timeout"] == MercadoPagoGateway.TIMEOUT
+
+
+def test_default_session_maps_http_error_to_gateway_error(monkeypatch):
+    def fake_urlopen(req, timeout=None):
+        raise HTTPError(req.full_url, 401, "Unauthorized", {}, io.BytesIO(b'{"message":"invalid_token"}'))
+
+    monkeypatch.setattr("apps.payments.gateways.mercado_pago.urlopen", fake_urlopen)
+    gw = MercadoPagoGateway("BAD-TOKEN")
+    with pytest.raises(MercadoPagoError, match="HTTP 401"):
+        gw.get_payment(123)
+
+
+def test_default_session_wraps_network_error(monkeypatch):
+    def fake_urlopen(req, timeout=None):
+        raise URLError("connection refused")
+
+    monkeypatch.setattr("apps.payments.gateways.mercado_pago.urlopen", fake_urlopen)
+    gw = MercadoPagoGateway("TEST-TOKEN")
+    with pytest.raises(MercadoPagoError, match="connection refused"):
+        gw.get_payment(123)
