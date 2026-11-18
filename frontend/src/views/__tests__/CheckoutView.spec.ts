@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
-import { createPinia } from 'pinia'
+import { createPinia, setActivePinia } from 'pinia'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createVuetify } from 'vuetify'
 import CheckoutView from '@/views/CheckoutView.vue'
 import { redirectTo } from '@/utils/redirect'
+import { useOperatorStore } from '@/stores/operator.store'
 
 const vuetify = createVuetify()
 
@@ -18,8 +19,10 @@ vi.mock('@/api/client', () => ({
   },
 }))
 
+const push = vi.fn()
+const replace = vi.fn()
 vi.mock('vue-router', () => ({
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  useRouter: () => ({ push, replace }),
   useRoute: () => ({ params: { slug: 'demo' }, query: {} }),
 }))
 
@@ -107,5 +110,55 @@ describe('CheckoutView payments', () => {
     ])
     expect(calls.some(([u]) => String(u).includes('/pay'))).toBe(false)
     expect(redirectTo).not.toHaveBeenCalled()
+  })
+
+  it('operator + online payment: generates link, shows dialog and close returns to board', async () => {
+    vi.mocked(api.post).mockImplementation(async (url: string) => {
+      if (url.endsWith('/orders') || url.endsWith('/orders/')) return { data: { id: 3, code: 3, total: '8500.00' } }
+      return { data: { init_point: 'https://mp/link/3' } }
+    })
+    sessionStorage.setItem('operator:manual', '1')
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    localStorage.setItem(
+      'cart:demo',
+      JSON.stringify([
+        { uid: 't1', product: { id: 5, name: 'Bombo', price: 8500, product_type: 'UNIT', pote_size: null }, qty: 1, flavorIds: [], flavorNames: [] },
+      ]),
+    )
+    const wrapper = mount(CheckoutView, {
+      global: { plugins: [pinia, vuetify, [VueQueryPlugin, { queryClient: new QueryClient() }]] },
+    })
+    await flushPromises()
+    await fillBasics(wrapper)
+
+    // Manual mode: switch the editable payment row to ONLINE and set the amount.
+    const selects = wrapper.findAllComponents({ name: 'VSelect' })
+    const methodSelect = selects.find((s) => String((s.props('label') ?? '')).includes('Método'))
+    expect(methodSelect).toBeTruthy()
+    await methodSelect!.setValue('ONLINE')
+    const amountInput = wrapper.find('input[type="number"]')
+    await amountInput.setValue('8500')
+    await flushPromises()
+
+    await clickSubmit(wrapper)
+
+    const calls = vi.mocked(api.post).mock.calls
+    const create = calls.find(([u]) => String(u).endsWith('/orders') || String(u).endsWith('/orders/'))
+    expect((create?.[1] as { payments: { method: string; amount: string }[] }).payments).toEqual([
+      { method: 'ONLINE', amount: '8500' },
+    ])
+    expect(calls.some(([u]) => String(u).includes('/orders/3/pay'))).toBe(true)
+    expect(redirectTo).not.toHaveBeenCalled()
+    expect(document.body.textContent).toContain('Mandáselo al cliente por WhatsApp')
+
+    const buttons = Array.from(document.body.querySelectorAll('button')) as HTMLButtonElement[]
+    const closeBtn = buttons.find((b) => b.textContent?.includes('Cerrar'))
+    expect(closeBtn).toBeTruthy()
+    closeBtn!.click()
+    await flushPromises()
+    expect(push).toHaveBeenCalledWith('/panel/board')
+    expect(useOperatorStore(pinia).active).toBe(false)
+    wrapper.unmount()
   })
 })
