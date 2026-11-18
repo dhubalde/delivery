@@ -8,6 +8,7 @@ export type Merchant = {
   is_active: boolean
   logo: string | null
   logo_url: string | null
+  has_online_payments?: boolean
 }
 
 export const merchantApi = {

@@ -21,14 +21,28 @@
         <v-select v-model="fulfillment" :items="['DELIVERY','PICKUP']" label="Entrega" density="compact" class="mb-2" style="max-width:200px" />
         <v-divider class="my-3" />
         <div class="text-subtitle-2 mb-2">Pagos</div>
-        <div v-for="(pay, i) in payments" :key="i" class="d-flex ga-2 mb-2">
-          <v-select v-model="pay.method" :items="methods" label="Método" density="compact" style="max-width:180px" />
-          <v-text-field v-model.number="pay.amount" type="number" label="Monto" density="compact" :error-messages="fieldErr(i)" />
-          <v-btn icon="mdi-delete" size="small" variant="text" @click="payments.splice(i,1)" v-if="payments.length>1" />
-        </div>
-        <v-btn size="small" variant="tonal" @click="payments.push({ method:'EFECTIVO', amount:0 })">Agregar pago</v-btn>
-        <v-alert v-if="sumError" type="error" variant="tonal" class="mt-2">{{ sumError }}</v-alert>
-        <template v-if="hasTarjeta">
+        <template v-if="!isManual">
+          <v-btn-toggle v-model="payMode" mandatory class="mb-2">
+            <v-btn value="EFECTIVO" prepend-icon="mdi-cash">Efectivo al recibir</v-btn>
+            <v-btn v-if="onlineEnabled" value="ONLINE" prepend-icon="mdi-credit-card-outline">Pagar en línea</v-btn>
+          </v-btn-toggle>
+          <div v-if="payMode === 'EFECTIVO'" class="text-caption text-medium-emphasis mb-2">
+            El repartidor cobra al entregar.
+          </div>
+          <div v-else class="text-caption text-medium-emphasis mb-2">
+            Te llevamos a Mercado Pago: pagá con tu billetera o tarjeta (hasta en cuotas).
+          </div>
+        </template>
+        <template v-else>
+          <div v-for="(pay, i) in payments" :key="i" class="d-flex ga-2 mb-2">
+            <v-select v-model="pay.method" :items="methods" label="Método" density="compact" style="max-width:180px" />
+            <v-text-field v-model.number="pay.amount" type="number" label="Monto" density="compact" :error-messages="fieldErr(i)" />
+            <v-btn icon="mdi-delete" size="small" variant="text" @click="payments.splice(i,1)" v-if="payments.length>1" />
+          </div>
+          <v-btn size="small" variant="tonal" @click="payments.push({ method:'EFECTIVO', amount:0 })">Agregar pago</v-btn>
+          <v-alert v-if="sumError" type="error" variant="tonal" class="mt-2">{{ sumError }}</v-alert>
+        </template>
+        <template v-if="isManual && hasTarjeta">
           <v-divider class="my-3" />
           <div class="text-subtitle-2 mb-2">Datos de tarjeta (mock)</div>
           <v-text-field v-model="cardNumber" label="Número de tarjeta *" density="compact" :error-messages="cardNumberErr" placeholder="4111 1111 1111 1111" hint="Para probar usá 4111 1111 1111 1111" persistent-hint class="mb-2" />
@@ -44,6 +58,23 @@
       </v-form>
     </template>
     <v-snackbar v-model="ok" color="success">Pedido creado ¡Gracias!</v-snackbar>
+    <v-dialog v-model="linkDlg" max-width="480">
+      <v-card>
+        <v-card-title class="text-subtitle-1">Link de pago</v-card-title>
+        <v-card-text>
+          <div class="text-caption text-medium-emphasis mb-2">
+            Mandáselo al cliente por WhatsApp; el pedido aparece en el tablero cuando paga.
+          </div>
+          <v-text-field :model-value="paymentLink" readonly density="compact" />
+        </v-card-text>
+        <v-card-actions>
+          <v-btn variant="text" @click="closeLinkDialog">Cerrar</v-btn>
+          <v-spacer />
+          <v-btn variant="tonal" prepend-icon="mdi-content-copy" @click="copyLink">Copiar</v-btn>
+          <v-btn color="primary" prepend-icon="mdi-whatsapp" @click="shareLink">WhatsApp</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <v-dialog v-model="mapDialog" max-width="640" scrollable>
       <v-card>
         <v-card-title class="text-subtitle-1">Confirmá tu dirección en el mapa</v-card-title>
@@ -69,6 +100,8 @@ import { useCartStore } from '@/stores/cart.store'
 import { useOperatorStore, coordinatorMethods, isManualBodySource } from '@/stores/operator.store'
 import { useMenu } from '@/composables/useMenu'
 import { useCustomerStore } from '@/stores/customer.store'
+import { usePublicMerchant } from '@/composables/useMerchant'
+import { redirectTo } from '@/utils/redirect'
 import { addMyOrderIdForSlug, saveMyOrderSnapshot } from '@/composables/useMyOrders'
 import ClosedBanner from '@/components/ClosedBanner.vue'
 import AddressMapPicker, { type MapAddress } from '@/components/AddressMapPicker.vue'
@@ -83,6 +116,14 @@ const isManual = computed(() => operator.active || route.query.manual === '1')
 watch(isManual, (m) => { if (m) operator.enter() }, { immediate: true })
 const methods = computed(() => (isManual.value ? coordinatorMethods() : ['EFECTIVO','BILLETERA','TARJETA']))
 const payments = ref<{ method:string; amount:number }[]>([{ method:'EFECTIVO', amount: cart.total }])
+// Web checkout: single choice — cash on delivery or online (Mercado Pago).
+const payMode = ref<'EFECTIVO' | 'ONLINE'>('EFECTIVO')
+const { data: merchantData } = usePublicMerchant(slug.value)
+const onlineEnabled = computed(
+  () => (merchantData.value as { has_online_payments?: boolean } | undefined)?.has_online_payments === true,
+)
+const linkDlg = ref(false)
+const paymentLink = ref('')
 const customerName = ref('')
 const customerPhone = ref('')
 const address = ref('')
@@ -172,11 +213,26 @@ const { data } = useMenu(slug as any) as any
 const closed = computed(() => { const d=(data as any).value as any; return d ? (d.closed===true||d.is_open===false) : false })
 const hasTarjeta = computed(() => payments.value.some((p) => p.method === 'TARJETA'))
 const sumError = computed(() => {
+  // Web checkout sets its single payment from cart.total in submit(): the
+  // initial ref may predate cart hydration (direct URL entry), so the sum
+  // guard only applies to the editable manual payment rows.
+  if (!isManual.value) return null
   const s = payments.value.reduce((a,p)=>a+Number(p.amount||0),0)
   if (Math.abs(s - cart.total) > 0.01) return `Los montos deben sumar $${cart.total.toFixed(2)}`
   return null
 })
 function fieldErr(i:number){ return fieldErrs.value[i] || '' }
+function closeLinkDialog(): void {
+  linkDlg.value = false
+  operator.exit()
+  router.push('/panel/board')
+}
+async function copyLink(): Promise<void> {
+  try { await navigator.clipboard.writeText(paymentLink.value) } catch { /* clipboard unavailable */ }
+}
+function shareLink(): void {
+  window.open(`https://wa.me/?text=${encodeURIComponent(`Pagá tu pedido acá: ${paymentLink.value}`)}`, '_blank')
+}
 function validatePhone(): string {
   const raw = customerPhone.value.trim()
   if (!raw) return 'Requerido'
@@ -214,6 +270,11 @@ async function submit(){
   }
   if(hasErr) return
   if (sumError.value) { inlineError.value = sumError.value; return }
+  // Web checkout: the single pay-mode choice decides the payment payload.
+  if (!isManual.value) {
+    payments.value = [payMode.value === 'ONLINE' ? { method: 'ONLINE', amount: cart.total } : { method: 'EFECTIVO', amount: cart.total }]
+  }
+  const wantsOnlinePay = payments.value.some((p) => p.method === 'ONLINE')
   loading.value=true
   try{
     const currentSlug = slug.value
@@ -236,6 +297,23 @@ async function submit(){
       saveMyOrderSnapshot(currentSlug, { id: created.id, code: created.code, state: 'RECIBIDO', total: created.total, created_at: new Date().toISOString() })
     }
     cart.clear(); ok.value=true
+    if (wantsOnlinePay && created && typeof created.id === 'number') {
+      try {
+        const { data: payData } = await api.post(`/public/${currentSlug}/orders/${created.id}/pay`) as { data: { init_point: string } }
+        if (isManual.value) {
+          // Operator took a phone order paid by link: show it to copy/share;
+          // the order enters the board only once the customer pays.
+          paymentLink.value = payData.init_point
+          linkDlg.value = true
+          return
+        }
+        redirectTo(payData.init_point)
+        return
+      } catch {
+        inlineError.value = 'El pedido quedó registrado pero no se pudo iniciar el pago. Avisanos al local.'
+        return
+      }
+    }
     if (isManual.value) {
       // Operator registered a phone order: back to the kanban, not to "my orders".
       setTimeout(() => { operator.exit(); router.push('/panel/board') }, 800)

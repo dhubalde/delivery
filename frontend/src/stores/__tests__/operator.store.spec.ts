@@ -31,8 +31,9 @@ describe('operator.store manual-entry mode', () => {
     expect(sessionStorage.getItem(operatorActiveKey)).toBeNull()
   })
 
-  it('phone-request methods are cash + transfer only', () => {
-    expect(coordinatorMethods()).toEqual(['EFECTIVO', 'TRANSFER'])
+  it('phone-request methods are cash, transfer and online payment link', () => {
+    // S2: phone orders can also be paid with a Mercado Pago link (ONLINE).
+    expect(coordinatorMethods()).toEqual(['EFECTIVO', 'TRANSFER', 'ONLINE'])
   })
 
   it('body source is MANUAL only in manual mode', () => {

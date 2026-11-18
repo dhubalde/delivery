@@ -237,11 +237,26 @@ class SpecialDateDetailView(generics.RetrieveUpdateDestroyAPIView):
 class MerchantSerializer(serializers.ModelSerializer):
     logo = serializers.ImageField(required=False, allow_null=True)
     logo_url = serializers.URLField(required=False, allow_null=True, allow_blank=True)
+    has_online_payments = serializers.SerializerMethodField()
 
     class Meta:
         model = Merchant
-        fields = ["id", "name", "slug", "vertical", "is_active", "logo", "logo_url", "print_tickets"]
+        fields = [
+            "id",
+            "name",
+            "slug",
+            "vertical",
+            "is_active",
+            "logo",
+            "logo_url",
+            "print_tickets",
+            "has_online_payments",
+        ]
         read_only_fields = ["id", "slug"]
+
+    def get_has_online_payments(self, merchant) -> bool:
+        # Public-safe capability flag; never expose the credentials themselves.
+        return bool(merchant.mp_access_token)
 
 
 class MerchantDetailView(APIView):

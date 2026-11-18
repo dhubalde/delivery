@@ -44,3 +44,10 @@ class TestMerchantPaymentConfig:
         data = client.get("/api/v1/merchant/").json()
         assert "mp_access_token" not in data
         assert "mp_webhook_secret" not in data
+
+    def test_public_merchant_exposes_has_online_payments_flag(self):
+        with_mp = MerchantFactory(mp_access_token="TEST-ACCESS")
+        without = MerchantFactory()
+        client = APIClient()
+        assert client.get("/api/v1/merchant/public/", {"slug": with_mp.slug}).json()["has_online_payments"] is True
+        assert client.get("/api/v1/merchant/public/", {"slug": without.slug}).json()["has_online_payments"] is False

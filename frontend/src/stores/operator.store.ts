@@ -5,7 +5,8 @@ export const operatorActiveKey = 'operator:manual'
 
 /** Payment methods offered to the operator at manual checkout (cash expected; transfer recorded as pending). */
 export function coordinatorMethods(): string[] {
-  return ['EFECTIVO', 'TRANSFER']
+  // ONLINE = pay with a Mercado Pago link the operator sends to the customer.
+  return ['EFECTIVO', 'TRANSFER', 'ONLINE']
 }
 
 /** Order body `source` value: MANUAL only while operator mode is active. */
