@@ -3,6 +3,7 @@ import { api } from '../client'
 export type Company = {
   id: number; name: string; slug: string
   seat_limit: number; has_branches: boolean; print_tickets?: boolean; is_active: boolean
+  has_online_payments?: boolean
 }
 export type InternalUser = {
   id: number; username: string; role: string
@@ -18,7 +19,11 @@ export const masterApi = {
   companies: async () => unwrap<Company>((await api.get('/master/companies/')).data),
   onboard: async (b: { name: string; slug: string; logo_url?: string; seat_limit: number; has_branches: boolean; admin_username: string; admin_password: string }) =>
     (await api.post('/master/companies/', b)).data,
-  updateCompany: async (id: number, b: { name?: string; logo_url?: string; seat_limit?: number; has_branches?: boolean; is_active?: boolean }) =>
+  updateCompany: async (id: number, b: {
+    name?: string; logo_url?: string; seat_limit?: number; has_branches?: boolean
+    print_tickets?: boolean; is_active?: boolean
+    mp_access_token?: string; mp_webhook_secret?: string
+  }) =>
     (await api.patch(`/master/companies/${id}/`, b)).data as Company,
   internalUsers: async () => unwrap<InternalUser>((await api.get('/master/users/')).data),
   createInternal: async (b: { username: string; password: string; role: string; assigned_merchants?: number[] }) =>

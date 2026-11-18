@@ -48,6 +48,26 @@
           <v-switch v-model="eform.has_branches" label="Tiene sucursales" color="primary" />
           <v-switch v-model="eform.print_tickets" label="Imprime tickets en comandera" color="primary" hint="Al pasar un pedido a Preparación se encola el ticket" persistent-hint />
           <v-switch v-model="eform.is_active" label="Activa" color="primary" />
+          <v-divider class="my-2" />
+          <div class="text-subtitle-2 mb-1">Mercado Pago (pagos en línea)</div>
+          <v-text-field
+            v-model="eform.mp_access_token"
+            label="Access token"
+            density="compact"
+            type="password"
+            autocomplete="off"
+            hint="Dejar vacío para no cambiar"
+            persistent-hint
+          />
+          <v-text-field
+            v-model="eform.mp_webhook_secret"
+            label="Webhook secret"
+            density="compact"
+            type="password"
+            autocomplete="off"
+            hint="Dejar vacío para no cambiar"
+            persistent-hint
+          />
           <v-alert v-if="err" type="error" density="compact">{{ err }}</v-alert>
         </v-card-text>
         <v-card-actions>
@@ -86,17 +106,33 @@ async function save() {
 import type { Company } from '@/api/panel/master.api'
 const edlg = ref(false)
 const editing = ref<number | null>(null)
-const eform = reactive({ name: '', logo_url: '', seat_limit: 10, has_branches: false, print_tickets: false, is_active: true })
+const eform = reactive({
+  name: '', logo_url: '', seat_limit: 10, has_branches: false,
+  print_tickets: false, is_active: true,
+  mp_access_token: '', mp_webhook_secret: '',
+})
 function openEdit(c: Company) {
   editing.value = c.id
-  Object.assign(eform, { name: c.name, logo_url: '', seat_limit: c.seat_limit, has_branches: c.has_branches, print_tickets: !!c.print_tickets, is_active: c.is_active })
+  // Credentials are never returned by the API; leave blank to keep current values.
+  Object.assign(eform, {
+    name: c.name, logo_url: '', seat_limit: c.seat_limit, has_branches: c.has_branches,
+    print_tickets: !!c.print_tickets, is_active: c.is_active,
+    mp_access_token: '', mp_webhook_secret: '',
+  })
   err.value = ''; edlg.value = true
 }
 async function saveEdit() {
   if (!editing.value) return
   saving.value = true; err.value = ''
   try {
-    await masterApi.updateCompany(editing.value, { ...eform })
+    const payload: Record<string, unknown> = {
+      name: eform.name, logo_url: eform.logo_url, seat_limit: eform.seat_limit,
+      has_branches: eform.has_branches, print_tickets: eform.print_tickets, is_active: eform.is_active,
+    }
+    // Only send credentials when the user typed a value; blank means "keep as is".
+    if (eform.mp_access_token.trim()) payload.mp_access_token = eform.mp_access_token.trim()
+    if (eform.mp_webhook_secret.trim()) payload.mp_webhook_secret = eform.mp_webhook_secret.trim()
+    await masterApi.updateCompany(editing.value, payload)
     edlg.value = false; editing.value = null
   } catch (e: unknown) {
     err.value = (e as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ?? 'Error'
