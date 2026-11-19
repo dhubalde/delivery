@@ -434,6 +434,9 @@ class CompanyOnboardingView(APIView):
                     "slug": m.slug,
                     "seat_limit": m.seat_limit,
                     "has_branches": m.has_branches,
+                    "print_tickets": m.print_tickets,
+                    # Capability flag only; credentials stay write-only.
+                    "has_online_payments": bool(m.mp_access_token),
                     "is_active": m.is_active,
                 }
                 for m in queryset

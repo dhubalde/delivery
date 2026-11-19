@@ -80,3 +80,29 @@ class TestCompanyDetail:
         )
         other = MerchantFactory()
         assert tclient.get(f"/api/master/companies/{other.pk}/").status_code == 404
+
+
+class TestCompanyList:
+    def test_list_exposes_table_flags_without_secrets(self):
+        client = _master_client()
+        comp = MerchantFactory(
+            print_tickets=True,
+            mp_access_token="APP-USR-123",
+            mp_webhook_secret="whsec-abc",
+        )
+        response = client.get("/api/master/companies/")
+        assert response.status_code == 200
+        row = next(r for r in response.data if r["id"] == comp.pk)
+        assert row["print_tickets"] is True
+        assert row["has_online_payments"] is True
+        # Credentials are write-only: the table never receives them.
+        assert "mp_access_token" not in row
+        assert "mp_webhook_secret" not in row
+
+    def test_list_reports_missing_payment_credentials(self):
+        client = _master_client()
+        comp = MerchantFactory()
+        response = client.get("/api/master/companies/")
+        row = next(r for r in response.data if r["id"] == comp.pk)
+        assert row["has_online_payments"] is False
+        assert row["print_tickets"] is False
