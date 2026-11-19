@@ -1,20 +1,92 @@
 <template>
   <v-container fluid class="pa-4">
-    <v-row align="center" class="mb-2">
-      <v-col><h2 class="text-h6">Empresas cliente</h2></v-col>
-      <v-col class="text-right"><v-btn color="primary" prepend-icon="mdi-plus" @click="dlg=true">Onboarding</v-btn></v-col>
+    <v-row align="center" class="mb-3">
+      <v-col cols="12" md="6">
+        <h2 class="text-h6 mb-1">Empresas cliente</h2>
+        <div class="text-caption text-medium-emphasis">
+          Buscá, filtrá y ordená por columna. El lápiz abre la configuración de cada empresa.
+        </div>
+      </v-col>
+      <v-col cols="12" md="6" class="text-md-right">
+        <v-btn color="primary" prepend-icon="mdi-plus" @click="dlg = true">Onboarding</v-btn>
+      </v-col>
     </v-row>
-    <v-card>
-      <v-list v-if="list.length" lines="two">
-        <v-list-item v-for="c in list" :key="c.id" :title="`${c.name} (${c.slug})`"
-          :subtitle="`Cupo ${c.seat_limit} · ${c.has_branches ? 'Con sucursales' : 'Sin sucursales'} · ${c.is_active ? 'Activa' : 'Inactiva'}`">
-          <template #append>
-            <v-btn icon="mdi-pencil" variant="text" size="small" @click="openEdit(c)" />
-          </template>
-        </v-list-item>
-      </v-list>
-      <v-card-text v-else class="text-medium-emphasis">Sin empresas.</v-card-text>
+
+    <v-card rounded="lg">
+      <v-card-title class="d-flex flex-wrap align-center ga-3 py-3">
+        <v-text-field
+          v-model="search"
+          data-test="company-search"
+          label="Buscar por nombre o slug"
+          prepend-inner-icon="mdi-magnify"
+          density="compact"
+          variant="outlined"
+          hide-details
+          clearable
+          style="max-width: 300px"
+        />
+        <v-btn-toggle v-model="status" mandatory density="compact" variant="outlined" divided>
+          <v-btn value="all" size="small">Todas</v-btn>
+          <v-btn value="active" size="small">Activas</v-btn>
+          <v-btn value="inactive" size="small">Inactivas</v-btn>
+        </v-btn-toggle>
+        <v-spacer />
+        <v-chip size="small" variant="tonal">{{ filtered.length }} de {{ list.length }}</v-chip>
+      </v-card-title>
+      <v-divider />
+      <v-data-table
+        :headers="headers"
+        :items="filtered"
+        :search="search"
+        :filter-keys="['name', 'slug']"
+        :loading="isLoading"
+        item-value="id"
+        density="comfortable"
+        hover
+        :items-per-page="10"
+        :items-per-page-options="[10, 25, 50, -1]"
+      >
+        <template #item.name="{ item }">
+          <div class="font-weight-medium">{{ item.name }}</div>
+          <div class="text-caption text-medium-emphasis">{{ item.slug }}</div>
+        </template>
+        <template #item.has_branches="{ item }">
+          <v-icon v-if="item.has_branches" color="success" size="small">mdi-check-circle</v-icon>
+          <span v-else class="text-medium-emphasis">—</span>
+        </template>
+        <template #item.print_tickets="{ item }">
+          <v-chip v-if="item.print_tickets" size="small" variant="tonal" color="primary">Sí</v-chip>
+          <span v-else class="text-medium-emphasis">—</span>
+        </template>
+        <template #item.has_online_payments="{ item }">
+          <v-chip v-if="item.has_online_payments" size="small" variant="tonal" color="success">
+            Configurado
+          </v-chip>
+          <span v-else class="text-medium-emphasis">—</span>
+        </template>
+        <template #item.is_active="{ item }">
+          <v-chip :color="item.is_active ? 'success' : 'default'" variant="tonal" size="small">
+            {{ item.is_active ? 'Activa' : 'Inactiva' }}
+          </v-chip>
+        </template>
+        <template #item.actions="{ item }">
+          <v-btn
+            icon="mdi-pencil"
+            variant="text"
+            size="small"
+            data-test="edit-company"
+            :title="`Editar ${item.name}`"
+            @click="openEdit(item)"
+          />
+        </template>
+        <template #no-data>
+          <div class="pa-6 text-center text-medium-emphasis">
+            Sin empresas que coincidan con la búsqueda.
+          </div>
+        </template>
+      </v-data-table>
     </v-card>
+
     <v-dialog v-model="dlg" max-width="520">
       <v-card>
         <v-card-title>Nueva empresa</v-card-title>
@@ -38,6 +110,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
     <v-dialog v-model="edlg" max-width="520">
       <v-card>
         <v-card-title>Editar empresa</v-card-title>
@@ -84,14 +157,38 @@
 import { computed, reactive, ref } from 'vue'
 import { useMasterCompanies } from '@/composables/useMaster'
 import { masterApi } from '@/api/panel/master.api'
+import type { Company } from '@/api/panel/master.api'
 
-const { data } = useMasterCompanies()
-const list = computed(() => data.value ?? [])
+const { data, isLoading } = useMasterCompanies()
+const list = computed(() => (data.value ?? []) as Company[])
+
+const search = ref('')
+const status = ref<'all' | 'active' | 'inactive'>('all')
+const filtered = computed(() =>
+  list.value.filter((c) => {
+    if (status.value === 'active') return c.is_active
+    if (status.value === 'inactive') return !c.is_active
+    return true
+  }),
+)
+
+// Every column is sortable by clicking its header; actions is not.
+const headers = [
+  { title: 'Empresa', key: 'name' },
+  { title: 'Cupo', key: 'seat_limit', align: 'end' as const },
+  { title: 'Sucursales', key: 'has_branches', align: 'center' as const },
+  { title: 'Tickets', key: 'print_tickets', align: 'center' as const },
+  { title: 'Mercado Pago', key: 'has_online_payments', align: 'center' as const },
+  { title: 'Estado', key: 'is_active', align: 'center' as const },
+  { title: '', key: 'actions', sortable: false, align: 'end' as const },
+]
+
 const dlg = ref(false)
 const saving = ref(false)
 const err = ref('')
 const showPass = ref(false)
 const form = reactive({ name: '', slug: '', logo_url: '', seat_limit: 10, has_branches: false, admin_username: '', admin_password: '' })
+
 async function save() {
   saving.value = true; err.value = ''
   try {
@@ -103,7 +200,7 @@ async function save() {
       ?? (e as { response?: { data?: { slug?: string } } })?.response?.data?.slug ?? 'Error'
   } finally { saving.value = false }
 }
-import type { Company } from '@/api/panel/master.api'
+
 const edlg = ref(false)
 const editing = ref<number | null>(null)
 const eform = reactive({
@@ -111,6 +208,7 @@ const eform = reactive({
   print_tickets: false, is_active: true,
   mp_access_token: '', mp_webhook_secret: '',
 })
+
 function openEdit(c: Company) {
   editing.value = c.id
   // Credentials are never returned by the API; leave blank to keep current values.
@@ -121,6 +219,7 @@ function openEdit(c: Company) {
   })
   err.value = ''; edlg.value = true
 }
+
 async function saveEdit() {
   if (!editing.value) return
   saving.value = true; err.value = ''

@@ -44,7 +44,6 @@
       </v-container>
     </v-main>
     <v-snackbar v-model="toast.show" :color="toast.type === 'error' ? 'error' : 'warning'" timeout="3000">{{ toast.msg }}</v-snackbar>
-    <FooterContact v-if="!route.path.includes('/panel/')" />
     <v-dialog v-model="showReportsDialog" max-width="360">
       <v-card>
         <v-card-title>Reportes — clave requerida</v-card-title>
@@ -63,13 +62,12 @@
 </template>
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useTheme } from 'vuetify'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
 import { useOffline } from '@/composables/useOffline'
 import AppLogo from '@/components/AppLogo.vue'
-import FooterContact from '@/components/FooterContact.vue'
 import NotificationBell from '@/components/NotificationBell.vue'
 const ui = useUiStore()
 const auth = useAuthStore()
@@ -77,7 +75,6 @@ const isAdmin = computed(() => auth.hasAnyRole(['ADMIN', 'MASTER']))
 const isPlatform = computed(() => auth.merchantId === null || auth.hasAnyRole(['MASTER']))
 const theme = useTheme()
 const router = useRouter()
-const route = useRoute()
 watch(() => ui.theme, (v) => { theme.global.name.value = v }, { immediate: true })
 useOffline()
 const toast = reactive({ show: false, msg: '', type: 'error' as string })
