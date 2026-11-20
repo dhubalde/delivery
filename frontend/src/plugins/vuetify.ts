@@ -39,6 +39,16 @@ export default createVuetify({
     },
   },
   defaults: {
-    VBtn: { style: 'font-family: Comfortaa, sans-serif' },
+    VBtn: { style: 'font-family: Comfortaa, sans-serif', density: 'compact' },
+    // Dense forms everywhere: compact controls, and messages only take vertical
+    // space when there is something to show (hint with persistent-hint, or error).
+    VTextField: { density: 'compact', hideDetails: 'auto' },
+    VTextarea: { density: 'compact', hideDetails: 'auto' },
+    VSelect: { density: 'compact', hideDetails: 'auto' },
+    VAutocomplete: { density: 'compact', hideDetails: 'auto' },
+    VCombobox: { density: 'compact', hideDetails: 'auto' },
+    VFileInput: { density: 'compact', hideDetails: 'auto' },
+    VSwitch: { density: 'compact', hideDetails: 'auto' },
+    VCheckbox: { density: 'compact', hideDetails: 'auto' },
   },
 })

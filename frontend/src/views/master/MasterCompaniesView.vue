@@ -12,40 +12,24 @@
       </v-col>
     </v-row>
 
-    <v-card rounded="lg">
-      <v-card-title class="d-flex flex-wrap align-center ga-3 py-3">
-        <v-text-field
-          v-model="search"
-          data-test="company-search"
-          label="Buscar por nombre o slug"
-          prepend-inner-icon="mdi-magnify"
-          density="compact"
-          variant="outlined"
-          hide-details
-          clearable
-          style="max-width: 300px"
-        />
+    <DataTableCard
+      v-model:search="search"
+      :headers="headers"
+      :items="filtered"
+      :total="list.length"
+      :search-keys="['name', 'slug']"
+      search-label="Buscar por nombre o slug"
+      search-test-id="company-search"
+      :loading="isLoading"
+      no-data-text="Sin empresas que coincidan con la búsqueda."
+    >
+      <template #filters>
         <v-btn-toggle v-model="status" mandatory density="compact" variant="outlined" divided>
           <v-btn value="all" size="small">Todas</v-btn>
           <v-btn value="active" size="small">Activas</v-btn>
           <v-btn value="inactive" size="small">Inactivas</v-btn>
         </v-btn-toggle>
-        <v-spacer />
-        <v-chip size="small" variant="tonal">{{ filtered.length }} de {{ list.length }}</v-chip>
-      </v-card-title>
-      <v-divider />
-      <v-data-table
-        :headers="headers"
-        :items="filtered"
-        :search="search"
-        :filter-keys="['name', 'slug']"
-        :loading="isLoading"
-        item-value="id"
-        density="comfortable"
-        hover
-        :items-per-page="10"
-        :items-per-page-options="[10, 25, 50, -1]"
-      >
+      </template>
         <template #item.name="{ item }">
           <div class="font-weight-medium">{{ item.name }}</div>
           <div class="text-caption text-medium-emphasis">{{ item.slug }}</div>
@@ -69,23 +53,18 @@
             {{ item.is_active ? 'Activa' : 'Inactiva' }}
           </v-chip>
         </template>
-        <template #item.actions="{ item }">
-          <v-btn
-            icon="mdi-pencil"
-            variant="text"
-            size="small"
-            data-test="edit-company"
-            :title="`Editar ${item.name}`"
-            @click="openEdit(item)"
-          />
-        </template>
-        <template #no-data>
-          <div class="pa-6 text-center text-medium-emphasis">
-            Sin empresas que coincidan con la búsqueda.
-          </div>
-        </template>
-      </v-data-table>
-    </v-card>
+      <template #item.actions="{ item }">
+        <v-btn
+          icon="mdi-pencil"
+          variant="text"
+          size="small"
+          color="primary"
+          data-test="edit-company"
+          :title="`Editar ${item.name}`"
+          @click="openEdit(item)"
+        />
+      </template>
+    </DataTableCard>
 
     <v-dialog v-model="dlg" max-width="520">
       <v-card>
@@ -158,6 +137,7 @@ import { computed, reactive, ref } from 'vue'
 import { useMasterCompanies } from '@/composables/useMaster'
 import { masterApi } from '@/api/panel/master.api'
 import type { Company } from '@/api/panel/master.api'
+import DataTableCard from '@/components/DataTableCard.vue'
 
 const { data, isLoading } = useMasterCompanies()
 const list = computed(() => (data.value ?? []) as Company[])
