@@ -2,7 +2,7 @@
   <v-container fluid class="pa-4">
     <v-row align="center" class="mb-2">
       <v-col><h2 class="text-h6">Usuarios internos</h2></v-col>
-      <v-col class="text-right"><v-btn color="primary" prepend-icon="mdi-plus" @click="dlg=true">Nuevo</v-btn></v-col>
+      <v-col class="text-right"><v-btn color="primary" density="compact" prepend-icon="mdi-plus" @click="dlg=true">Nuevo</v-btn></v-col>
     </v-row>
     <DataTableCard
       v-model:search="search"
@@ -50,8 +50,8 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="dlg=false">Cancelar</v-btn>
-          <v-btn color="primary" :loading="saving" @click="save">Guardar</v-btn>
+          <v-btn variant="text" density="compact" @click="dlg=false">Cancelar</v-btn>
+          <v-btn color="primary" density="compact" :loading="saving" @click="save">Guardar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -79,8 +79,8 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn color="error" @click="killSessions">Revocar todas</v-btn>
-          <v-btn variant="text" @click="sessDlg=false">Cerrar</v-btn>
+          <v-btn color="error" density="compact" @click="killSessions">Revocar todas</v-btn>
+          <v-btn variant="text" density="compact" @click="sessDlg=false">Cerrar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

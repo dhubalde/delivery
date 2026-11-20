@@ -8,7 +8,7 @@
         </div>
       </v-col>
       <v-col cols="12" md="6" class="text-md-right">
-        <v-btn color="primary" prepend-icon="mdi-plus" @click="dlg = true">Onboarding</v-btn>
+        <v-btn color="primary" density="compact" prepend-icon="mdi-plus" @click="dlg = true">Onboarding</v-btn>
       </v-col>
     </v-row>
 
@@ -84,8 +84,8 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="dlg=false">Cancelar</v-btn>
-          <v-btn color="primary" :loading="saving" @click="save">Crear</v-btn>
+          <v-btn variant="text" density="compact" @click="dlg=false">Cancelar</v-btn>
+          <v-btn color="primary" density="compact" :loading="saving" @click="save">Crear</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -124,8 +124,8 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="edlg=false">Cancelar</v-btn>
-          <v-btn color="primary" :loading="saving" @click="saveEdit">Guardar</v-btn>
+          <v-btn variant="text" density="compact" @click="edlg=false">Cancelar</v-btn>
+          <v-btn color="primary" density="compact" :loading="saving" @click="saveEdit">Guardar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
