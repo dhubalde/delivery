@@ -6,53 +6,58 @@
         Historial para reclamos: buscá por fecha, código o cliente y reimprimí el ticket.
       </div>
     </div>
-    <v-card variant="tonal" class="mb-3">
-      <v-card-text class="d-flex flex-wrap ga-2 align-center py-2">
-        <v-text-field v-model="startDate" type="date" density="compact" hide-details label="Desde" style="max-width: 180px" />
-        <v-text-field v-model="endDate" type="date" density="compact" hide-details label="Hasta" style="max-width: 180px" />
+    <v-alert v-if="error" type="warning" density="compact" class="mb-2">No se pudo cargar el historial.</v-alert>
+    <DataTableCard
+      v-model:search="search"
+      :headers="headers"
+      :items="rows"
+      search-label="Código o cliente (nombre/teléfono)"
+      :loading="isLoading"
+      no-data-text="Sin pedidos para esos filtros."
+    >
+      <template #filters>
         <v-text-field
-          v-model="search"
+          v-model="startDate"
+          type="date"
+          label="Desde"
           density="compact"
+          variant="outlined"
           hide-details
-          clearable
-          label="Código o cliente (nombre/teléfono)"
-          style="max-width: 280px"
-          @keyup.enter="doSearch"
+          style="max-width: 180px"
         />
-        <v-btn color="primary" density="compact" @click="doSearch">Buscar</v-btn>
-      </v-card-text>
-    </v-card>
-    <v-skeleton-loader v-if="isLoading" type="table" />
-    <v-alert v-else-if="error" type="warning" density="compact">No se pudo cargar el historial.</v-alert>
-    <template v-else>
-      <v-alert v-if="!rows.length" type="info" variant="tonal" density="compact">
-        Sin pedidos para esos filtros.
-      </v-alert>
-      <v-table v-else density="compact">
-        <thead>
-          <tr>
-            <th>Pedido</th>
-            <th>Fecha y hora</th>
-            <th>Cliente</th>
-            <th>Estado</th>
-            <th class="text-right">Total</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="o in rows" :key="o.id">
-            <td>#{{ o.code }}</td>
-            <td>{{ when(o) }}</td>
-            <td>{{ o.customer_name }}<span v-if="o.customer_phone" class="text-caption text-medium-emphasis"> · {{ o.customer_phone }}</span></td>
-            <td><v-chip size="x-small" variant="tonal" :color="chipColor(o.state)">{{ o.state }}</v-chip></td>
-            <td class="text-right">${{ o.total }}</td>
-            <td class="text-right">
-              <v-btn size="small" variant="text" prepend-icon="mdi-receipt-text" @click="openTicket(o)">Ver ticket</v-btn>
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
-    </template>
+        <v-text-field
+          v-model="endDate"
+          type="date"
+          label="Hasta"
+          density="compact"
+          variant="outlined"
+          hide-details
+          style="max-width: 180px"
+        />
+        <v-btn color="primary" variant="tonal" @click="doSearch">Buscar</v-btn>
+      </template>
+      <template #item.code="{ item }">
+        <span class="font-weight-medium">#{{ item.code }}</span>
+      </template>
+      <template #item.created_at="{ item }">
+        <span class="text-caption">{{ when(item as unknown as Row) }}</span>
+      </template>
+      <template #item.customer_name="{ item }">
+        {{ item.customer_name }}
+        <span v-if="item.customer_phone" class="text-caption text-medium-emphasis"> · {{ item.customer_phone }}</span>
+      </template>
+      <template #item.state="{ item }">
+        <v-chip size="x-small" variant="tonal" :color="chipColor(String(item.state))">{{ item.state }}</v-chip>
+      </template>
+      <template #item.total="{ item }">
+        <span class="font-weight-medium">${{ item.total }}</span>
+      </template>
+      <template #item.actions="{ item }">
+        <v-btn size="small" variant="text" color="primary" prepend-icon="mdi-receipt-text" @click="openTicket(item as unknown as Row)">
+          Ver ticket
+        </v-btn>
+      </template>
+    </DataTableCard>
     <v-dialog v-model="ticketDlg" max-width="360">
       <v-card>
         <v-card-title class="text-subtitle-2">Ticket #{{ current?.code }}</v-card-title>
@@ -78,8 +83,19 @@ import { useMerchant } from '@/composables/useMerchant'
 import { printTicket, buildTicketHtml, ticketWhen } from '@/utils/ticket'
 import type { TicketOrder } from '@/api/panel/printing.api'
 import { qk } from '@/queries/keys'
+import DataTableCard from '@/components/DataTableCard.vue'
 
 type Row = TicketOrder
+
+// Server-side filtering: the query already sends q, so the table must not filter again.
+const headers = [
+  { title: 'Pedido', key: 'code' },
+  { title: 'Fecha y hora', key: 'created_at' },
+  { title: 'Cliente', key: 'customer_name' },
+  { title: 'Estado', key: 'state', align: 'center' as const },
+  { title: 'Total', key: 'total', align: 'end' as const },
+  { title: '', key: 'actions', sortable: false, align: 'end' as const },
+]
 
 function isoDaysAgo(days: number): string {
   const d = new Date()

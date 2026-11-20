@@ -53,8 +53,8 @@ describe('AdminConsultasView', () => {
     expect(firstCall?.[1]?.params).not.toHaveProperty('q')
 
     // Typing a phone does not require Enter: it debounces and re-queries with q.
-    const inputs = wrapper.findAll('input')
-    await inputs[2].setValue('3456')
+    const searchInput = wrapper.find('[data-test="table-search"] input')
+    await searchInput.setValue('3456')
     await vi.advanceTimersByTimeAsync(400)
     await flushPromises()
     const calls = vi.mocked(api.get).mock.calls
@@ -62,7 +62,7 @@ describe('AdminConsultasView', () => {
     expect(qCall).toBeTruthy()
 
     // Clearing the field goes back to the default list (no way to get stuck).
-    await inputs[2].setValue('')
+    await searchInput.setValue('')
     await vi.advanceTimersByTimeAsync(400)
     await flushPromises()
     const cleared = vi.mocked(api.get).mock.calls[vi.mocked(api.get).mock.calls.length - 1]

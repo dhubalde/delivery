@@ -33,22 +33,31 @@
         <div class="text-caption text-medium-emphasis">Feriados y cierres puntuales</div>
       </div>
       <v-alert v-if="sdError && forbidSd" type="error">403 — Permiso denegado</v-alert>
-      <v-table v-if="sdList.length" density="compact" fixed-header hover>
-        <thead>
-          <tr><th>Fecha</th><th>Estado</th><th>Motivo</th><th class="text-right">Acciones</th></tr>
-        </thead>
-        <tbody>
-          <tr v-for="s in sdList" :key="s.id">
-            <td class="font-weight-medium">{{ s.date }}</td>
-            <td class="text-caption">{{ s.is_closed ? 'Cerrado' : 'Abierto' }}</td>
-            <td class="text-caption text-medium-emphasis">{{ s.reason }}</td>
-            <td class="text-right text-no-wrap">
-              <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="delSd(s.id)" />
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
-      <v-alert v-else type="info">Sin fechas especiales</v-alert>
+      <DataTableCard
+        v-model:search="sdSearch"
+        :headers="sdHeaders"
+        :items="sdList"
+        :total="sdList.length"
+        :search-keys="['date', 'reason']"
+        search-label="Buscar fecha o motivo"
+        no-data-text="Sin fechas especiales"
+        :items-per-page="25"
+      >
+        <template #item.date="{ item }">
+          <span class="font-weight-medium">{{ item.date }}</span>
+        </template>
+        <template #item.is_closed="{ item }">
+          <v-chip :color="item.is_closed ? 'error' : 'success'" size="small" variant="tonal">
+            {{ item.is_closed ? 'Cerrado' : 'Abierto' }}
+          </v-chip>
+        </template>
+        <template #item.reason="{ item }">
+          <span class="text-caption text-medium-emphasis">{{ item.reason }}</span>
+        </template>
+        <template #item.actions="{ item }">
+          <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="delSd(item.id as number)" />
+        </template>
+      </DataTableCard>
       <v-card class="mt-4" title="Nueva fecha especial">
         <v-card-text class="d-flex flex-wrap ga-2 align-center">
           <v-text-field v-model="sdForm.date" label="Fecha" type="date" density="compact" hide-details style="max-width:200px" />
@@ -68,9 +77,17 @@ import { useSchedules, useSpecialDates, useUpsertSchedule, useDeleteSchedule, us
 import { useAuthStore } from '@/stores/auth.store'
 import { hasAnyRole } from '@/utils/guards'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import DataTableCard from '@/components/DataTableCard.vue'
 import { useConfirm, toast } from '@/composables/useConfirm'
 const auth = useAuthStore()
 const isAdmin = computed(()=> hasAnyRole(auth.roles, ['ADMIN']))
+const sdSearch = ref('')
+const sdHeaders = [
+  { title: 'Fecha', key: 'date' },
+  { title: 'Estado', key: 'is_closed', align: 'center' as const },
+  { title: 'Motivo', key: 'reason' },
+  { title: '', key: 'actions', sortable: false, align: 'end' as const },
+]
 const { data: schedData, isLoading: loading, isError, error } = useSchedules()
 const { data: sdData, error: sdErr } = useSpecialDates()
 const forbid = computed(()=> (error.value as {response?:{status?:number}})?.response?.status===403)

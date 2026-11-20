@@ -4,18 +4,37 @@
       <v-col><h2 class="text-h6">Usuarios internos</h2></v-col>
       <v-col class="text-right"><v-btn color="primary" prepend-icon="mdi-plus" @click="dlg=true">Nuevo</v-btn></v-col>
     </v-row>
-    <v-card>
-      <v-list v-if="list.length" lines="two">
-        <v-list-item v-for="u in list" :key="u.id" :title="`${u.username} (${u.role})`"
-          :subtitle="`${(u.assigned_merchants ?? []).map(m => m.slug).join(', ') || 'sin empresas'} · ${u.is_active ? 'Activo' : 'Inactivo'}`">
-          <template #append>
-            <v-btn icon="mdi-cellphone-lock" variant="text" size="small" title="Sesiones" @click="openSessions(u)" />
-            <v-btn icon="mdi-pencil" variant="text" size="small" @click="openEdit(u)" />
-          </template>
-        </v-list-item>
-      </v-list>
-      <v-card-text v-else class="text-medium-emphasis">Sin usuarios internos.</v-card-text>
-    </v-card>
+    <DataTableCard
+      v-model:search="search"
+      :headers="headers"
+      :items="list"
+      :total="list.length"
+      :search-keys="['username', 'role']"
+      search-label="Buscar usuario o rol"
+      :loading="loading"
+      no-data-text="Sin usuarios internos."
+    >
+      <template #item.username="{ item }">
+        <span class="font-weight-medium">{{ item.username }}</span>
+      </template>
+      <template #item.role="{ item }">
+        <v-chip size="small" variant="tonal">{{ item.role }}</v-chip>
+      </template>
+      <template #item.assigned_merchants="{ item }">
+        <span class="text-caption text-medium-emphasis">
+          {{ merchantSlugs(item as unknown as InternalUser) }}
+        </span>
+      </template>
+      <template #item.is_active="{ item }">
+        <v-chip :color="item.is_active ? 'success' : 'default'" size="small" variant="tonal">
+          {{ item.is_active ? 'Activo' : 'Inactivo' }}
+        </v-chip>
+      </template>
+      <template #item.actions="{ item }">
+        <v-btn icon="mdi-cellphone-lock" variant="text" size="small" color="primary" title="Sesiones" @click="openSessions(item as unknown as InternalUser)" />
+        <v-btn icon="mdi-pencil" variant="text" size="small" color="primary" title="Editar" @click="openEdit(item as unknown as InternalUser)" />
+      </template>
+    </DataTableCard>
     <v-dialog v-model="dlg" max-width="520">
       <v-card>
         <v-card-title>{{ editing ? 'Editar interno' : 'Nuevo interno' }}</v-card-title>
@@ -40,11 +59,22 @@
       <v-card>
         <v-card-title>Sesiones de {{ sessUser?.username }}</v-card-title>
         <v-card-text>
-          <v-list v-if="sessList.length" density="compact">
-            <v-list-item v-for="(s, i) in sessList" :key="i"
-              :title="`...${s.jti_prefix}`"
-              :subtitle="`${new Date(s.created_at).toLocaleString('es-AR')} · ${s.active ? 'Activa' : 'Revocada'}`" />
-          </v-list>
+          <v-table v-if="sessList.length" density="compact" hover>
+            <thead>
+              <tr><th>Token</th><th>Inicio</th><th>Estado</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="(s, i) in sessList" :key="i">
+                <td class="text-caption">...{{ s.jti_prefix }}</td>
+                <td class="text-caption">{{ new Date(s.created_at).toLocaleString('es-AR') }}</td>
+                <td>
+                  <v-chip :color="s.active ? 'success' : 'default'" size="small" variant="tonal">
+                    {{ s.active ? 'Activa' : 'Revocada' }}
+                  </v-chip>
+                </td>
+              </tr>
+            </tbody>
+          </v-table>
           <p v-else class="text-medium-emphasis">Sin sesiones.</p>
         </v-card-text>
         <v-card-actions>
@@ -61,10 +91,23 @@
 import { computed, reactive, ref } from 'vue'
 import { useMasterCompanies, useMasterUsers } from '@/composables/useMaster'
 import type { InternalUser } from '@/api/panel/master.api'
+import DataTableCard from '@/components/DataTableCard.vue'
 
 const { q, createM, updateM } = useMasterUsers()
 const { data: companies } = useMasterCompanies()
 const list = computed(() => (q.data.value ?? []) as InternalUser[])
+const loading = computed(() => q.isLoading.value)
+const search = ref('')
+const headers = [
+  { title: 'Usuario', key: 'username' },
+  { title: 'Rol', key: 'role', align: 'center' as const },
+  { title: 'Empresas', key: 'assigned_merchants' },
+  { title: 'Estado', key: 'is_active', align: 'center' as const },
+  { title: '', key: 'actions', sortable: false, align: 'end' as const },
+]
+function merchantSlugs(u: InternalUser): string {
+  return (u.assigned_merchants ?? []).map((m) => m.slug).join(', ') || 'sin empresas'
+}
 const companyOpts = computed(() => (companies.value ?? []).map(c => ({ id: c.id, slug: `${c.name} (${c.slug})` })))
 const dlg = ref(false)
 const editing = ref<number | null>(null)

@@ -9,29 +9,34 @@
     </div>
     <v-alert v-if="!isAdmin" type="warning" class="mb-4">Solo ADMIN gestiona empleados</v-alert>
     <v-alert v-if="isError && forbid" type="error" class="mb-4">403 — Solo ADMIN (BR-CIE-01)</v-alert>
-    <v-card variant="tonal" class="mb-3">
-      <v-card-text class="d-flex flex-wrap ga-2 align-center py-2">
-        <v-text-field v-model="search" label="Buscar" prepend-inner-icon="mdi-magnify" clearable density="compact" hide-details style="max-width:260px" />
-      </v-card-text>
-    </v-card>
-    <v-skeleton-loader v-if="loading" type="list-item@3" />
-    <v-alert v-else-if="!list.length" type="info">Sin empleados</v-alert>
-    <v-table v-else density="compact" fixed-header hover>
-      <thead>
-        <tr><th>Nombre</th><th>Roles</th><th>Estado</th><th class="text-right">Acciones</th></tr>
-      </thead>
-      <tbody>
-        <tr v-for="e in list" :key="e.id">
-          <td class="font-weight-medium">{{ e.fullname ?? 'Sin nombre' }}</td>
-          <td class="text-caption text-medium-emphasis">{{ (e.roles ?? []).join(', ') || 'sin rol' }}</td>
-          <td class="text-caption">{{ e.is_active ? 'Activo' : 'Inactivo' }}</td>
-          <td class="text-right text-no-wrap">
-            <v-btn icon="mdi-pencil" size="small" density="compact" variant="text" title="Editar" :disabled="!isAdmin" @click="openEdit(e)" />
-            <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="remove(e.id)" />
-          </td>
-        </tr>
-      </tbody>
-    </v-table>
+    <DataTableCard
+      v-model:search="search"
+      :headers="headers"
+      :items="list"
+      :total="rawList.length"
+      :search-keys="['fullname']"
+      search-label="Buscar empleado"
+      :loading="loading"
+      no-data-text="Sin empleados"
+    >
+      <template #item.fullname="{ item }">
+        <span class="font-weight-medium">{{ item.fullname ?? 'Sin nombre' }}</span>
+      </template>
+      <template #item.roles="{ item }">
+        <span class="text-caption text-medium-emphasis">
+          {{ ((item.roles ?? []) as string[]).join(', ') || 'sin rol' }}
+        </span>
+      </template>
+      <template #item.is_active="{ item }">
+        <v-chip :color="item.is_active ? 'success' : 'default'" size="small" variant="tonal">
+          {{ item.is_active ? 'Activo' : 'Inactivo' }}
+        </v-chip>
+      </template>
+      <template #item.actions="{ item }">
+        <v-btn icon="mdi-pencil" size="small" density="compact" variant="text" color="primary" title="Editar" :disabled="!isAdmin" @click="openEdit(item as never)" />
+        <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="remove(item.id as number)" />
+      </template>
+    </DataTableCard>
     <v-dialog v-model="dlg" max-width="480">
       <v-card :title="editing?'Editar empleado':'Nuevo empleado'">
         <v-card-text>
@@ -56,17 +61,21 @@ import { ROLES, type Role } from '@/api/panel/employees.api'
 import { useAuthStore } from '@/stores/auth.store'
 import { hasAnyRole } from '@/utils/guards'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import DataTableCard from '@/components/DataTableCard.vue'
 import { useConfirm, toast } from '@/composables/useConfirm'
 const auth = useAuthStore()
 const isAdmin = computed(()=> hasAnyRole(auth.roles, ['ADMIN']))
 const { data, isLoading: loading, isError, error } = useEmployees()
 const search = ref('')
 const rawList = computed(()=> (data.value as {id:number;fullname:string;is_active:boolean;roles:Role[]}[]) ?? [])
-const list = computed(()=> {
-  const needle = search.value.trim().toLowerCase()
-  if (!needle) return rawList.value
-  return rawList.value.filter((e) => (e.fullname ?? '').toLowerCase().includes(needle))
-})
+// Filtering happens inside DataTableCard (search-keys), so the table owns it.
+const list = rawList
+const headers = [
+  { title: 'Nombre', key: 'fullname' },
+  { title: 'Roles', key: 'roles' },
+  { title: 'Estado', key: 'is_active', align: 'center' as const },
+  { title: '', key: 'actions', sortable: false, align: 'end' as const },
+]
 const forbid = computed(()=> (error.value as {response?:{status?:number}})?.response?.status===403)
 const roleOpts = [...ROLES]
 const dlg=ref(false); const editing=ref<number|null>(null); const saving=ref(false)

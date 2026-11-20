@@ -31,23 +31,27 @@
         </div>
         <v-btn color="primary" density="compact" prepend-icon="mdi-plus" :disabled="!isAdmin" @click="openCreate">Nueva zona</v-btn>
       </div>
-      <v-skeleton-loader v-if="zLoading" type="list-item@3" />
-      <v-table v-else-if="zones.length" density="compact" fixed-header hover>
-        <thead>
-          <tr><th>Nombre</th><th>Base fee</th><th class="text-right">Acciones</th></tr>
-        </thead>
-        <tbody>
-          <tr v-for="z in zones" :key="z.id">
-            <td class="font-weight-medium">{{ z.name }}</td>
-            <td>${{ z.base_fee }}</td>
-            <td class="text-right text-no-wrap">
-              <v-btn icon="mdi-pencil" size="small" density="compact" variant="text" title="Editar" :disabled="!isAdmin" @click="openEdit(z)" />
-              <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="delZone(z.id)" />
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
-      <v-alert v-else type="info">Sin zonas — creá la primera</v-alert>
+      <DataTableCard
+        v-model:search="zSearch"
+        :headers="zHeaders"
+        :items="zones"
+        :total="zones.length"
+        :search-keys="['name']"
+        search-label="Buscar zona"
+        :loading="zLoading"
+        no-data-text="Sin zonas — creá la primera"
+      >
+        <template #item.name="{ item }">
+          <span class="font-weight-medium">{{ item.name }}</span>
+        </template>
+        <template #item.base_fee="{ item }">
+          <span class="font-weight-medium">${{ item.base_fee }}</span>
+        </template>
+        <template #item.actions="{ item }">
+          <v-btn icon="mdi-pencil" size="small" density="compact" variant="text" color="primary" title="Editar" :disabled="!isAdmin" @click="openEdit(item as never)" />
+          <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="delZone(item.id as number)" />
+        </template>
+      </DataTableCard>
       <v-dialog v-model="dlg" max-width="420">
         <v-card :title="editing?'Editar zona':'Nueva zona'">
           <v-card-text>
@@ -68,9 +72,16 @@ import { useDeliveryConfig, useZones, useUpdateDelivery, useCreateZone, useUpdat
 import { useAuthStore } from '@/stores/auth.store'
 import { hasAnyRole } from '@/utils/guards'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import DataTableCard from '@/components/DataTableCard.vue'
 import { useConfirm, toast } from '@/composables/useConfirm'
 const auth = useAuthStore()
 const isAdmin = computed(()=> hasAnyRole(auth.roles, ['ADMIN']))
+const zSearch = ref('')
+const zHeaders = [
+  { title: 'Nombre', key: 'name' },
+  { title: 'Base fee', key: 'base_fee', align: 'end' as const },
+  { title: '', key: 'actions', sortable: false, align: 'end' as const },
+]
 const { data: cfgData, isLoading: loading, isError, error } = useDeliveryConfig()
 const { data: zData, isLoading: zLoading } = useZones()
 const forbid = computed(()=> (error.value as {response?:{status?:number}})?.response?.status===403)

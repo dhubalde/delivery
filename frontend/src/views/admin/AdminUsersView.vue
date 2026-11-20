@@ -8,32 +8,37 @@
       <v-btn color="primary" density="compact" prepend-icon="mdi-plus" :disabled="!isAdmin" @click="openCreate">Nuevo</v-btn>
     </div>
     <v-alert v-if="formError" type="error" density="compact" class="mb-2">{{ formError }}</v-alert>
-    <v-card variant="tonal" class="mb-3">
-      <v-card-text class="d-flex flex-wrap ga-2 align-center py-2">
-        <v-text-field v-model="search" label="Buscar" prepend-inner-icon="mdi-magnify" clearable density="compact" hide-details style="max-width:260px" />
-      </v-card-text>
-    </v-card>
-    <v-card>
-      <v-table v-if="list.length" density="compact" fixed-header hover>
-        <thead>
-          <tr><th>Usuario</th><th>Rol</th><th>Tipo</th><th>Estado</th><th class="text-right">Acciones</th></tr>
-        </thead>
-        <tbody>
-          <tr v-for="u in list" :key="u.id">
-            <td class="font-weight-medium">{{ u.username }}<div class="text-caption text-medium-emphasis font-weight-regular">{{ u.sector ?? '' }}</div></td>
-            <td class="text-caption">{{ u.role }}</td>
-            <td class="text-caption text-medium-emphasis">{{ u.kind }}</td>
-            <td class="text-caption">{{ u.is_active ? 'Activo' : 'Inactivo' }}</td>
-            <td class="text-right text-no-wrap">
-              <v-btn icon="mdi-pencil" variant="text" size="small" density="compact" title="Editar" @click="openEdit(u)" />
-              <v-btn icon="mdi-key" variant="text" size="small" density="compact" title="Generar reseteo" @click="openReset(u)" />
-              <v-btn icon="mdi-delete" variant="text" size="small" density="compact" title="Desactivar" @click="askRemove(u)" />
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
-      <v-card-text v-else class="text-medium-emphasis">Sin usuarios. Creá el primero con Nuevo.</v-card-text>
-    </v-card>
+    <DataTableCard
+      v-model:search="search"
+      :headers="headers"
+      :items="list"
+      :total="list.length"
+      :search-keys="['username', 'sector']"
+      search-label="Buscar usuario"
+      :loading="loading"
+      no-data-text="Sin usuarios. Creá el primero con Nuevo."
+    >
+      <template #item.username="{ item }">
+        <div class="font-weight-medium">{{ item.username }}</div>
+        <div class="text-caption text-medium-emphasis font-weight-regular">{{ item.sector ?? '' }}</div>
+      </template>
+      <template #item.role="{ item }">
+        <span class="text-caption">{{ item.role }}</span>
+      </template>
+      <template #item.kind="{ item }">
+        <span class="text-caption text-medium-emphasis">{{ item.kind }}</span>
+      </template>
+      <template #item.is_active="{ item }">
+        <v-chip :color="item.is_active ? 'success' : 'default'" size="small" variant="tonal">
+          {{ item.is_active ? 'Activo' : 'Inactivo' }}
+        </v-chip>
+      </template>
+      <template #item.actions="{ item }">
+        <v-btn icon="mdi-pencil" variant="text" size="small" density="compact" color="primary" title="Editar" @click="openEdit(item as unknown as AppUser)" />
+        <v-btn icon="mdi-key" variant="text" size="small" density="compact" color="warning" title="Generar reseteo" @click="openReset(item as unknown as AppUser)" />
+        <v-btn icon="mdi-delete" variant="text" size="small" density="compact" color="error" title="Desactivar" @click="askRemove(item as unknown as AppUser)" />
+      </template>
+    </DataTableCard>
 
     <v-dialog v-model="dlg" max-width="520">
       <v-card>
@@ -94,18 +99,23 @@ import { computed, reactive, ref } from 'vue'
 import { useAdminUsers, userErrDetails, type AppUser } from '@/composables/useAdminUsers'
 import { usersApi, type OperativeRole, type UserKind } from '@/api/panel/users.api'
 import { useAuthStore } from '@/stores/auth.store'
+import DataTableCard from '@/components/DataTableCard.vue'
 
 const auth = useAuthStore()
 const isAdmin = computed(() => auth.hasAnyRole(['ADMIN']))
 const { q, createM, updateM, removeM } = useAdminUsers()
 const data = computed(() => q.data.value as AppUser[] | undefined)
+const loading = computed(() => q.isLoading.value)
 const search = ref('')
-const list = computed(() => {
-  const all = data.value ?? []
-  const needle = search.value.trim().toLowerCase()
-  if (!needle) return all
-  return all.filter((u) => u.username.toLowerCase().includes(needle))
-})
+// Filtering happens inside DataTableCard (search-keys), so the table owns it.
+const list = computed(() => data.value ?? [])
+const headers = [
+  { title: 'Usuario', key: 'username' },
+  { title: 'Rol', key: 'role', align: 'center' as const },
+  { title: 'Tipo', key: 'kind', align: 'center' as const },
+  { title: 'Estado', key: 'is_active', align: 'center' as const },
+  { title: '', key: 'actions', sortable: false, align: 'end' as const },
+]
 
 const roleOpts: OperativeRole[] = ['ADMIN', 'CAJERO', 'PREPARADOR', 'REPARTIDOR', 'TOMA_PEDIDOS']
 const dlg = ref(false)

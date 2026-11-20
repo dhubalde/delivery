@@ -8,32 +8,39 @@
       <v-btn color="primary" density="compact" prepend-icon="mdi-plus" :disabled="!isAdmin" @click="openCreate">Nuevo</v-btn>
     </div>
     <v-alert v-if="!isAdmin" type="warning" class="mb-4">Solo ADMIN puede editar sabores</v-alert>
-    <v-card variant="tonal" class="mb-3">
-      <v-card-text class="d-flex flex-wrap ga-2 align-center py-2">
-        <v-text-field v-model="search" label="Buscar" prepend-inner-icon="mdi-magnify" clearable density="compact" hide-details style="max-width:260px" />
-        <v-select v-model="fltCat" :items="catItems" label="Categoría" clearable density="compact" hide-details style="max-width:220px" />
-      </v-card-text>
-    </v-card>
     <v-alert v-if="isForbidden" type="error" class="mb-2">403 — ADMIN requerido</v-alert>
-    <v-skeleton-loader v-if="isLoading" type="list-item@3" />
-    <v-alert v-else-if="!list.length" type="info">Sin sabores — creá el primero</v-alert>
-    <template v-else>
-      <v-table density="compact" fixed-header hover>
-        <thead>
-          <tr><th>Nombre</th><th>Categoría</th><th class="text-right">Acciones</th></tr>
-        </thead>
-        <tbody>
-          <tr v-for="f in list" :key="f.id">
-            <td class="font-weight-medium">{{ f.name }}</td>
-            <td class="text-caption text-medium-emphasis">{{ catName(f.category_id) }}</td>
-            <td class="text-right text-no-wrap">
-              <v-btn icon="mdi-pencil" size="small" density="compact" variant="text" title="Editar" :disabled="!isAdmin" @click="openEdit(f)" />
-              <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="remove(f.id)" />
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
-    </template>
+    <DataTableCard
+      v-model:search="search"
+      :headers="headers"
+      :items="list"
+      :total="list.length"
+      search-label="Buscar sabor"
+      :loading="isLoading"
+      no-data-text="Sin sabores — creá el primero"
+    >
+      <template #filters>
+        <v-select
+          v-model="fltCat"
+          :items="catItems"
+          label="Categoría"
+          clearable
+          density="compact"
+          variant="outlined"
+          hide-details
+          style="max-width: 220px"
+        />
+      </template>
+      <template #item.name="{ item }">
+        <span class="font-weight-medium">{{ item.name }}</span>
+      </template>
+      <template #item.category_id="{ item }">
+        <span class="text-caption text-medium-emphasis">{{ catName(item.category_id as number | null) }}</span>
+      </template>
+      <template #item.actions="{ item }">
+        <v-btn icon="mdi-pencil" size="small" density="compact" variant="text" color="primary" title="Editar" :disabled="!isAdmin" @click="openEdit(item as never)" />
+        <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="remove(item.id as number)" />
+      </template>
+    </DataTableCard>
     <v-dialog v-model="dlg" max-width="480">
       <v-card :title="editing ? 'Editar sabor' : 'Nuevo sabor'">
         <v-card-text>
@@ -55,8 +62,14 @@ import { useAuthStore } from '@/stores/auth.store'
 import { hasAnyRole } from '@/utils/guards'
 import { qk } from '@/queries/keys'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import DataTableCard from '@/components/DataTableCard.vue'
 import { useConfirm, toast } from '@/composables/useConfirm'
 const auth = useAuthStore(); const isAdmin = computed(()=>hasAnyRole(auth.roles,['ADMIN']))
+const headers = [
+  { title: 'Nombre', key: 'name' },
+  { title: 'Categoría', key: 'category_id' },
+  { title: '', key: 'actions', sortable: false, align: 'end' as const },
+]
 const { data: cats } = useAdminCategories()
 const catItems = computed(()=>((cats.value as {id:number;name:string}[])??[]).map(c=>({ title:c.name, value:c.id })))
 const catMap = computed(()=>Object.fromEntries(((cats.value as {id:number;name:string}[])??[]).map(c=>[c.id,c.name])))

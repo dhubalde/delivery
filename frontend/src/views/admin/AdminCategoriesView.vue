@@ -9,31 +9,32 @@
     </div>
     <v-alert v-if="!isAdmin" type="warning" class="mb-4">Solo ADMIN puede editar categorías</v-alert>
     <v-alert v-if="isError && isForbidden" type="error">403 — Permiso denegado (ADMIN requerido)</v-alert>
-    <v-card variant="tonal" class="mb-3">
-      <v-card-text class="d-flex flex-wrap ga-2 align-center py-2">
-        <v-text-field v-model="search" label="Buscar" prepend-inner-icon="mdi-magnify" clearable density="compact" hide-details style="max-width:260px" />
-      </v-card-text>
-    </v-card>
-    <v-skeleton-loader v-if="isLoading" type="list-item@3" />
-    <v-alert v-else-if="!list.length" type="info">Sin categorías — creá la primera</v-alert>
-    <template v-else>
-      <v-table density="compact" fixed-header hover>
-        <thead>
-          <tr><th>Nombre</th><th>Posición</th><th>Estado</th><th class="text-right">Acciones</th></tr>
-        </thead>
-        <tbody>
-          <tr v-for="c in list" :key="c.id">
-            <td class="font-weight-medium">{{ c.name }}</td>
-            <td class="text-medium-emphasis">#{{ c.position }}</td>
-            <td class="text-caption">{{ c.is_active ? 'Activa' : 'Inactiva' }}</td>
-            <td class="text-right text-no-wrap">
-              <v-btn icon="mdi-pencil" size="small" density="compact" variant="text" title="Editar" :disabled="!isAdmin" @click="openEdit(c)" />
-              <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="remove(c.id)" />
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
-    </template>
+    <DataTableCard
+      v-model:search="search"
+      :headers="headers"
+      :items="list"
+      :total="rawList.length"
+      :search-keys="['name']"
+      search-label="Buscar categoría"
+      :loading="isLoading"
+      no-data-text="Sin categorías — creá la primera"
+    >
+      <template #item.name="{ item }">
+        <span class="font-weight-medium">{{ item.name }}</span>
+      </template>
+      <template #item.position="{ item }">
+        <span class="text-medium-emphasis">#{{ item.position }}</span>
+      </template>
+      <template #item.is_active="{ item }">
+        <v-chip :color="item.is_active ? 'success' : 'default'" size="small" variant="tonal">
+          {{ item.is_active ? 'Activa' : 'Inactiva' }}
+        </v-chip>
+      </template>
+      <template #item.actions="{ item }">
+        <v-btn icon="mdi-pencil" size="small" density="compact" variant="text" color="primary" title="Editar" :disabled="!isAdmin" @click="openEdit(item)" />
+        <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="remove(item.id as number)" />
+      </template>
+    </DataTableCard>
     <v-dialog v-model="dlg" max-width="480">
       <v-card :title="editing ? 'Editar categoría' : 'Nueva categoría'">
         <v-card-text>
@@ -57,17 +58,21 @@ import { useAdminCategories, useCreateCategory, useUpdateCategory, useDeleteCate
 import { useAuthStore } from '@/stores/auth.store'
 import { hasAnyRole } from '@/utils/guards'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import DataTableCard from '@/components/DataTableCard.vue'
 import { useConfirm, toast } from '@/composables/useConfirm'
 const auth = useAuthStore()
 const isAdmin = computed(() => hasAnyRole(auth.roles, ['ADMIN']))
 const { data, isLoading, isError, error } = useAdminCategories()
 const search = ref('')
 const rawList = computed(() => (data.value as { id:number; name:string; position:number; is_active:boolean }[]) ?? [])
-const list = computed(() => {
-  const q = search.value.trim().toLowerCase()
-  if (!q) return rawList.value
-  return rawList.value.filter(c => c.name.toLowerCase().startsWith(q))
-})
+// Filtering happens inside DataTableCard (search-keys), so the table owns it.
+const list = rawList
+const headers = [
+  { title: 'Nombre', key: 'name' },
+  { title: 'Posición', key: 'position', align: 'end' as const },
+  { title: 'Estado', key: 'is_active', align: 'center' as const },
+  { title: '', key: 'actions', sortable: false, align: 'end' as const },
+]
 const isForbidden = computed(() => (error.value as { response?: { status?: number } })?.response?.status === 403)
 const dlg = ref(false); const editing = ref<number|null>(null); const saving = ref(false)
 const form = reactive({ name: '', position: 0, is_active: true })

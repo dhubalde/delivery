@@ -15,41 +15,74 @@
       </v-card-text>
     </v-card>
     <v-alert v-if="isForbidden" type="error" class="mb-2">403 — ADMIN requerido</v-alert>
-    <v-skeleton-loader v-if="isLoading" type="list-item@3" />
-<v-alert v-else-if="!list.length" type="info">Sin productos — ajustá filtros o creá uno</v-alert>
-      <v-table density="compact" fixed-header hover>
-        <thead>
-          <tr><th>Nombre</th><th>Tipo</th><th>Precio</th><th>Gustos</th><th class="text-right">Acciones</th></tr>
-        </thead>
-        <tbody>
-          <tr v-for="p in list" :key="p.id">
-            <td>
-              <span class="font-weight-medium">{{ p.name }}</span>
-              <span v-if="p.description" class="ml-2 text-caption text-medium-emphasis"><v-icon size="12" color="primary">mdi-text</v-icon>{{ p.description.length>40 ? p.description.slice(0,40)+'…' : p.description }}</span>
-            </td>
-            <td class="text-medium-emphasis">{{ p.product_type }}{{ p.pote_size ? ' (' + p.pote_size.replace('KG_1','1kg').replace('KG_HALF','1/2kg').replace('KG_QUARTER','1/4kg') + ')' : '' }}</td>
-            <td>${{ p.price }}</td>
-            <td class="text-caption text-medium-emphasis">{{ flavorHint(p) }}</td>
-            <td class="text-right text-no-wrap">
-              <v-btn icon="mdi-pencil" size="small" density="compact" variant="text" title="Editar" :disabled="!isAdmin" @click="openEdit(p as never)" />
-              <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="remove(p.id)" />
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
-    <v-dialog v-model="dlg" max-width="520">
+    <DataTableCard
+      v-model:search="search"
+      :headers="headers"
+      :items="list"
+      :total="list.length"
+      search-label="Buscar producto"
+      :loading="isLoading"
+      no-data-text="Sin productos — ajustá filtros o creá uno"
+    >
+      <template #filters>
+        <v-select
+          v-model="fltCat"
+          :items="catItems"
+          label="Categoría"
+          clearable
+          density="compact"
+          variant="outlined"
+          hide-details
+          style="max-width: 220px"
+        />
+      </template>
+      <template #item.name="{ item }">
+        <span class="font-weight-medium">{{ item.name }}</span>
+        <span v-if="item.description" class="ml-2 text-caption text-medium-emphasis">
+          <v-icon size="12" color="primary">mdi-text</v-icon>{{ shortText(item.description) }}
+        </span>
+      </template>
+      <template #item.product_type="{ item }">
+        <span class="text-medium-emphasis">
+          {{ item.product_type }}{{ item.pote_size ? ' (' + poteLabel(item.pote_size) + ')' : '' }}
+        </span>
+      </template>
+      <template #item.price="{ item }">
+        <span class="font-weight-medium">${{ item.price }}</span>
+      </template>
+      <template #item.flavors="{ item }">
+        <span class="text-caption text-medium-emphasis">{{ flavorHint(item as never) }}</span>
+      </template>
+      <template #item.actions="{ item }">
+        <v-btn icon="mdi-pencil" size="small" density="compact" variant="text" color="primary" title="Editar" :disabled="!isAdmin" @click="openEdit(item as never)" />
+        <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="remove(item.id as number)" />
+      </template>
+    </DataTableCard>
+    <v-dialog v-model="dlg" max-width="640">
       <v-card :title="editing ? 'Editar producto' : 'Nuevo producto'">
         <v-card-text>
           <v-text-field v-model="form.name" label="Nombre *" :error-messages="fieldErr('name')" density="compact" />
-          <v-select v-model="form.category_id" :items="catItems" label="Categoría *" :error-messages="fieldErr('category_id')" density="compact" />
-          <v-select v-model="form.product_type" :items="['POTE','UNIT']" label="Tipo *" density="compact" />
-          <v-select v-if="form.product_type==='POTE'" v-model="form.pote_size" :items="poteSizeItems" label="Tamaño pote *" :error-messages="fieldErr('pote_size')" density="compact" />
+          <v-row dense>
+            <v-col cols="12" sm="6">
+              <v-select v-model="form.category_id" :items="catItems" label="Categoría *" :error-messages="fieldErr('category_id')" density="compact" />
+            </v-col>
+            <v-col cols="12" sm="6">
+              <v-select v-model="form.product_type" :items="['POTE','UNIT']" label="Tipo *" density="compact" />
+            </v-col>
+          </v-row>
+          <v-row dense>
+            <v-col v-if="form.product_type==='POTE'" cols="12" sm="6">
+              <v-select v-model="form.pote_size" :items="poteSizeItems" label="Tamaño pote *" :error-messages="fieldErr('pote_size')" density="compact" />
+            </v-col>
+            <v-col cols="12" sm="6">
+              <v-text-field v-model="form.price" label="Precio *" prefix="$" density="compact" :error-messages="fieldErr('price')" />
+            </v-col>
+          </v-row>
           <v-checkbox v-model="form.has_flavors" label="Permite elegir gustos" density="compact" hide-details />
-          <v-row v-if="form.has_flavors">
+          <v-row v-if="form.has_flavors" dense>
             <v-col><v-text-field v-model.number="form.min_flavors" label="Min gustos" type="number" density="compact" :error-messages="fieldErr('min_flavors')" /></v-col>
             <v-col><v-text-field v-model.number="form.max_flavors" label="Max gustos" type="number" density="compact" :error-messages="fieldErr('max_flavors')" /></v-col>
           </v-row>
-          <v-text-field v-model="form.price" label="Precio *" prefix="$" density="compact" :error-messages="fieldErr('price')" />
           <v-checkbox v-model="form.has_description" label="Agregar descripción corta" density="compact" hide-details />
           <v-textarea v-if="form.has_description" v-model="form.description" label="Descripción corta" :counter="160" maxlength="160" rows="2" auto-grow density="compact" hint="Ideal para deco/juguetes - máx 160 caracteres" persistent-hint :error-messages="fieldErr('description')" />
           <v-file-input v-model="form.imageFile" label="Foto (archivo)" accept="image/*" density="compact" clearable prepend-icon="" :error-messages="fieldErr('image')" hint="Subí una foto propia (JPG/PNG). Si no elegís archivo, se usa la URL." persistent-hint @update:model-value="onFileChange" />
@@ -72,6 +105,7 @@ import { hasAnyRole } from '@/utils/guards'
 import { qk } from '@/queries/keys'
 import { hint } from '@/utils/flavorPolicy'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import DataTableCard from '@/components/DataTableCard.vue'
 import { useConfirm, toast } from '@/composables/useConfirm'
 import { catalogApi } from '@/api/panel/catalog.api'
 import { useQueryClient } from '@tanstack/vue-query'
@@ -84,6 +118,15 @@ const qkRef = computed(()=> qk.adminProducts({ category: fltCat.value, search: s
 const { data, isLoading, error } = useAdminProducts(fltCat as never, search as never)
 const list = computed(()=>(data.value as {id:number;name:string;description?:string|null;product_type:string;pote_size:string|null;price:string;min_flavors:number|null;max_flavors:number|null}[])??[])
 function flavorHint(p: {min_flavors:number|null;max_flavors:number|null}): string { if(p.min_flavors==null||p.max_flavors==null) return 'sin gustos'; return p.min_flavors===p.max_flavors ? `${p.min_flavors} gustos` : `${p.min_flavors} a ${p.max_flavors} gustos` }
+function shortText(v: unknown): string { const s = String(v); return s.length > 40 ? `${s.slice(0, 40)}…` : s }
+function poteLabel(v: unknown): string { return String(v).replace('KG_1','1kg').replace('KG_HALF','1/2kg').replace('KG_QUARTER','1/4kg') }
+const headers = [
+  { title: 'Nombre', key: 'name' },
+  { title: 'Tipo', key: 'product_type', align: 'center' as const },
+  { title: 'Precio', key: 'price', align: 'end' as const },
+  { title: 'Gustos', key: 'flavors', sortable: false },
+  { title: '', key: 'actions', sortable: false, align: 'end' as const },
+]
 const isForbidden = computed(()=>(error.value as { response?:{status?:number}})?.response?.status===403)
 const dlg=ref(false); const editing=ref<number|null>(null); const saving=ref(false)
 const form=reactive({ name:'', category_id: null as number|null, product_type:'POTE' as 'POTE'|'UNIT', pote_size:'KG_1' as 'KG_1'|'KG_HALF'|'KG_QUARTER'|null, has_flavors:true, min_flavors:1 as number|null, max_flavors:4 as number|null, price:'' , image_url:'' as string, imageFile: null as File | File[] | null, has_description:false as boolean, description:'' as string })
