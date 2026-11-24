@@ -28,6 +28,41 @@ def _master_client():
     return client, master
 
 
+class TestReservedSlugs:
+    """The storefront lives at /<slug>: a slug that collides with a platform
+    route would create a company nobody can reach."""
+
+    RESERVED = [
+        "login",
+        "forgot-password",
+        "change-password",
+        "panel",
+        "master",
+        "api",
+        "admin",
+        "media",
+        "static",
+        "assets",
+    ]
+
+    @pytest.mark.parametrize("slug", RESERVED)
+    def test_reserved_slug_is_rejected_and_nothing_created(self, slug):
+        client, _ = _master_client()
+        payload = dict(PAYLOAD, slug=slug, admin_username=f"admin-{slug}")
+        response = client.post("/api/master/companies/", payload, format="json")
+        assert response.status_code == 400
+        assert "slug" in response.data
+        assert not Merchant.objects.filter(slug=slug).exists()
+        assert not User.objects.filter(username=f"admin-{slug}").exists()
+
+    def test_reserved_slug_check_ignores_case(self):
+        client, _ = _master_client()
+        payload = dict(PAYLOAD, slug="Login", admin_username="admin-case")
+        response = client.post("/api/master/companies/", payload, format="json")
+        assert response.status_code == 400
+        assert not Merchant.objects.filter(slug="Login").exists()
+
+
 class TestCompanyOnboarding:
     def test_happy_path_creates_all(self):
         client, master = _master_client()

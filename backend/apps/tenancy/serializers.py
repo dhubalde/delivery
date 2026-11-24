@@ -5,6 +5,25 @@ from rest_framework.exceptions import ValidationError
 
 from .models import Branch, Employee, EmployeeRole, PlatformUser
 
+# A storefront lives at `/<slug>`, so these first path segments already belong
+# to the platform (Vue Router top-level routes plus the nginx locations in
+# nginx.conf). A company using one of them would be unreachable.
+RESERVED_SLUGS = frozenset(
+    {
+        "login",
+        "forgot-password",
+        "change-password",
+        "panel",
+        "master",
+        "api",
+        "admin",
+        "media",
+        "static",
+        "assets",
+    }
+)
+
+
 
 class EmployeeSerializer(serializers.ModelSerializer):
     roles = serializers.ListField(
@@ -81,6 +100,11 @@ class CompanyOnboardingSerializer(serializers.Serializer):
     has_branches = serializers.BooleanField(default=False)
     admin_username = serializers.CharField(max_length=150)
     admin_password = serializers.CharField(write_only=True, allow_blank=False)
+
+    def validate_slug(self, value):
+        if value.lower() in RESERVED_SLUGS:
+            raise ValidationError("slug is reserved by the platform.")
+        return value
 
     def validate_admin_username(self, value):
         if User.objects.filter(username=value).exists():
