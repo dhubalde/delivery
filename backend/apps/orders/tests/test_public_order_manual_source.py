@@ -21,8 +21,7 @@ pytestmark = pytest.mark.django_db
 
 def _open_merchant(slug, active=True):
     m = MerchantFactory(slug=slug, is_active=active)
-    now = timezone.now()
-    weekday = now.date().weekday()
+    weekday = timezone.localdate().weekday()
     sched, _ = Schedule.objects.get_or_create(merchant=m, weekday=weekday)
     TimeRange.objects.get_or_create(schedule=sched, opens_at=time(0, 0), closes_at=time(23, 59, 59))
     return m

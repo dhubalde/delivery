@@ -17,8 +17,7 @@ class TestDuplicatePublicOrdersRoute:
         from django.utils import timezone
         from apps.tenancy.models import Schedule, TimeRange
 
-        now = timezone.now()
-        weekday = now.date().weekday()
+        weekday = timezone.localdate().weekday()
         sched, _ = Schedule.objects.get_or_create(merchant=merchant, weekday=weekday)
         # Create time range covering whole day
         TimeRange.objects.get_or_create(schedule=sched, opens_at=time(0, 0), closes_at=time(23, 59, 59))

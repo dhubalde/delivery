@@ -12,8 +12,7 @@ pytestmark = pytest.mark.django_db
 
 
 def _make_open_product(merchant, price="100.00"):
-    now = timezone.now()
-    weekday = now.date().weekday()
+    weekday = timezone.localdate().weekday()
     sched, _ = Schedule.objects.get_or_create(merchant=merchant, weekday=weekday)
     TimeRange.objects.get_or_create(schedule=sched, opens_at=time(0, 0), closes_at=time(23, 59, 59))
     cat = CategoryFactory(merchant=merchant, name="Cat1")
