@@ -3,13 +3,28 @@ from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key")
+INSECURE_SECRET_KEY = "dev-only-insecure-key"
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", INSECURE_SECRET_KEY)
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
-ALLOWED_HOSTS = ["*"]
-CSRF_TRUSTED_ORIGINS = [
+
+if not DEBUG and SECRET_KEY == INSECURE_SECRET_KEY:
+    raise ImproperlyConfigured(
+        "Set DJANGO_SECRET_KEY to a real secret before running with DJANGO_DEBUG=0."
+    )
+
+
+def env_list(name: str) -> list[str]:
+    """Parse a comma-separated environment variable into a list of values."""
+    raw = os.environ.get(name, "")
+    return [item.strip() for item in raw.split(",") if item.strip()]
+
+
+# Origins of the local dev servers (Vite on 5173, Django on 8000).
+LOCAL_DEV_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:8000",
@@ -17,9 +32,25 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
 ]
 
+# Railway exposes the public domain of the service, so a fresh deploy works
+# without hand-copying the host into a variable.
+_configured_hosts = env_list("DJANGO_ALLOWED_HOSTS")
+if not _configured_hosts and os.environ.get("RAILWAY_PUBLIC_DOMAIN"):
+    _configured_hosts = [os.environ["RAILWAY_PUBLIC_DOMAIN"]]
+ALLOWED_HOSTS = _configured_hosts or (["*"] if DEBUG else [])
+
+CSRF_TRUSTED_ORIGINS = LOCAL_DEV_ORIGINS + env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
+
+# The SPA runs on a different origin than the API outside local dev (dev uses
+# the Vite proxy, so same-origin is not guaranteed in production).
+CORS_ALLOWED_ORIGINS = (LOCAL_DEV_ORIGINS if DEBUG else []) + env_list(
+    "DJANGO_CORS_ALLOWED_ORIGINS"
+)
+
 ROOT_URLCONF = "config.urls"
 
 INSTALLED_APPS = [
+    "corsheaders",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -41,11 +72,14 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.common.middleware.TenantContextMiddleware",
     "apps.common.middleware.IdempotencyMiddleware",
 ]
@@ -67,8 +101,16 @@ TEMPLATES = [
 ]
 
 STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+# WhiteNoise serves STATIC_ROOT when DEBUG=0. The non-manifest variant keeps a
+# first production deploy from failing on one missing asset reference.
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+}
 
 DATABASES = {
     "default": dj_database_url.config(
@@ -94,3 +136,13 @@ SIMPLE_JWT = {
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": False,
 }
+
+# Production hardening. The platform terminates TLS and forwards the original
+# scheme in X-Forwarded-Proto.
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "1") == "1"
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # Off by default: enabling HSTS on a domain you may still move is painful.
+    SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_HSTS_SECONDS", "0"))
