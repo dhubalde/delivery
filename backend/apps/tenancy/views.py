@@ -315,10 +315,12 @@ class PublicMerchantView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        slug = request.query_params.get("slug") or request.headers.get("X-Merchant-Slug") or "ice-zone"
+        slug = request.query_params.get("slug") or request.headers.get("X-Merchant-Slug")
         if slug == "zona-ice":
             slug = "ice-zone"
-        m = Merchant.objects.filter(slug=slug).first() or Merchant.objects.first()
+        # Storefront URLs are brand-first (/<slug>): an unknown or missing slug
+        # must fail loudly instead of serving some other company's data.
+        m = Merchant.objects.filter(slug=slug).first() if slug else None
         if not m:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         return Response(MerchantSerializer(m, context={"request": request}).data)
