@@ -1,7 +1,7 @@
 <template>
   <v-tooltip v-if="effectiveCompact" location="top" open-on-hover>
     <template #activator="{ props: tipProps }">
-      <v-card v-bind="tipProps" :loading="pending" class="mb-1 ma-0 w-100" density="compact" height="60" :color="isRejected ? 'error' : undefined" :variant="isRejected ? 'outlined' : 'elevated'" :style="isRejected ? 'border:2px solid rgb(var(--v-theme-error));width:100%;margin:0 0 4px 0;box-sizing:border-box' : 'width:100%;margin:0 0 4px 0;box-sizing:border-box'">
+      <v-card ref="cardEl" v-bind="tipProps" :data-order-id="order.id" :loading="pending" class="mb-1 ma-0 w-100" :class="{ 'order-highlight': highlight }" density="compact" height="60" :color="isRejected ? 'error' : undefined" :variant="isRejected ? 'outlined' : 'elevated'" :style="isRejected ? 'border:2px solid rgb(var(--v-theme-error));width:100%;margin:0 0 4px 0;box-sizing:border-box' : 'width:100%;margin:0 0 4px 0;box-sizing:border-box'">
         <v-card-text class="py-1 px-2 d-flex flex-column justify-center ma-0 w-100" style="height:60px;min-width:0;margin:0;box-sizing:border-box;width:100%" :class="{ 'text-error': isRejected }">
           <div class="d-flex align-center text-caption font-weight-bold" style="min-width: 0; font-size: 12px; line-height: 1.2" :class="{ 'text-error': isRejected }">
             <span class="flex-shrink-0">#{{ order.code }} —&nbsp;</span>
@@ -22,7 +22,7 @@
       <div v-if="orderPhone">{{ orderPhone }}</div>
     </div>
   </v-tooltip>
-  <v-card v-else :loading="pending" class="mb-2 ma-0 w-100" density="compact" :color="isRejected ? 'error' : undefined" :variant="isRejected ? 'outlined' : 'elevated'" :style="isRejected ? 'border:2px solid rgb(var(--v-theme-error));width:100%;margin:0 0 8px 0;box-sizing:border-box' : 'width:100%;margin:0 0 8px 0;box-sizing:border-box'" :class="{ 'rejected-card': isRejected }">
+  <v-card v-else ref="cardEl" :data-order-id="order.id" :loading="pending" class="mb-2 ma-0 w-100" density="compact" :color="isRejected ? 'error' : undefined" :variant="isRejected ? 'outlined' : 'elevated'" :style="isRejected ? 'border:2px solid rgb(var(--v-theme-error));width:100%;margin:0 0 8px 0;box-sizing:border-box' : 'width:100%;margin:0 0 8px 0;box-sizing:border-box'" :class="{ 'rejected-card': isRejected, 'order-highlight': highlight }">
     <v-card-text class="pb-1 ma-0 w-100" style="margin:0;box-sizing:border-box;width:100%" :class="{ 'text-error': isRejected }">
       <div class="d-flex justify-space-between align-center">
         <strong :class="{ 'text-error': isRejected }">#{{ order.code }}</strong>
@@ -73,12 +73,25 @@
   </v-dialog>
 </template>
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { canAdvance, hasAnyRole, nextStateOf, requiredRolesFor } from '@/utils/guards'
 import { useTransition } from '@/composables/useOrders'
 
-const props = defineProps<{ order: { id: number; code: string; state: string; fulfillment: string; cash_declared: boolean; total: string; payments: { method: string; status: string }[]; customer_name?: string; customer?: string; created_at?: string; address?: string; phone?: string; customer_address?: string; customer_phone?: string; delivery_address?: string; cancel_reason?: string | null; canceled_at?: string | null }; compact?: boolean }>()
+const props = defineProps<{ order: { id: number; code: string; state: string; fulfillment: string; cash_declared: boolean; total: string; payments: { method: string; status: string }[]; customer_name?: string; customer?: string; created_at?: string; address?: string; phone?: string; customer_address?: string; customer_phone?: string; delivery_address?: string; cancel_reason?: string | null; canceled_at?: string | null }; compact?: boolean; highlight?: boolean }>()
+const cardEl = ref<{ $el?: HTMLElement } | null>(null)
+// A notification opens the board with ?order=<id>: bring that card into view
+// instead of leaving the user to hunt it down across five columns.
+watch(
+  () => props.highlight,
+  async (on) => {
+    if (!on) return
+    await nextTick()
+    const el = cardEl.value?.$el
+    if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  },
+  { immediate: true },
+)
 const orderAddress = computed(() => (props.order as unknown as Record<string, string | undefined>).address ?? (props.order as unknown as Record<string, string | undefined>).customer_address ?? (props.order as unknown as Record<string, string | undefined>).delivery_address ?? '')
 const orderPhone = computed(() => (props.order as unknown as Record<string, string | undefined>).phone ?? (props.order as unknown as Record<string, string | undefined>).customer_phone ?? '')
 const auth = useAuthStore()
@@ -171,4 +184,9 @@ async function onConfirmReject() {
 <style scoped>
 .blinking { animation: blink 1s infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+.order-highlight {
+  outline: 3px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px rgba(var(--v-theme-primary), 0.18);
+}
 </style>

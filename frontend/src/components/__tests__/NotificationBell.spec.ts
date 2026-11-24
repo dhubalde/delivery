@@ -22,6 +22,13 @@ const notification = {
   created_at: new Date().toISOString(),
 }
 
+const { pushMock } = vi.hoisted(() => ({ pushMock: vi.fn() }))
+
+vi.mock('vue-router', () => ({
+  useRouter: () => ({ push: pushMock }),
+  useRoute: () => ({ params: { slug: 'ice-zone' }, query: {} }),
+}))
+
 vi.mock('@/api/client', () => ({
   api: {
     get: vi.fn(),
@@ -83,6 +90,32 @@ describe('NotificationBell', () => {
     await flushPromises()
 
     expect(vi.mocked(api.post)).toHaveBeenCalledWith('/v1/notifications/1/mark-read/')
+  })
+
+  it('opens the order board when the notification points at an order', async () => {
+    mockList([notification])
+    const wrapper = mountBell()
+    await flushPromises()
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+
+    ;(Array.from(document.querySelectorAll('.notify-item'))[0] as HTMLElement).click()
+    await flushPromises()
+
+    expect(pushMock).toHaveBeenCalledWith({ path: '/panel/board', query: { order: '10' } })
+  })
+
+  it('only marks read when the notification has no order', async () => {
+    mockList([{ ...notification, order: null }])
+    const wrapper = mountBell()
+    await flushPromises()
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+
+    ;(Array.from(document.querySelectorAll('.notify-item'))[0] as HTMLElement).click()
+    await flushPromises()
+
+    expect(pushMock).not.toHaveBeenCalled()
   })
 
   it('shows the empty state inside the dropdown', async () => {

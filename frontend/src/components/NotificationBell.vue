@@ -57,7 +57,7 @@
               class="notify-item mb-2"
               :class="{ 'notify-item--unread': !notif.is_read }"
               rounded="lg"
-              @click="handleMarkRead(notif.id)"
+              @click="openNotification(notif)"
             >
               <v-list-item-subtitle class="text-caption text-medium-emphasis">
                 {{ formatDate(notif.created_at) }}
@@ -88,6 +88,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useNotifications } from '@/composables/useNotifications'
 import { getMyOrderIds } from '@/composables/useMyOrders'
 
@@ -99,6 +100,8 @@ const { notifications: allNotifications, markRead, markAllRead, remove } = useNo
   props.recipientType ? { recipientType: props.recipientType } : undefined,
 )
 const showDropdown = ref(false)
+const router = useRouter()
+const route = useRoute()
 
 // — Filtro por cliente: en catálogo solo las notificaciones de SUS pedidos (localStorage myOrders)
 const myIds = ref<number[]>(getMyOrderIds())
@@ -135,6 +138,29 @@ const unreadCount = computed(() => filteredNotifications.value.filter((n) => !n.
 
 const handleMarkRead = async (id: number) => {
   await markRead.mutateAsync(id)
+}
+
+type NotificationRow = { id: number; order: number | null }
+
+/**
+ * Opening a notification marks it read and, when it points at an order, takes
+ * you to that order: the board (employee) or my orders (customer). A deep link
+ * without a target only marks it read.
+ */
+async function openNotification(notif: NotificationRow) {
+  try {
+    await handleMarkRead(notif.id)
+  } catch {
+    // the mutation already reports its own error toast
+  }
+  if (notif.order == null) return
+  showDropdown.value = false
+  if (props.recipientType === 'CUSTOMER') {
+    const slug = (route.params.slug as string) || 'ice-zone'
+    router.push({ name: 'my-orders', params: { slug }, query: { order: String(notif.order) } })
+  } else {
+    router.push({ path: '/panel/board', query: { order: String(notif.order) } })
+  }
 }
 
 const handleMarkAllRead = async () => {

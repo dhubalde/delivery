@@ -42,7 +42,7 @@
     </v-dialog>
     <v-row no-gutters class="ma-0 pa-0 mx-0" style="margin:0;padding:0;padding-bottom:4px;box-sizing:border-box;display:flex;width:100%;gap:8px;flex-wrap:nowrap;overflow-x:auto">
       <v-col v-for="col in cols" :key="col.state" cols="12" md="2" class="pa-1 ma-0 d-flex" style="padding:4px;margin:0;box-sizing:border-box;flex:1 0 160px;min-width:160px;max-width:none;display:flex">
-        <KanbanColumn :title="col.title" :color="col.color" :orders="getOrdersFor(col.state)" :is-loading="getLoadingFor(col.state)" :is-error="getErrorFor(col.state)" :compact="col.state === 'ENTREGADO'" @retry="boards[col.state].refetch()" />
+        <KanbanColumn :title="col.title" :color="col.color" :orders="getOrdersFor(col.state)" :is-loading="getLoadingFor(col.state)" :is-error="getErrorFor(col.state)" :compact="col.state === 'ENTREGADO'" :highlight-id="highlightId" @retry="boards[col.state].refetch()" />
       </v-col>
       <v-col cols="12" md="2" class="pa-1 ma-0 d-flex" style="padding:4px;margin:0;box-sizing:border-box;flex:1 0 160px;min-width:160px;max-width:none;display:flex">
         <KanbanTotalsCard :fallback-orders="(boards['ENTREGADO'].data.value ?? []) as any" :business-date="businessDate" />
@@ -63,7 +63,7 @@ import { usePendingPrintJobs, useMarkPrinted } from '@/composables/usePrinting'
 import { printTicket } from '@/utils/ticket'
 import type { PrintJob } from '@/api/panel/printing.api'
 import { useAuthStore } from '@/stores/auth.store'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 const { data: merchantData } = useMerchant()
 const merchantName = computed(() => (merchantData.value as { name?: string } | undefined)?.name ?? 'Work Zone')
 const printTicketsOn = computed(() => !!(merchantData.value as { print_tickets?: boolean } | undefined)?.print_tickets)
@@ -85,6 +85,15 @@ async function markPrinted(id: number) {
 }
 const auth = useAuthStore()
 const router = useRouter()
+const route = useRoute()
+// A notification deep-links here with ?order=<id>; the matching card scrolls
+// into view and stays outlined so it is not lost among the columns.
+const highlightId = computed<number | null>(() => {
+  const raw = route.query.order
+  const value = Array.isArray(raw) ? raw[0] : raw
+  const id = Number(value)
+  return Number.isFinite(id) && id > 0 ? id : null
+})
 function NuevoPedido(): void {
   // Manual entry happens on the storefront itself: the operator browses the real
   // catalog (products + flavors) and fills the caller's data at checkout.

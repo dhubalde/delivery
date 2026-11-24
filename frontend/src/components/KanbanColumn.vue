@@ -12,13 +12,13 @@
       <div v-else-if="isError" class="text-caption text-error ma-0 pa-0 w-100" style="margin:0;padding:0;box-sizing:border-box;width:100%">Error al cargar <v-btn size="x-small" @click="$emit('retry')">Reintentar</v-btn></div>
       <div v-else-if="!orders.length" class="text-caption text-medium-emphasis text-center py-6 ma-0 w-100" style="margin:0;box-sizing:border-box;width:100%">Sin pedidos</div>
       <div v-else class="d-flex flex-column ga-2 w-100 ma-0 pa-0" style="display:flex;flex-direction:column;gap:8px;width:100%;margin:0;padding:0;box-sizing:border-box">
-        <KanbanCard v-for="o in orders" :key="o.id" :order="o" :compact="compact" />
+        <KanbanCard v-for="o in orders" :key="o.id" :order="o" :compact="compact" :highlight="highlightId != null && highlightId === o.id" />
       </div>
     </v-card-text>
   </v-card>
 </template>
 <script setup lang="ts">
 import KanbanCard from '@/components/KanbanCard.vue'
-defineProps<{ title: string; color: string; orders: { id: number; code: string; state: string; fulfillment: string; cash_declared: boolean; total: string; payments: { method: string; status: string }[]; created_at?: string }[]; isLoading: boolean; isError: boolean; compact?: boolean }>()
+defineProps<{ title: string; color: string; orders: { id: number; code: string; state: string; fulfillment: string; cash_declared: boolean; total: string; payments: { method: string; status: string }[]; created_at?: string }[]; isLoading: boolean; isError: boolean; compact?: boolean; highlightId?: number | null }>()
 defineEmits<{ retry: [] }>()
 </script>
