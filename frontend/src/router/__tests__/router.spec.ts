@@ -6,7 +6,7 @@ function makeTestRouter() {
   return createRouter({
     history: createWebHistory(),
     routes: [
-      { path: '/', redirect: '/ice-zone' },
+      { path: '/', component: { template: '<div>landing</div>' } },
       { path: '/login', component: { template: '<div>login</div>' } },
       { path: '/change-password', component: { template: '<div>cp</div>' }, meta: { requiresAuth: true } },
       {
@@ -60,11 +60,22 @@ describe('slug routing', () => {
     expect(router.currentRoute.value.params.slug).toBe('beta')
   })
 
-  it('root redirects to /ice-zone', async () => {
+  it('root keeps you at / without picking a company', async () => {
     await router.push('/')
     await router.isReady()
-    expect(router.currentRoute.value.path).toBe('/ice-zone')
-    expect(router.currentRoute.value.params.slug).toBe('ice-zone')
+    expect(router.currentRoute.value.path).toBe('/')
+    expect(router.currentRoute.value.params.slug).toBeUndefined()
+  })
+
+  it('the real router does not send the root to a hardcoded company', async () => {
+    const mod = await import('../index')
+    const routes = (mod.default as any).getRoutes()
+    const root = routes.find((r: any) => r.path === '/')
+    expect(root).toBeDefined()
+    // A hardcoded root redirect means every visitor lands in one merchant's
+    // catalog regardless of which business they belong to.
+    expect(root.redirect).toBeUndefined()
+    expect(root.components).toBeTruthy()
   })
 
   it('actual router file contains /:slug parent and NotFound fallback', async () => {

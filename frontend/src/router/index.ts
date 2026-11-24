@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/auth.store'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', redirect: '/ice-zone' },
+    { path: '/', component: () => import('@/views/LandingView.vue') },
     { path: '/login', component: () => import('@/views/LoginView.vue') },
     { path: '/forgot-password', component: () => import('@/views/ForgotPasswordView.vue') },
     { path: '/change-password', component: () => import('@/views/ChangePasswordView.vue'), meta: { requiresAuth: true } },
