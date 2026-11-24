@@ -7,22 +7,24 @@
       :close-on-content-click="false"
     >
       <template #activator="{ props: menuProps }">
-        <v-badge
-          :content="unreadCount"
-          :model-value="unreadCount > 0"
-          color="grey-darken-1"
-          location="top end"
-          offset-x="4"
-          offset-y="9"
-          :max="99"
-          class="bell-badge"
-        >
-          <v-btn
-            icon="mdi-bell-outline"
-            variant="text"
-            v-bind="menuProps"
-          />
-        </v-badge>
+        <div v-bind="menuProps" class="bell-activator">
+          <v-badge
+            :content="unreadCount"
+            :model-value="unreadCount > 0"
+            color="grey-darken-1"
+            location="top end"
+            offset-x="4"
+            offset-y="9"
+            :max="99"
+            class="bell-badge"
+          >
+            <v-btn
+              icon="mdi-bell-outline"
+              variant="text"
+              aria-label="Notificaciones"
+            />
+          </v-badge>
+        </div>
       </template>
 
       <v-card min-width="340" max-height="420" elevation="12" rounded="lg">
@@ -30,7 +32,7 @@
           <span class="text-subtitle-1 font-weight-bold">Notificaciones</span>
           <v-spacer />
           <v-btn
-            size="small"
+            density="compact"
             variant="text"
             color="primary"
             :disabled="unreadCount === 0"
@@ -40,12 +42,10 @@
           </v-btn>
         </v-card-title>
         <v-divider />
-        <v-list dense class="notify-list pa-2">
+        <v-list density="compact" class="notify-list pa-2">
           <template v-if="filteredNotifications.length === 0">
             <v-list-item disabled rounded="lg">
-              <v-list-item-content class="text-center text-medium-emphasis pa-4">
-                Sin notificaciones
-              </v-list-item-content>
+              <div class="text-center text-medium-emphasis pa-4">Sin notificaciones</div>
             </v-list-item>
           </template>
           <template v-else>
@@ -177,15 +177,23 @@ function formatDate(iso: string): string {
   position: relative;
   overflow: visible;
 }
+.bell-activator {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
 .bell-badge {
   overflow: visible;
 }
+/* The count bubble sits above the button; without this it swallows the click
+   and the dropdown never opens when you aim at the badge. */
 .bell-badge :deep(.v-badge__badge) {
   font-size: 11px;
   min-width: 18px;
   height: 18px;
   padding: 0 4px;
   transform: translate(2px, 1px);
+  pointer-events: none;
 }
 .notify-list {
   background: transparent;
