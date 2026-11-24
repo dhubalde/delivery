@@ -4,6 +4,7 @@
 
 ## Sources scanned
 
+- .agents\skills
 - C:\Users\dalil\.agents\skills
 - C:\Users\dalil\.config\opencode\skills
 - C:\Users\dalil\.claude\skills
@@ -25,6 +26,7 @@
 | `chained-pr` | Trigger: PRs over 400 lines, stacked PRs, review slices. Split oversized changes into chained PRs that protect review focus. | user | `C:\Users\dalil\.agents\skills\chained-pr\SKILL.md` |
 | `cognitive-doc-design` | Design docs that reduce cognitive load. Trigger: writing guides, READMEs, RFCs, onboarding, architecture, or review-facing docs. | user | `C:\Users\dalil\.agents\skills\cognitive-doc-design\SKILL.md` |
 | `comment-writer` | Write warm, direct collaboration comments. Trigger: PR feedback, issue replies, reviews, Slack messages, or GitHub comments. | user | `C:\Users\dalil\.agents\skills\comment-writer\SKILL.md` |
+| `delivery-design-system` | Trigger — UI, vista, pantalla, tabla, listado, formulario, diálogo, panel, chip de estado, design system, frontend Vue. Build any delivery panel screen with the project's shared components instead of styling Vuetify by hand. | project | `C:\Users\dalil\Desktop\AI programacion\delivery\.agents\skills\design-system\SKILL.md` |
 | `find-skills` | Helps users discover and install agent skills when they ask questions like "how do I do X", "find a skill for X", "is there a skill that can...", or express interest in extending capabilities. This skill should be used when the user is looking for functionality that might exist as an installable skill. | user | `C:\Users\dalil\.agents\skills\find-skills\SKILL.md` |
 | `gentle-ai-bench` | Trigger: bench, journey, journeys, driven mode, gentle-ai-bench, journey corpus, j-numbers, bench axis. Author and verify gentle-ai bench journeys; go test ./bench never proves driven execution. | user | `C:\Users\dalil\.agents\skills\gentle-ai-bench\SKILL.md` |
 | `go-testing` | Trigger: Go tests, go test coverage, Bubbletea teatest, golden files. Apply focused Go testing patterns. | user | `C:\Users\dalil\.agents\skills\go-testing\SKILL.md` |
