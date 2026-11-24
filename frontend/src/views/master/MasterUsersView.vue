@@ -1,9 +1,8 @@
 <template>
   <v-container fluid class="pa-4">
-    <v-row align="center" class="mb-2">
-      <v-col><h2 class="text-h6">Usuarios internos</h2></v-col>
-      <v-col class="text-right"><v-btn color="primary" density="compact" prepend-icon="mdi-plus" @click="dlg=true">Nuevo</v-btn></v-col>
-    </v-row>
+    <PageHeader title="Usuarios internos" subtitle="Equipo de plataforma y empresas asignadas">
+      <v-btn color="primary" density="compact" prepend-icon="mdi-plus" @click="dlg=true">Nuevo</v-btn>
+    </PageHeader>
     <DataTableCard
       v-model:search="search"
       :headers="headers"
@@ -26,64 +25,55 @@
         </span>
       </template>
       <template #item.is_active="{ item }">
-        <v-chip :color="item.is_active ? 'success' : 'default'" size="small" variant="tonal">
-          {{ item.is_active ? 'Activo' : 'Inactivo' }}
-        </v-chip>
+        <StatusChip :value="Boolean(item.is_active)" positive="Activo" negative="Inactivo" />
       </template>
       <template #item.actions="{ item }">
         <v-btn icon="mdi-cellphone-lock" variant="text" size="small" color="primary" title="Sesiones" @click="openSessions(item as unknown as InternalUser)" />
         <v-btn icon="mdi-pencil" variant="text" size="small" color="primary" title="Editar" @click="openEdit(item as unknown as InternalUser)" />
       </template>
     </DataTableCard>
-    <v-dialog v-model="dlg" max-width="520">
-      <v-card>
-        <v-card-title>{{ editing ? 'Editar interno' : 'Nuevo interno' }}</v-card-title>
-        <v-card-text>
-          <v-text-field v-model="form.username" label="Usuario *" density="compact" :disabled="!!editing" />
-          <v-text-field v-if="!editing" v-model="form.password" label="Clave *" :type="showPass ? 'text' : 'password'"
-            :append-inner-icon="showPass ? 'mdi-eye-off' : 'mdi-eye'" density="compact"
-            hint="8-12 caracteres, número, mayúscula y especial"
-            @click:append-inner="showPass = !showPass" />
-          <v-select v-model="form.role" :items="['MASTER','ADMIN','DEV','TECNICO','JUNIOR']" label="Rol *" density="compact" />
-          <v-select v-model="form.assigned" :items="companyOpts" item-title="slug" item-value="id" label="Empresas asignadas" multiple chips density="compact" />
-          <v-alert v-if="err" type="error" density="compact">{{ err }}</v-alert>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" density="compact" @click="dlg=false">Cancelar</v-btn>
-          <v-btn color="primary" density="compact" :loading="saving" @click="save">Guardar</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <v-dialog v-model="sessDlg" max-width="480">
-      <v-card>
-        <v-card-title>Sesiones de {{ sessUser?.username }}</v-card-title>
-        <v-card-text>
-          <v-table v-if="sessList.length" density="compact" hover>
-            <thead>
-              <tr><th>Token</th><th>Inicio</th><th>Estado</th></tr>
-            </thead>
-            <tbody>
-              <tr v-for="(s, i) in sessList" :key="i">
-                <td class="text-caption">...{{ s.jti_prefix }}</td>
-                <td class="text-caption">{{ new Date(s.created_at).toLocaleString('es-AR') }}</td>
-                <td>
-                  <v-chip :color="s.active ? 'success' : 'default'" size="small" variant="tonal">
-                    {{ s.active ? 'Activa' : 'Revocada' }}
-                  </v-chip>
-                </td>
-              </tr>
-            </tbody>
-          </v-table>
-          <p v-else class="text-medium-emphasis">Sin sesiones.</p>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn color="error" density="compact" @click="killSessions">Revocar todas</v-btn>
-          <v-btn variant="text" density="compact" @click="sessDlg=false">Cerrar</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <FormDialog
+      v-model="dlg"
+      :title="editing ? 'Editar interno' : 'Nuevo interno'"
+      :loading="saving"
+      @submit="save"
+    >
+      <v-text-field v-model="form.username" label="Usuario *" density="compact" :disabled="!!editing" />
+      <v-text-field v-if="!editing" v-model="form.password" label="Clave *" :type="showPass ? 'text' : 'password'"
+        :append-inner-icon="showPass ? 'mdi-eye-off' : 'mdi-eye'" density="compact"
+        hint="8-12 caracteres, número, mayúscula y especial"
+        @click:append-inner="showPass = !showPass" />
+      <v-select v-model="form.role" :items="['MASTER','ADMIN','DEV','TECNICO','JUNIOR']" label="Rol *" density="compact" />
+      <v-select v-model="form.assigned" :items="companyOpts" item-title="slug" item-value="id" label="Empresas asignadas" multiple chips density="compact" />
+      <v-alert v-if="err" type="error" density="compact">{{ err }}</v-alert>
+    </FormDialog>
+
+    <FormDialog
+      v-model="sessDlg"
+      :title="`Sesiones de ${sessUser?.username ?? ''}`"
+      :max-width="480"
+      hide-submit
+      cancel-label="Cerrar"
+    >
+      <v-table v-if="sessList.length" density="compact" hover>
+        <thead>
+          <tr><th>Token</th><th>Inicio</th><th>Estado</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="(s, i) in sessList" :key="i">
+            <td class="text-caption">...{{ s.jti_prefix }}</td>
+            <td class="text-caption">{{ new Date(s.created_at).toLocaleString('es-AR') }}</td>
+            <td>
+              <StatusChip :value="Boolean(s.active)" positive="Activa" negative="Revocada" />
+            </td>
+          </tr>
+        </tbody>
+      </v-table>
+      <p v-else class="text-medium-emphasis">Sin sesiones.</p>
+      <template #actions>
+        <v-btn color="error" density="compact" @click="killSessions">Revocar todas</v-btn>
+      </template>
+    </FormDialog>
   </v-container>
 </template>
 
@@ -91,7 +81,7 @@
 import { computed, reactive, ref } from 'vue'
 import { useMasterCompanies, useMasterUsers } from '@/composables/useMaster'
 import type { InternalUser } from '@/api/panel/master.api'
-import DataTableCard from '@/components/DataTableCard.vue'
+import { DataTableCard, FormDialog, PageHeader, StatusChip } from '@/design'
 
 const { q, createM, updateM } = useMasterUsers()
 const { data: companies } = useMasterCompanies()

@@ -1,6 +1,6 @@
 <template>
   <v-container fluid class="pa-4">
-    <h2 class="text-h6 mb-2">Auditoría</h2>
+    <PageHeader title="Auditoría" subtitle="Movimientos del panel y de cada empresa" />
     <DataTableCard
       v-model:search="search"
       :headers="headers"
@@ -29,7 +29,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useMasterAudit } from '@/composables/useMaster'
-import DataTableCard from '@/components/DataTableCard.vue'
+import { DataTableCard, PageHeader } from '@/design'
 
 const { data } = useMasterAudit()
 const list = computed(() => data.value ?? [])

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createVuetify } from 'vuetify'
 import { ref } from 'vue'
-import DataTableCard from '@/components/DataTableCard.vue'
+import DataTableCard from '@/design/DataTableCard.vue'
 
 const vuetify = createVuetify()
 

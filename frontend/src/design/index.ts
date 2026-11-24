@@ -10,5 +10,5 @@
 export { default as PageHeader } from './PageHeader.vue'
 export { default as StatusChip } from './StatusChip.vue'
 export { default as FormDialog } from './FormDialog.vue'
-export { default as DataTableCard } from '@/components/DataTableCard.vue'
+export { default as DataTableCard } from './DataTableCard.vue'
 export { brandColors, themes, statusColors, componentDefaults, titleFont } from './tokens'

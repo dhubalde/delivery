@@ -52,16 +52,17 @@
           <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="delZone(item.id as number)" />
         </template>
       </DataTableCard>
-      <v-dialog v-model="dlg" max-width="420">
-        <v-card :title="editing?'Editar zona':'Nueva zona'">
-          <v-card-text>
-            <v-text-field v-model="zForm.name" label="Nombre *" density="compact" :error-messages="zDetails.name ?? ''" />
-            <v-text-field v-model="zForm.base_fee" label="Base fee *" type="number" density="compact" :error-messages="zDetails.base_fee ?? ''" />
-            <v-alert v-if="zFormError" type="error" density="compact">{{ zFormError }}</v-alert>
-          </v-card-text>
-          <v-card-actions><v-spacer/><v-btn variant="text" density="compact" @click="dlg=false">Cancelar</v-btn><v-btn color="primary" density="compact" :loading="zSaving" @click="saveZone">Guardar</v-btn></v-card-actions>
-        </v-card>
-      </v-dialog>
+      <FormDialog
+        v-model="dlg"
+        :title="editing ? 'Editar zona' : 'Nueva zona'"
+        :max-width="420"
+        :loading="zSaving"
+        @submit="saveZone"
+      >
+        <v-text-field v-model="zForm.name" label="Nombre *" density="compact" :error-messages="zDetails.name ?? ''" />
+        <v-text-field v-model="zForm.base_fee" label="Base fee *" type="number" density="compact" :error-messages="zDetails.base_fee ?? ''" />
+        <v-alert v-if="zFormError" type="error" density="compact">{{ zFormError }}</v-alert>
+      </FormDialog>
     </template>
     <ConfirmDialog v-model="confirm.show.value" :title="confirm.title.value" :message="confirm.message.value" :confirm-text="confirm.confirmText.value" :cancel-text="confirm.cancelText.value" :confirm-color="confirm.confirmColor.value" @confirm="confirm.onConfirm" @cancel="confirm.onCancel" />
   </v-container>
@@ -72,7 +73,7 @@ import { useDeliveryConfig, useZones, useUpdateDelivery, useCreateZone, useUpdat
 import { useAuthStore } from '@/stores/auth.store'
 import { hasAnyRole } from '@/utils/guards'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
-import DataTableCard from '@/components/DataTableCard.vue'
+import { DataTableCard, FormDialog } from '@/design'
 import { useConfirm, toast } from '@/composables/useConfirm'
 const auth = useAuthStore()
 const isAdmin = computed(()=> hasAnyRole(auth.roles, ['ADMIN']))

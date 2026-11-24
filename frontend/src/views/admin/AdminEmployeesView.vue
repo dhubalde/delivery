@@ -1,12 +1,8 @@
 <template>
   <v-container>
-    <div class="d-flex align-center justify-space-between mb-1 flex-wrap ga-2">
-      <div>
-        <h2 class="text-h6" style="font-family:Comfortaa">Empleados</h2>
-        <div class="text-caption text-medium-emphasis">Legajos, roles y estado</div>
-      </div>
+    <PageHeader title="Empleados" subtitle="Legajos, roles y estado">
       <v-btn color="primary" density="compact" prepend-icon="mdi-plus" :disabled="!isAdmin" @click="openCreate">Nuevo</v-btn>
-    </div>
+    </PageHeader>
     <v-alert v-if="!isAdmin" type="warning" class="mb-4">Solo ADMIN gestiona empleados</v-alert>
     <v-alert v-if="isError && forbid" type="error" class="mb-4">403 — Solo ADMIN (BR-CIE-01)</v-alert>
     <DataTableCard
@@ -28,29 +24,29 @@
         </span>
       </template>
       <template #item.is_active="{ item }">
-        <v-chip :color="item.is_active ? 'success' : 'default'" size="small" variant="tonal">
-          {{ item.is_active ? 'Activo' : 'Inactivo' }}
-        </v-chip>
+        <StatusChip :value="Boolean(item.is_active)" positive="Activo" negative="Inactivo" />
       </template>
       <template #item.actions="{ item }">
         <v-btn icon="mdi-pencil" size="small" density="compact" variant="text" color="primary" title="Editar" :disabled="!isAdmin" @click="openEdit(item as never)" />
         <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="remove(item.id as number)" />
       </template>
     </DataTableCard>
-    <v-dialog v-model="dlg" max-width="480">
-      <v-card :title="editing?'Editar empleado':'Nuevo empleado'">
-        <v-card-text>
-          <v-text-field v-model="form.fullname" label="Nombre *" density="compact" :error-messages="details.fullname ?? ''" />
-          <v-text-field v-model="form.cuil" label="CUIL *" density="compact" :error-messages="details.cuil ?? ''" />
-          <v-text-field v-model="form.address" label="Dirección *" density="compact" :error-messages="details.address ?? ''" />
-          <v-text-field v-model="form.city" label="Ciudad *" density="compact" :error-messages="details.city ?? ''" />
-          <v-select v-model="form.roles" :items="roleOpts" label="Roles *" multiple chips density="compact" :error-messages="details.roles ?? ''" />
-          <v-switch v-model="form.is_active" label="Activo" color="primary" />
-          <v-alert v-if="formError" type="error" density="compact" class="mt-2">{{ formError }}</v-alert>
-        </v-card-text>
-        <v-card-actions><v-spacer/><v-btn variant="text" density="compact" @click="dlg=false">Cancelar</v-btn><v-btn color="primary" density="compact" :loading="saving" :disabled="!isAdmin" @click="save">Guardar</v-btn></v-card-actions>
-      </v-card>
-    </v-dialog>
+    <FormDialog
+      v-model="dlg"
+      :title="editing?'Editar empleado':'Nuevo empleado'"
+      :max-width="480"
+      :loading="saving"
+      :submit-disabled="!isAdmin"
+      @submit="save"
+    >
+      <v-text-field v-model="form.fullname" label="Nombre *" density="compact" :error-messages="details.fullname ?? ''" />
+      <v-text-field v-model="form.cuil" label="CUIL *" density="compact" :error-messages="details.cuil ?? ''" />
+      <v-text-field v-model="form.address" label="Dirección *" density="compact" :error-messages="details.address ?? ''" />
+      <v-text-field v-model="form.city" label="Ciudad *" density="compact" :error-messages="details.city ?? ''" />
+      <v-select v-model="form.roles" :items="roleOpts" label="Roles *" multiple chips density="compact" :error-messages="details.roles ?? ''" />
+      <v-switch v-model="form.is_active" label="Activo" color="primary" />
+      <v-alert v-if="formError" type="error" density="compact" class="mt-2">{{ formError }}</v-alert>
+    </FormDialog>
     <ConfirmDialog v-model="confirm.show.value" :title="confirm.title.value" :message="confirm.message.value" :confirm-text="confirm.confirmText.value" :cancel-text="confirm.cancelText.value" :confirm-color="confirm.confirmColor.value" @confirm="confirm.onConfirm" @cancel="confirm.onCancel" />
   </v-container>
 </template>
@@ -61,7 +57,7 @@ import { ROLES, type Role } from '@/api/panel/employees.api'
 import { useAuthStore } from '@/stores/auth.store'
 import { hasAnyRole } from '@/utils/guards'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
-import DataTableCard from '@/components/DataTableCard.vue'
+import { DataTableCard, PageHeader, StatusChip } from '@/design'
 import { useConfirm, toast } from '@/composables/useConfirm'
 const auth = useAuthStore()
 const isAdmin = computed(()=> hasAnyRole(auth.roles, ['ADMIN']))

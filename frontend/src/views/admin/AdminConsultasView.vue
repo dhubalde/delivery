@@ -1,11 +1,9 @@
 <template>
   <v-container>
-    <div class="mb-3">
-      <h2 class="text-h6" style="font-family: Comfortaa">Consultas — tickets de pedidos</h2>
-      <div class="text-caption text-medium-emphasis">
-        Historial para reclamos: buscá por fecha, código o cliente y reimprimí el ticket.
-      </div>
-    </div>
+    <PageHeader
+      title="Consultas — tickets de pedidos"
+      subtitle="Historial para reclamos: buscá por fecha, código o cliente y reimprimí el ticket."
+    />
     <v-alert v-if="error" type="warning" density="compact" class="mb-2">No se pudo cargar el historial.</v-alert>
     <DataTableCard
       v-model:search="search"
@@ -58,20 +56,19 @@
         </v-btn>
       </template>
     </DataTableCard>
-    <v-dialog v-model="ticketDlg" max-width="360">
-      <v-card>
-        <v-card-title class="text-subtitle-2">Ticket #{{ current?.code }}</v-card-title>
-        <v-card-text>
-          <!-- eslint-disable-next-line vue/no-v-html — ticket HTML is built locally from server data, escaped -->
-          <div v-if="current" v-html="ticketHtml" style="font-family: 'Courier New', monospace; font-size: 12px" />
-        </v-card-text>
-        <v-card-actions>
-          <v-btn variant="text" @click="ticketDlg = false">Cerrar</v-btn>
-          <v-spacer />
-          <v-btn color="primary" prepend-icon="mdi-printer" @click="reprint">Reimprimir</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <FormDialog
+      v-model="ticketDlg"
+      :title="`Ticket #${current?.code ?? ''}`"
+      :max-width="360"
+      hide-submit
+      cancel-label="Cerrar"
+    >
+      <!-- eslint-disable-next-line vue/no-v-html — ticket HTML is built locally from server data, escaped -->
+      <div v-if="current" v-html="ticketHtml" style="font-family: 'Courier New', monospace; font-size: 12px" />
+      <template #actions>
+        <v-btn color="primary" prepend-icon="mdi-printer" @click="reprint">Reimprimir</v-btn>
+      </template>
+    </FormDialog>
   </v-container>
 </template>
 
@@ -83,7 +80,7 @@ import { useMerchant } from '@/composables/useMerchant'
 import { printTicket, buildTicketHtml, ticketWhen } from '@/utils/ticket'
 import type { TicketOrder } from '@/api/panel/printing.api'
 import { qk } from '@/queries/keys'
-import DataTableCard from '@/components/DataTableCard.vue'
+import { DataTableCard, FormDialog, PageHeader } from '@/design'
 
 type Row = TicketOrder
 

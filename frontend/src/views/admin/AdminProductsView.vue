@@ -1,12 +1,8 @@
 <template>
   <v-container>
-    <div class="d-flex align-center justify-space-between mb-1 flex-wrap ga-2">
-      <div>
-        <h2 class="text-h6" style="font-family:Comfortaa">Productos</h2>
-        <div class="text-caption text-medium-emphasis">Catálogo — precios, gustos y fotos</div>
-      </div>
+    <PageHeader title="Productos" subtitle="Catálogo — precios, gustos y fotos">
       <v-btn color="primary" density="compact" prepend-icon="mdi-plus" :disabled="!isAdmin" @click="openCreate">Nuevo</v-btn>
-    </div>
+    </PageHeader>
     <v-alert v-if="!isAdmin" type="warning" class="mb-4">Solo ADMIN puede editar productos</v-alert>
     <v-card variant="tonal" class="mb-3">
       <v-card-text class="d-flex flex-wrap ga-2 align-center py-2">
@@ -58,42 +54,44 @@
         <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="remove(item.id as number)" />
       </template>
     </DataTableCard>
-    <v-dialog v-model="dlg" max-width="640">
-      <v-card :title="editing ? 'Editar producto' : 'Nuevo producto'">
-        <v-card-text>
-          <v-text-field v-model="form.name" label="Nombre *" :error-messages="fieldErr('name')" density="compact" />
-          <v-row dense>
-            <v-col cols="12" sm="6">
-              <v-select v-model="form.category_id" :items="catItems" label="Categoría *" :error-messages="fieldErr('category_id')" density="compact" />
-            </v-col>
-            <v-col cols="12" sm="6">
-              <v-select v-model="form.product_type" :items="['POTE','UNIT']" label="Tipo *" density="compact" />
-            </v-col>
-          </v-row>
-          <v-row dense>
-            <v-col v-if="form.product_type==='POTE'" cols="12" sm="6">
-              <v-select v-model="form.pote_size" :items="poteSizeItems" label="Tamaño pote *" :error-messages="fieldErr('pote_size')" density="compact" />
-            </v-col>
-            <v-col cols="12" sm="6">
-              <v-text-field v-model="form.price" label="Precio *" prefix="$" density="compact" :error-messages="fieldErr('price')" />
-            </v-col>
-          </v-row>
-          <v-checkbox v-model="form.has_flavors" label="Permite elegir gustos" density="compact" hide-details />
-          <v-row v-if="form.has_flavors" dense>
-            <v-col><v-text-field v-model.number="form.min_flavors" label="Min gustos" type="number" density="compact" :error-messages="fieldErr('min_flavors')" /></v-col>
-            <v-col><v-text-field v-model.number="form.max_flavors" label="Max gustos" type="number" density="compact" :error-messages="fieldErr('max_flavors')" /></v-col>
-          </v-row>
-          <v-checkbox v-model="form.has_description" label="Agregar descripción corta" density="compact" hide-details />
-          <v-textarea v-if="form.has_description" v-model="form.description" label="Descripción corta" :counter="160" maxlength="160" rows="2" auto-grow density="compact" hint="Ideal para deco/juguetes - máx 160 caracteres" persistent-hint :error-messages="fieldErr('description')" />
-          <v-file-input v-model="form.imageFile" label="Foto (archivo)" accept="image/*" density="compact" clearable prepend-icon="" :error-messages="fieldErr('image')" hint="Subí una foto propia (JPG/PNG). Si no elegís archivo, se usa la URL." persistent-hint @update:model-value="onFileChange" />
-          <v-text-field v-model="form.image_url" label="Imagen URL (fallback)" placeholder="https://..." density="compact" clearable :error-messages="fieldErr('image_url')" hint="URL alternativa si no subís archivo" persistent-hint />
-          <v-img v-if="previewSrc" :src="previewSrc" height="120" cover class="mt-2 rounded" style="border:1px solid #eee" />
-          <v-alert v-if="poteHint" type="info" density="compact" class="mt-2">{{ poteHint }}</v-alert>
-          <v-alert v-if="formError" type="error" density="compact" class="mt-2">{{ formError }}</v-alert>
-        </v-card-text>
-        <v-card-actions><v-spacer/><v-btn variant="text" density="compact" @click="dlg=false">Cancelar</v-btn><v-btn color="primary" density="compact" :loading="saving" :disabled="!isAdmin" @click="save">Guardar</v-btn></v-card-actions>
-      </v-card>
-    </v-dialog>
+    <FormDialog
+      v-model="dlg"
+      :title="editing ? 'Editar producto' : 'Nuevo producto'"
+      :max-width="640"
+      :loading="saving"
+      :submit-disabled="!isAdmin"
+      @submit="save"
+    >
+      <v-text-field v-model="form.name" label="Nombre *" :error-messages="fieldErr('name')" density="compact" />
+      <v-row dense>
+        <v-col cols="12" sm="6">
+          <v-select v-model="form.category_id" :items="catItems" label="Categoría *" :error-messages="fieldErr('category_id')" density="compact" />
+        </v-col>
+        <v-col cols="12" sm="6">
+          <v-select v-model="form.product_type" :items="['POTE','UNIT']" label="Tipo *" density="compact" />
+        </v-col>
+      </v-row>
+      <v-row dense>
+        <v-col v-if="form.product_type==='POTE'" cols="12" sm="6">
+          <v-select v-model="form.pote_size" :items="poteSizeItems" label="Tamaño pote *" :error-messages="fieldErr('pote_size')" density="compact" />
+        </v-col>
+        <v-col cols="12" sm="6">
+          <v-text-field v-model="form.price" label="Precio *" prefix="$" density="compact" :error-messages="fieldErr('price')" />
+        </v-col>
+      </v-row>
+      <v-checkbox v-model="form.has_flavors" label="Permite elegir gustos" density="compact" hide-details />
+      <v-row v-if="form.has_flavors" dense>
+        <v-col><v-text-field v-model.number="form.min_flavors" label="Min gustos" type="number" density="compact" :error-messages="fieldErr('min_flavors')" /></v-col>
+        <v-col><v-text-field v-model.number="form.max_flavors" label="Max gustos" type="number" density="compact" :error-messages="fieldErr('max_flavors')" /></v-col>
+      </v-row>
+      <v-checkbox v-model="form.has_description" label="Agregar descripción corta" density="compact" hide-details />
+      <v-textarea v-if="form.has_description" v-model="form.description" label="Descripción corta" :counter="160" maxlength="160" rows="2" auto-grow density="compact" hint="Ideal para deco/juguetes - máx 160 caracteres" persistent-hint :error-messages="fieldErr('description')" />
+      <v-file-input v-model="form.imageFile" label="Foto (archivo)" accept="image/*" density="compact" clearable prepend-icon="" :error-messages="fieldErr('image')" hint="Subí una foto propia (JPG/PNG). Si no elegís archivo, se usa la URL." persistent-hint @update:model-value="onFileChange" />
+      <v-text-field v-model="form.image_url" label="Imagen URL (fallback)" placeholder="https://..." density="compact" clearable :error-messages="fieldErr('image_url')" hint="URL alternativa si no subís archivo" persistent-hint />
+      <v-img v-if="previewSrc" :src="previewSrc" height="120" cover class="mt-2 rounded" style="border:1px solid #eee" />
+      <v-alert v-if="poteHint" type="info" density="compact" class="mt-2">{{ poteHint }}</v-alert>
+      <v-alert v-if="formError" type="error" density="compact" class="mt-2">{{ formError }}</v-alert>
+    </FormDialog>
     <ConfirmDialog v-model="confirm.show.value" :title="confirm.title.value" :message="confirm.message.value" :confirm-text="confirm.confirmText.value" :cancel-text="confirm.cancelText.value" :confirm-color="confirm.confirmColor.value" @confirm="confirm.onConfirm" @cancel="confirm.onCancel" />
   </v-container>
 </template>
@@ -105,7 +103,7 @@ import { hasAnyRole } from '@/utils/guards'
 import { qk } from '@/queries/keys'
 import { hint } from '@/utils/flavorPolicy'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
-import DataTableCard from '@/components/DataTableCard.vue'
+import { DataTableCard, FormDialog, PageHeader } from '@/design'
 import { useConfirm, toast } from '@/composables/useConfirm'
 import { catalogApi } from '@/api/panel/catalog.api'
 import { useQueryClient } from '@tanstack/vue-query'

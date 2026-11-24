@@ -1,12 +1,8 @@
 <template>
   <v-container>
-    <div class="d-flex align-center justify-space-between mb-1 flex-wrap ga-2">
-      <div>
-        <h2 class="text-h6" style="font-family:Comfortaa">Categorías</h2>
-        <div class="text-caption text-medium-emphasis">Orden y visibilidad del catálogo</div>
-      </div>
+    <PageHeader title="Categorías" subtitle="Orden y visibilidad del catálogo">
       <v-btn color="primary" density="compact" prepend-icon="mdi-plus" :disabled="!isAdmin" @click="openCreate">Nueva</v-btn>
-    </div>
+    </PageHeader>
     <v-alert v-if="!isAdmin" type="warning" class="mb-4">Solo ADMIN puede editar categorías</v-alert>
     <v-alert v-if="isError && isForbidden" type="error">403 — Permiso denegado (ADMIN requerido)</v-alert>
     <DataTableCard
@@ -26,29 +22,26 @@
         <span class="text-medium-emphasis">#{{ item.position }}</span>
       </template>
       <template #item.is_active="{ item }">
-        <v-chip :color="item.is_active ? 'success' : 'default'" size="small" variant="tonal">
-          {{ item.is_active ? 'Activa' : 'Inactiva' }}
-        </v-chip>
+        <StatusChip :value="Boolean(item.is_active)" positive="Activa" negative="Inactiva" />
       </template>
       <template #item.actions="{ item }">
         <v-btn icon="mdi-pencil" size="small" density="compact" variant="text" color="primary" title="Editar" :disabled="!isAdmin" @click="openEdit(item)" />
         <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="remove(item.id as number)" />
       </template>
     </DataTableCard>
-    <v-dialog v-model="dlg" max-width="480">
-      <v-card :title="editing ? 'Editar categoría' : 'Nueva categoría'">
-        <v-card-text>
-          <v-text-field v-model="form.name" label="Nombre *" :error-messages="fieldErr('name')" density="compact" />
-          <v-text-field v-model.number="form.position" label="Posición" type="number" density="compact" :error-messages="fieldErr('position')" />
-          <v-switch v-model="form.is_active" label="Activa" color="primary" />
-          <v-alert v-if="formError" type="error" density="compact" class="mt-2">{{ formError }}</v-alert>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer /><v-btn variant="text" density="compact" @click="dlg=false">Cancelar</v-btn>
-          <v-btn color="primary" density="compact" :loading="saving" :disabled="!isAdmin" @click="save">Guardar</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <FormDialog
+      v-model="dlg"
+      :title="editing ? 'Editar categoría' : 'Nueva categoría'"
+      :max-width="480"
+      :loading="saving"
+      :submit-disabled="!isAdmin"
+      @submit="save"
+    >
+      <v-text-field v-model="form.name" label="Nombre *" :error-messages="fieldErr('name')" density="compact" />
+      <v-text-field v-model.number="form.position" label="Posición" type="number" density="compact" :error-messages="fieldErr('position')" />
+      <v-switch v-model="form.is_active" label="Activa" color="primary" />
+      <v-alert v-if="formError" type="error" density="compact" class="mt-2">{{ formError }}</v-alert>
+    </FormDialog>
     <ConfirmDialog v-model="confirm.show.value" :title="confirm.title.value" :message="confirm.message.value" :confirm-text="confirm.confirmText.value" :cancel-text="confirm.cancelText.value" :confirm-color="confirm.confirmColor.value" @confirm="confirm.onConfirm" @cancel="confirm.onCancel" />
   </v-container>
 </template>
@@ -58,7 +51,7 @@ import { useAdminCategories, useCreateCategory, useUpdateCategory, useDeleteCate
 import { useAuthStore } from '@/stores/auth.store'
 import { hasAnyRole } from '@/utils/guards'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
-import DataTableCard from '@/components/DataTableCard.vue'
+import { DataTableCard, PageHeader, StatusChip } from '@/design'
 import { useConfirm, toast } from '@/composables/useConfirm'
 const auth = useAuthStore()
 const isAdmin = computed(() => hasAnyRole(auth.roles, ['ADMIN']))

@@ -1,12 +1,8 @@
 <template>
   <v-container>
-    <div class="d-flex align-center justify-space-between mb-1 flex-wrap ga-2">
-      <div>
-        <h2 class="text-h6" style="font-family:Comfortaa">Sabores</h2>
-        <div class="text-caption text-medium-emphasis">Gustos por categoría o globales</div>
-      </div>
+    <PageHeader title="Sabores" subtitle="Gustos por categoría o globales">
       <v-btn color="primary" density="compact" prepend-icon="mdi-plus" :disabled="!isAdmin" @click="openCreate">Nuevo</v-btn>
-    </div>
+    </PageHeader>
     <v-alert v-if="!isAdmin" type="warning" class="mb-4">Solo ADMIN puede editar sabores</v-alert>
     <v-alert v-if="isForbidden" type="error" class="mb-2">403 — ADMIN requerido</v-alert>
     <DataTableCard
@@ -41,17 +37,19 @@
         <v-btn icon="mdi-delete" size="small" density="compact" variant="text" color="error" title="Eliminar" :disabled="!isAdmin" @click="remove(item.id as number)" />
       </template>
     </DataTableCard>
-    <v-dialog v-model="dlg" max-width="480">
-      <v-card :title="editing ? 'Editar sabor' : 'Nuevo sabor'">
-        <v-card-text>
-          <v-text-field v-model="form.name" label="Nombre *" :error-messages="fieldErr('name')" density="compact" />
-          <v-select v-model="form.category_id" :items="catItems" label="Categoría (opcional)" clearable :error-messages="fieldErr('category_id')" density="compact" />
-          <v-switch v-model="form.is_active" label="Activo" color="primary" />
-          <v-alert v-if="formError" type="error" density="compact" class="mt-2">{{ formError }}</v-alert>
-        </v-card-text>
-        <v-card-actions><v-spacer/><v-btn variant="text" density="compact" @click="dlg=false">Cancelar</v-btn><v-btn color="primary" density="compact" :loading="saving" :disabled="!isAdmin" @click="save">Guardar</v-btn></v-card-actions>
-      </v-card>
-    </v-dialog>
+    <FormDialog
+      v-model="dlg"
+      :title="editing ? 'Editar sabor' : 'Nuevo sabor'"
+      :max-width="480"
+      :loading="saving"
+      :submit-disabled="!isAdmin"
+      @submit="save"
+    >
+      <v-text-field v-model="form.name" label="Nombre *" :error-messages="fieldErr('name')" density="compact" />
+      <v-select v-model="form.category_id" :items="catItems" label="Categoría (opcional)" clearable :error-messages="fieldErr('category_id')" density="compact" />
+      <v-switch v-model="form.is_active" label="Activo" color="primary" />
+      <v-alert v-if="formError" type="error" density="compact" class="mt-2">{{ formError }}</v-alert>
+    </FormDialog>
     <ConfirmDialog v-model="confirm.show.value" :title="confirm.title.value" :message="confirm.message.value" :confirm-text="confirm.confirmText.value" :cancel-text="confirm.cancelText.value" :confirm-color="confirm.confirmColor.value" @confirm="confirm.onConfirm" @cancel="confirm.onCancel" />
   </v-container>
 </template>
@@ -62,7 +60,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { hasAnyRole } from '@/utils/guards'
 import { qk } from '@/queries/keys'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
-import DataTableCard from '@/components/DataTableCard.vue'
+import { DataTableCard, PageHeader } from '@/design'
 import { useConfirm, toast } from '@/composables/useConfirm'
 const auth = useAuthStore(); const isAdmin = computed(()=>hasAnyRole(auth.roles,['ADMIN']))
 const headers = [

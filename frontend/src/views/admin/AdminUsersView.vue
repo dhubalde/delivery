@@ -1,12 +1,8 @@
 <template>
   <v-container fluid class="pa-4">
-    <div class="d-flex align-center justify-space-between mb-1 flex-wrap ga-2">
-      <div>
-        <h2 class="text-h6">Usuarios</h2>
-        <div class="text-caption text-medium-emphasis">Cuentas, roles y accesos</div>
-      </div>
+    <PageHeader title="Usuarios" subtitle="Cuentas, roles y accesos">
       <v-btn color="primary" density="compact" prepend-icon="mdi-plus" :disabled="!isAdmin" @click="openCreate">Nuevo</v-btn>
-    </div>
+    </PageHeader>
     <v-alert v-if="formError" type="error" density="compact" class="mb-2">{{ formError }}</v-alert>
     <DataTableCard
       v-model:search="search"
@@ -29,9 +25,7 @@
         <span class="text-caption text-medium-emphasis">{{ item.kind }}</span>
       </template>
       <template #item.is_active="{ item }">
-        <v-chip :color="item.is_active ? 'success' : 'default'" size="small" variant="tonal">
-          {{ item.is_active ? 'Activo' : 'Inactivo' }}
-        </v-chip>
+        <StatusChip :value="Boolean(item.is_active)" positive="Activo" negative="Inactivo" />
       </template>
       <template #item.actions="{ item }">
         <v-btn icon="mdi-pencil" variant="text" size="small" density="compact" color="primary" title="Editar" @click="openEdit(item as unknown as AppUser)" />
@@ -40,57 +34,50 @@
       </template>
     </DataTableCard>
 
-    <v-dialog v-model="dlg" max-width="520">
-      <v-card>
-        <v-card-title>{{ editing ? 'Editar usuario' : 'Nuevo usuario' }}</v-card-title>
-        <v-card-text>
-          <v-alert v-if="form.role === 'ADMIN'" type="warning" density="compact" class="mb-3">
-            El rol ADMIN administra usuarios, caja y configuración. Solo para mandos medios o quien mejor maneje el sistema.
-          </v-alert>
-          <v-text-field v-model="form.username" label="Usuario *" density="compact" :disabled="!!editing" :error-messages="details.username ?? ''" />
-          <v-text-field v-if="!editing" v-model="form.password" label="Clave inicial *" :type="showPass ? 'text' : 'password'"
-            :append-inner-icon="showPass ? 'mdi-eye-off' : 'mdi-eye'" density="compact"
-            hint="8-12 caracteres, número, mayúscula y especial" :error-messages="details.password ?? ''"
-            @click:append-inner="showPass = !showPass" />
-          <v-select v-model="form.role" :items="roleOpts" label="Rol *" density="compact" :error-messages="details.role ?? ''" />
-          <v-select v-model="form.kind" :items="['PERSONAL','STATION']" label="Tipo" density="compact" />
-          <v-select v-model="form.sector" :items="['', 'RECIBIDO', 'PREPARACION', 'FACTURACION', 'LOGISTICA', 'TODAS']" label="Sector" density="compact" hint="Vacío = por rol. TODAS = todas las estaciones (negocio chico)" />
-          <v-switch v-model="form.is_active" label="Activo" color="primary" />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" density="compact" @click="dlg=false">Cancelar</v-btn>
-          <v-btn color="primary" density="compact" :loading="saving" @click="save">Guardar</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <FormDialog
+      v-model="dlg"
+      :title="editing ? 'Editar usuario' : 'Nuevo usuario'"
+      :loading="saving"
+      @submit="save"
+    >
+      <v-alert v-if="form.role === 'ADMIN'" type="warning" density="compact" class="mb-3">
+        El rol ADMIN administra usuarios, caja y configuración. Solo para mandos medios o quien mejor maneje el sistema.
+      </v-alert>
+      <v-text-field v-model="form.username" label="Usuario *" density="compact" :disabled="!!editing" :error-messages="details.username ?? ''" />
+      <v-text-field v-if="!editing" v-model="form.password" label="Clave inicial *" :type="showPass ? 'text' : 'password'"
+        :append-inner-icon="showPass ? 'mdi-eye-off' : 'mdi-eye'" density="compact"
+        hint="8-12 caracteres, número, mayúscula y especial" :error-messages="details.password ?? ''"
+        @click:append-inner="showPass = !showPass" />
+      <v-select v-model="form.role" :items="roleOpts" label="Rol *" density="compact" :error-messages="details.role ?? ''" />
+      <v-select v-model="form.kind" :items="['PERSONAL','STATION']" label="Tipo" density="compact" />
+      <v-select v-model="form.sector" :items="['', 'RECIBIDO', 'PREPARACION', 'FACTURACION', 'LOGISTICA', 'TODAS']" label="Sector" density="compact" hint="Vacío = por rol. TODAS = todas las estaciones (negocio chico)" />
+      <v-switch v-model="form.is_active" label="Activo" color="primary" />
+    </FormDialog>
 
-    <v-dialog v-model="resetDlg" max-width="520">
-      <v-card>
-        <v-card-title>Resetear clave de {{ resetUser?.username }}</v-card-title>
-        <v-card-text>
-          <p class="text-body-2 mb-2">Se genera un token de un solo uso (20 min). Pasáselo por un canal seguro, nunca por chat grupal.</p>
-          <v-text-field v-if="resetToken" :model-value="resetToken" label="Token" readonly density="compact" />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" density="compact" @click="resetDlg=false">Cerrar</v-btn>
-          <v-btn color="primary" density="compact" :loading="resetting" @click="doReset">Generar</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <FormDialog
+      v-model="resetDlg"
+      :title="`Resetear clave de ${resetUser?.username ?? ''}`"
+      hide-submit
+      cancel-label="Cerrar"
+    >
+      <p class="text-body-2 mb-2">Se genera un token de un solo uso (20 min). Pasáselo por un canal seguro, nunca por chat grupal.</p>
+      <v-text-field v-if="resetToken" :model-value="resetToken" label="Token" readonly density="compact" />
+      <template #actions>
+        <v-btn color="primary" density="compact" :loading="resetting" @click="doReset">Generar</v-btn>
+      </template>
+    </FormDialog>
 
-    <v-dialog v-model="removeDlg" max-width="420">
-      <v-card>
-        <v-card-title>Desactivar usuario</v-card-title>
-        <v-card-text>Se desactiva <b>{{ removeTarget?.username }}</b> (libera cupo, conserva historial).</v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" density="compact" @click="removeDlg=false">Cancelar</v-btn>
-          <v-btn color="error" density="compact" :loading="removeM.isPending.value" @click="doRemove">Desactivar</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <FormDialog
+      v-model="removeDlg"
+      title="Desactivar usuario"
+      :max-width="420"
+      hide-submit
+    >
+      Se desactiva <b>{{ removeTarget?.username }}</b> (libera cupo, conserva historial).
+      <template #actions>
+        <v-btn color="error" density="compact" :loading="removeM.isPending.value" @click="doRemove">Desactivar</v-btn>
+      </template>
+    </FormDialog>
   </v-container>
 </template>
 
@@ -99,7 +86,7 @@ import { computed, reactive, ref } from 'vue'
 import { useAdminUsers, userErrDetails, type AppUser } from '@/composables/useAdminUsers'
 import { usersApi, type OperativeRole, type UserKind } from '@/api/panel/users.api'
 import { useAuthStore } from '@/stores/auth.store'
-import DataTableCard from '@/components/DataTableCard.vue'
+import { DataTableCard, FormDialog, PageHeader, StatusChip } from '@/design'
 
 const auth = useAuthStore()
 const isAdmin = computed(() => auth.hasAnyRole(['ADMIN']))

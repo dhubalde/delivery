@@ -47,9 +47,7 @@
           <span class="font-weight-medium">{{ item.date }}</span>
         </template>
         <template #item.is_closed="{ item }">
-          <v-chip :color="item.is_closed ? 'error' : 'success'" size="small" variant="tonal">
-            {{ item.is_closed ? 'Cerrado' : 'Abierto' }}
-          </v-chip>
+          <StatusChip :value="!item.is_closed" positive="Abierto" negative="Cerrado" negative-color="error" />
         </template>
         <template #item.reason="{ item }">
           <span class="text-caption text-medium-emphasis">{{ item.reason }}</span>
@@ -77,7 +75,7 @@ import { useSchedules, useSpecialDates, useUpsertSchedule, useDeleteSchedule, us
 import { useAuthStore } from '@/stores/auth.store'
 import { hasAnyRole } from '@/utils/guards'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
-import DataTableCard from '@/components/DataTableCard.vue'
+import { DataTableCard, StatusChip } from '@/design'
 import { useConfirm, toast } from '@/composables/useConfirm'
 const auth = useAuthStore()
 const isAdmin = computed(()=> hasAnyRole(auth.roles, ['ADMIN']))
